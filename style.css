@@ -77,6 +77,7 @@ body {
   background: var(--bg);
   color: var(--text);
   line-height: 1.65;
+  font-size: var(--fluid-body);
   overflow-x: hidden;
   -webkit-font-smoothing: antialiased;
   transition: background-color 0.4s ease, color 0.4s ease;
@@ -140,7 +141,7 @@ ul {
 }
 
 .section {
-  padding: 100px 0;
+  padding: var(--fluid-space) 0;
 }
 
 .section-alt {
@@ -180,8 +181,8 @@ ul {
 }
 
 .section-title {
-  font-size: clamp(2rem, 4vw, 3rem);
-  margin-bottom: 56px;
+  font-size: var(--fluid-h2);
+  margin-bottom: var(--fluid-space-sm);
   position: relative;
 }
 
@@ -1923,8 +1924,10 @@ ul {
    ───────────────────────────────────────────────────── */
 .skills-grid {
   display: grid;
-  grid-template-columns: repeat(3, 1fr);
+  grid-template-columns: repeat(auto-fit, minmax(320px, 1fr));
   gap: 24px;
+  position: relative;
+  z-index: 10;
 }
 
 .skill-group {
@@ -2712,7 +2715,7 @@ footer {
    ───────────────────────────────────────────────────── */
 @media (max-width: 1024px) {
   .skills-grid {
-    grid-template-columns: repeat(2, 1fr);
+    grid-template-columns: repeat(auto-fit, minmax(280px, 1fr));
   }
 
   .exp-grid {
@@ -2722,7 +2725,7 @@ footer {
   }
 
   .projects-grid {
-    grid-template-columns: repeat(2, 1fr);
+    grid-template-columns: repeat(auto-fit, minmax(300px, 1fr));
   }
 
   .project-featured {
@@ -2790,6 +2793,18 @@ footer {
     justify-content: center;
   }
 
+  /* Robotic Scaling for Mobile */
+  .section-robot { opacity: 0.4; }
+  .swarm-drone {
+    transform: scale(0.6) translateZ(0);
+  }
+
+  .drone-swarm .d2 { top: 20%; left: 70%; }
+  .drone-swarm .d3 { top: 80%; left: 10%; }
+
+  .tb-lidar { transform: scale(0.7); }
+  .omni-arm { transform: rotateX(60deg) rotateZ(20deg) scale(0.5) !important; }
+
   .about-grid {
     grid-template-columns: 1fr;
   }
@@ -2804,6 +2819,11 @@ footer {
 
   .projects-grid {
     grid-template-columns: 1fr;
+  }
+
+  .exp-grid {
+    grid-template-columns: 1fr;
+    gap: 24px;
   }
 
   .contact-wrap {

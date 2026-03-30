@@ -140,7 +140,11 @@ ul {
 }
 
 .section {
-  padding: 100px 0;
+  padding: 80px 0;
+}
+
+.section + .section {
+  padding-top: 40px;
 }
 
 .section-alt {
@@ -180,8 +184,8 @@ ul {
 }
 
 .section-title {
-  font-size: clamp(2rem, 4vw, 3rem);
-  margin-bottom: 56px;
+  font-size: clamp(2rem, 4.5vw, 3.2rem);
+  margin-bottom: 48px;
   position: relative;
 }
 
@@ -2714,7 +2718,7 @@ footer {
    ───────────────────────────────────────────────────── */
 @media (max-width: 1024px) {
   .section {
-    padding: clamp(60px, 10vh, 100px) 0;
+    padding: clamp(40px, 8vh, 80px) 0;
   }
   
   .section-title {

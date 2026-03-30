@@ -1,0 +1,185 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+  <title>YOLOv8 Edge Inference on ESP32 — Ganesh Reddy</title>
+  <meta name="description" content="Challenges and breakthroughs from porting lighter convolutional architectures to bare-metal embedded devices with tight RAM constraints." />
+  <link rel="preconnect" href="https://fonts.googleapis.com" />
+  <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin />
+  <link href="https://fonts.googleapis.com/css2?family=Outfit:wght@300;400;500;600;700&family=Syne:wght@400;500;600;700;800&display=swap" rel="stylesheet" />
+  <link rel="stylesheet" href="style.css?v=12" />
+  
+  <script src="https://polyfill.io/v3/polyfill.min.js?features=es6"></script>
+  <script id="MathJax-script" async src="https://cdn.jsdelivr.net/npm/mathjax@3/es5/tex-mml-chtml.js"></script>
+  
+  <script type="module">
+    import mermaid from 'https://cdn.jsdelivr.net/npm/mermaid@10/dist/mermaid.esm.min.mjs';
+    mermaid.initialize({ startOnLoad: true, theme: 'dark', fontFamily: 'Inter' });
+  </script>
+
+  <style>
+    .blog-header {
+      padding: calc(var(--nav-h) + 100px) 40px 60px;
+      text-align: center;
+      position: relative;
+    }
+    .blog-meta {
+      font-size: 0.85rem;
+      color: var(--accent-2);
+      text-transform: uppercase;
+      letter-spacing: 0.1em;
+      font-weight: 600;
+      margin-bottom: 20px;
+      display: block;
+    }
+    .blog-content {
+      max-width: 800px;
+      margin: 0 auto;
+      font-size: 1.1rem;
+      line-height: 1.8;
+      color: var(--text);
+    }
+    .blog-content p {
+      margin-bottom: 24px;
+      color: var(--text-muted);
+    }
+    .blog-content h2 {
+      font-size: 2rem;
+      margin: 60px 0 24px;
+      color: var(--text);
+    }
+    .blog-content h3 {
+      font-size: 1.4rem;
+      margin: 40px 0 16px;
+      color: var(--accent);
+    }
+    .formula-box {
+      background: var(--surface);
+      padding: 24px;
+      border-left: 4px solid var(--accent-2);
+      border-radius: 0 var(--radius-sm) var(--radius-sm) 0;
+      margin: 32px 0;
+      overflow-x: auto;
+    }
+    .diagram-box {
+      margin: 48px 0;
+      padding: 32px;
+      background: var(--surface);
+      border: 1px solid var(--surface-border);
+      border-radius: var(--radius);
+      text-align: center;
+    }
+    pre {
+      background: var(--bg-alt);
+      padding: 24px;
+      border-radius: var(--radius-sm);
+      overflow-x: auto;
+      border: 1px solid var(--surface-border);
+      margin-bottom: 24px;
+      font-size: 0.9rem;
+      color: var(--text);
+    }
+    code {
+      font-family: 'Fira Code', monospace;
+    }
+    .mermaid {
+      background: transparent !important;
+    }
+  </style>
+</head>
+<body>
+  <!-- ─── NAV ──────────────────────────────────────────────── -->
+  <nav id="navbar" class="scrolled">
+    <a href="index.html" class="nav-logo">GR<span class="accent">.</span></a>
+    <ul class="nav-links">
+      <li><a href="index.html">&larr; Back to Portfolio</a></li>
+      <li><a href="blog.html" class="gradient-text">Blog Home</a></li>
+    </ul>
+    <button id="hamburger" aria-label="Toggle menu">
+      <span></span><span></span><span></span>
+    </button>
+  </nav>
+
+  <!-- ─── HEADER ───────────────────────────────────────────── -->
+  <header class="blog-header">
+    <div class="container">
+      <span class="blog-meta">January 10, 2026 • Edge AI & Embedded Systems</span>
+      <h1 class="section-title" style="margin-bottom: 24px;">YOLOv8 Edge Inference on ESP32</h1>
+      <p style="color: var(--text-muted); max-width: 600px; margin: 0 auto;">Challenges and breakthroughs from porting lighter convolutional architectures to bare-metal embedded devices with tight RAM constraints.</p>
+    </div>
+  </header>
+
+  <!-- ─── CONTENT ──────────────────────────────────────────── -->
+  <main class="section" style="padding-top: 20px;">
+    <div class="container blog-content">
+
+      <h2>1. The Challenge of Bare-Metal Edge AI</h2>
+      <p>Running a state-of-the-art object detection model like YOLOv8 on a standard PC is trivial. Running it on an ESP32 microcontroller with a few megabytes of PSRAM and barely any flash storage? That's an engineering battle. The constraint isn't just compute speed, it's extreme memory limitation.</p>
+      
+      <p>In this post, I explore how to strip down, quantize, and optimize YOLO architectures into TensorFlow Lite Micro (.tflite) payloads suitable for bare-metal C++ execution.</p>
+
+      <div class="diagram-box">
+        <div class="mermaid">
+        flowchart TD
+            A[YOLOv8 Nano Model] -->|Export to ONNX| B[ONNX Graph]
+            B -->|Convert & Quantize INT8| C[TensorFlow Lite Model]
+            C -->|xxd Hex Dump| D[C Byte Array Header]
+            D -->|ESP-IDF Framework| E[ESP32 Execution]
+            E -->|OV2640 Camera| F[Bounding Box Output]
+        </div>
+      </div>
+
+      <h2>2. Model Reduction & INT8 Quantization</h2>
+      <p>The standard YOLOv8n (Nano) is still too large. We have to prune the network, reduce input resolutions to 96x96 or 160x160, and perform Post-Training Quantization (PTQ) to convert all 32-bit floating-point weights into 8-bit integers.</p>
+
+      <div class="formula-box">
+        \[ r = S (q - Z) \]
+        <p style="font-size: 0.9rem; margin-top: 10px; margin-bottom: 0;"><strong>Quantization Math:</strong> We map the real value \(r\) to the quantized integer \(q\) using a Scale \(S\) and a Zero-point \(Z\). This drastically reduces the memory footprint by 4x and speeds up inference on integer-only ALUs.</p>
+      </div>
+
+      <h2>3. TensorFlow Lite Micro Implementation</h2>
+      <p>Once converted to a C-style array using <code>xxd -i model.tflite > model_data.cc</code>, we use the TensorFlow Lite Micro library in ESP-IDF to allocate a tensor arena and invoke the interpreter.</p>
+
+<pre><code>// 1. Define memory arena
+constexpr int kTensorArenaSize = 1024 * 500; // 500 KB limit!
+uint8_t tensor_arena[kTensorArenaSize];
+
+// 2. Setup the MicroInterpreter
+tflite::MicroInterpreter interpreter(
+    model, resolver, tensor_arena, kTensorArenaSize, error_reporter);
+
+// 3. Allocate and map image data to input tensor
+TfLiteTensor* input = interpreter.input(0);
+memcpy(input->data.int8, camera_fb->buf, camera_fb->len);
+
+// 4. Run Inference!
+if (interpreter.Invoke() != kTfLiteOk) {
+    ESP_LOGE("TF", "Invoke failed");
+}
+</code></pre>
+
+      <h2>4. Memory Management & Heap Limitations</h2>
+      <p>The ESP32 typically features 520KB of internal SRAM. A large model will immediately fail on <code>AllocateTensors()</code>. The trick is to utilize external PSRAM (e.g., the 4MB module on ESP32-CAM boards). However, PSRAM is connected via SPI and is vastly slower than internal SRAM.</p>
+      <p>By carefully pinning the TFLite operations to internal memory and storing only the static weights in PSRAM/Flash via the <code>EXT_RAM_ATTR</code> directive, we strike a working balance between capacity and latency, achieving ~1-2 FPS for basic real-time object detection directly on the sensor node.</p>
+    </div>
+  </main>
+
+  <!-- ─── FOOTER ───────────────────────────────────────────── -->
+  <footer>
+    <div class="container">
+      <p>&copy; 2026 Ganesh Reddy. All rights reserved.</p>
+    </div>
+  </footer>
+
+  <script>
+    const hamburger = document.getElementById('hamburger');
+    const navLinks = document.querySelector('.nav-links');
+    if (hamburger) {
+      hamburger.addEventListener('click', () => {
+        navLinks.classList.toggle('open');
+      });
+    }
+  </script>
+</body>
+</html>

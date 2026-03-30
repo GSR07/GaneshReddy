@@ -1,0 +1,198 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+  <title>Nav2 EKF Sensor Fusion on Custom AMRs — Ganesh Reddy</title>
+  <meta name="description" content="Integrating wheel odometry, IMU data, and 2D LiDAR into the robot_localization package for a 300kg payload autonomous mobile robot." />
+  <link rel="preconnect" href="https://fonts.googleapis.com" />
+  <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin />
+  <link href="https://fonts.googleapis.com/css2?family=Outfit:wght@300;400;500;600;700&family=Syne:wght@400;500;600;700;800&display=swap" rel="stylesheet" />
+  <link rel="stylesheet" href="style.css?v=12" />
+  
+  <script src="https://polyfill.io/v3/polyfill.min.js?features=es6"></script>
+  <script id="MathJax-script" async src="https://cdn.jsdelivr.net/npm/mathjax@3/es5/tex-mml-chtml.js"></script>
+  
+  <script type="module">
+    import mermaid from 'https://cdn.jsdelivr.net/npm/mermaid@10/dist/mermaid.esm.min.mjs';
+    mermaid.initialize({ startOnLoad: true, theme: 'dark', fontFamily: 'Inter' });
+  </script>
+
+  <style>
+    .blog-header {
+      padding: calc(var(--nav-h) + 100px) 40px 60px;
+      text-align: center;
+      position: relative;
+    }
+    .blog-meta {
+      font-size: 0.85rem;
+      color: var(--accent-2);
+      text-transform: uppercase;
+      letter-spacing: 0.1em;
+      font-weight: 600;
+      margin-bottom: 20px;
+      display: block;
+    }
+    .blog-content {
+      max-width: 800px;
+      margin: 0 auto;
+      font-size: 1.1rem;
+      line-height: 1.8;
+      color: var(--text);
+    }
+    .blog-content p {
+      margin-bottom: 24px;
+      color: var(--text-muted);
+    }
+    .blog-content h2 {
+      font-size: 2rem;
+      margin: 60px 0 24px;
+      color: var(--text);
+    }
+    .blog-content h3 {
+      font-size: 1.4rem;
+      margin: 40px 0 16px;
+      color: var(--accent);
+    }
+    .formula-box {
+      background: var(--surface);
+      padding: 24px;
+      border-left: 4px solid var(--accent-2);
+      border-radius: 0 var(--radius-sm) var(--radius-sm) 0;
+      margin: 32px 0;
+      overflow-x: auto;
+    }
+    .diagram-box {
+      margin: 48px 0;
+      padding: 32px;
+      background: var(--surface);
+      border: 1px solid var(--surface-border);
+      border-radius: var(--radius);
+      text-align: center;
+    }
+    pre {
+      background: var(--bg-alt);
+      padding: 24px;
+      border-radius: var(--radius-sm);
+      overflow-x: auto;
+      border: 1px solid var(--surface-border);
+      margin-bottom: 24px;
+      font-size: 0.9rem;
+      color: var(--text);
+    }
+    code {
+      font-family: 'Fira Code', monospace;
+    }
+    .mermaid {
+      background: transparent !important;
+    }
+  </style>
+</head>
+<body>
+  <!-- ─── NAV ──────────────────────────────────────────────── -->
+  <nav id="navbar" class="scrolled">
+    <a href="index.html" class="nav-logo">GR<span class="accent">.</span></a>
+    <ul class="nav-links">
+      <li><a href="index.html">&larr; Back to Portfolio</a></li>
+      <li><a href="blog.html" class="gradient-text">Blog Home</a></li>
+    </ul>
+    <button id="hamburger" aria-label="Toggle menu">
+      <span></span><span></span><span></span>
+    </button>
+  </nav>
+
+  <!-- ─── HEADER ───────────────────────────────────────────── -->
+  <header class="blog-header">
+    <div class="container">
+      <span class="blog-meta">February 15, 2026 • Autonomous Mobile Robots</span>
+      <h1 class="section-title" style="margin-bottom: 24px;">Nav2 EKF Sensor Fusion on Custom AMRs</h1>
+      <p style="color: var(--text-muted); max-width: 600px; margin: 0 auto;">Integrating wheel odometry, IMU data, and 2D LiDAR into the robot_localization package for a 300kg payload autonomous mobile robot.</p>
+    </div>
+  </header>
+
+  <!-- ─── CONTENT ──────────────────────────────────────────── -->
+  <main class="section" style="padding-top: 20px;">
+    <div class="container blog-content">
+
+      <h2>1. The Navigation Challenge</h2>
+      <p>Building a 300kg payload AMR is demanding on the hardware level, but the software challenge is equally difficult. A heavy robot experiences slippage, wheel scrub, and IMU drift that can completely disorient its navigation stack. Standard wheel odometry alone is not reliable. If you rely solely on it, the robot will quickly believe it's in a different room.</p>
+      <p>To fix this, we need Sensor Fusion using an Extended Kalman Filter (EKF) to merge multiple imprecise measurements into a single, high-fidelity state estimate.</p>
+
+      <div class="diagram-box">
+        <div class="mermaid">
+        flowchart TD
+            Odom[Wheel Odometry] -->|Velocity| EKF[robot_localization EKF Filter]
+            IMU[IMU Sensor] -->|Angular Velocity, Acceleration| EKF
+            Lidar[2D LiDAR] -->|Laser Scans| AMCL[AMCL]
+            AMCL -->|Pose Estimate| EKF
+            EKF -->|Fused Odom to Base Link| Nav2[Nav2 Stack]
+        </div>
+      </div>
+
+      <h2>2. Understanding the Extended Kalman Filter (EKF)</h2>
+      <p>The standard Kalman Filter works perfectly for linear systems, but our AMR model is non-linear (due to trigonometric functions representing headings). The EKF solves this by taking the Jacobian of the state transition and observation models.</p>
+      
+      <div class="formula-box">
+        \[ \hat{x}_{k|k-1} = f(\hat{x}_{k-1|k-1}, u_k) \]
+        \[ P_{k|k-1} = F_k P_{k-1|k-1} F_k^T + Q_k \]
+        <p style="font-size: 0.9rem; margin-top: 10px; margin-bottom: 0;"><strong>Predict Phase:</strong> The robot guesses its current position based on its previous position and how much it thinks its wheels have turned (\(u_k\)).</p>
+      </div>
+
+      <div class="formula-box">
+        \[ K_k = P_{k|k-1} H_k^T (H_k P_{k|k-1} H_k^T + R_k)^{-1} \]
+        \[ \hat{x}_{k|k} = \hat{x}_{k|k-1} + K_k (z_k - h(\hat{x}_{k|k-1})) \]
+        <p style="font-size: 0.9rem; margin-top: 10px; margin-bottom: 0;"><strong>Update Phase:</strong> The robot receives new sensor data, like an IMU reading (\(z_k\)), and applies the Kalman Gain (\(K_k\)) to correct the state estimate based on how much it trusts the sensor (\(R_k\)) vs its own prediction.</p>
+      </div>
+
+      <h2>3. Configuring robot_localization</h2>
+      <p>In ROS2, we use the <code>robot_localization</code> package to handle the EKF math. The trick is telling it exactly which parts of which sensor messages to trust.</p>
+
+<pre><code>ekf_filter_node:
+  ros__parameters:
+    frequency: 30.0
+    two_d_mode: true
+    publish_tf: true
+
+    # Wheel Odometry
+    odom0: /odom
+    odom0_config: [false, false, false,
+                   false, false, false,
+                   true,  true,  false,
+                   false, false, true,
+                   false, false, false]
+                   
+    # IMU Data
+    imu0: /imu/data
+    imu0_config: [false, false, false,
+                  false, false, true,
+                  false, false, false,
+                  false, false, true,
+                  true,  true,  false]
+</code></pre>
+
+      <p>Notice the boolean arrays. We instruct the EKF to only look at X/Y velocity and Yaw velocity from the wheel odometry, but rely heavily on the IMU for Yaw orientation and angular velocity. This ensures we get the best traits of both sensors while mitigating their individual weaknesses.</p>
+
+      <h2>4. Nav2 Integration & Results</h2>
+      <p>Once the EKF publishes the high-fidelity <code>odom</code> to <code>base_link</code> transform, we plug it into the Nav2 stack alongside AMCL (Adaptive Monte Carlo Localization) which provides map-level corrections based on LiDAR.</p>
+      <p>The final result is an incredibly stable AMR that can recover from slippage on uneven terrain and accurately trace its path on the map with near-zero long-term drift.</p>
+    </div>
+  </main>
+
+  <!-- ─── FOOTER ───────────────────────────────────────────── -->
+  <footer>
+    <div class="container">
+      <p>&copy; 2026 Ganesh Reddy. All rights reserved.</p>
+    </div>
+  </footer>
+
+  <script>
+    const hamburger = document.getElementById('hamburger');
+    const navLinks = document.querySelector('.nav-links');
+    if (hamburger) {
+      hamburger.addEventListener('click', () => {
+        navLinks.classList.toggle('open');
+      });
+    }
+  </script>
+</body>
+</html>

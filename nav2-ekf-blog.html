@@ -3,104 +3,184 @@
 <head>
   <meta charset="UTF-8" />
   <meta name="viewport" content="width=device-width, initial-scale=1.0" />
-  <title>Nav2 EKF Sensor Fusion on Custom AMRs — Ganesh Reddy</title>
-  <meta name="description" content="Integrating wheel odometry, IMU data, and 2D LiDAR into the robot_localization package for a 300kg payload autonomous mobile robot." />
+  <title>Navigation in Mobile Robotics — Theory, Math & Algorithms</title>
   <link rel="preconnect" href="https://fonts.googleapis.com" />
   <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin />
-  <link href="https://fonts.googleapis.com/css2?family=Outfit:wght@300;400;500;600;700&family=Syne:wght@400;500;600;700;800&display=swap" rel="stylesheet" />
+  <link href="https://fonts.googleapis.com/css2?family=Outfit:wght@300;400;500;600;700;800&family=Syne:wght@400;500;600;700;800&family=JetBrains+Mono:wght@400;500&display=swap" rel="stylesheet" />
   <link rel="stylesheet" href="style.css?v=20" />
   <script>
-    const savedTheme = localStorage.getItem('theme');
-    if (savedTheme === 'light' || (!savedTheme && window.matchMedia('(prefers-color-scheme: light)').matches)) {
-      document.documentElement.setAttribute('data-theme', 'light');
+    const savedTheme = localStorage.getItem("theme");
+    if (savedTheme === "light" || (!savedTheme && window.matchMedia("(prefers-color-scheme: light)").matches)) {
+      document.documentElement.setAttribute("data-theme", "light");
     }
   </script>
-  
-  <script src="https://polyfill.io/v3/polyfill.min.js?features=es6"></script>
-  <script id="MathJax-script" async src="https://cdn.jsdelivr.net/npm/mathjax@3/es5/tex-mml-chtml.js"></script>
-  
-  <script type="module">
-    import mermaid from 'https://cdn.jsdelivr.net/npm/mermaid@10/dist/mermaid.esm.min.mjs';
-    mermaid.initialize({ startOnLoad: true, theme: 'dark', fontFamily: 'Inter' });
+  <!-- MathJax for LaTeX rendering -->
+  <script>
+    window.MathJax = { tex: { inlineMath: [['\\(','\\)'],['$','$']], displayMath: [['$$','$$'],['\\[','\\]']] }, svg: { fontCache: 'global' } };
   </script>
+  <script src="https://cdn.jsdelivr.net/npm/mathjax@3/es5/tex-svg.js" defer></script>
 
   <style>
-    .blog-header {
-      padding: calc(var(--nav-h) + 100px) 40px 60px;
-      text-align: center;
-      position: relative;
-    }
-    .blog-meta {
-      font-size: 0.85rem;
-      color: var(--accent-2);
-      text-transform: uppercase;
-      letter-spacing: 0.1em;
-      font-weight: 600;
-      margin-bottom: 20px;
-      display: block;
-    }
-    .blog-content {
-      max-width: 800px;
-      margin: 0 auto;
-      font-size: 1.1rem;
-      line-height: 1.8;
-      color: var(--text);
-    }
-    .blog-content p {
-      margin-bottom: 24px;
-      color: var(--text-muted);
-    }
-    .blog-content h2 {
-      font-size: 2rem;
-      margin: 60px 0 24px;
-      color: var(--text);
-    }
-    .blog-content h3 {
-      font-size: 1.4rem;
-      margin: 40px 0 16px;
-      color: var(--accent);
-    }
-    .formula-box {
-      background: var(--surface);
-      padding: 24px;
-      border-left: 4px solid var(--accent-2);
-      border-radius: 0 var(--radius-sm) var(--radius-sm) 0;
-      margin: 32px 0;
-      overflow-x: auto;
-    }
-    .diagram-box {
-      margin: 48px 0;
-      padding: 32px;
-      background: var(--surface);
-      border: 1px solid var(--surface-border);
-      border-radius: var(--radius);
-      text-align: center;
-    }
-    pre {
-      background: var(--bg-alt);
-      padding: 24px;
-      border-radius: var(--radius-sm);
-      overflow-x: auto;
-      border: 1px solid var(--surface-border);
-      margin-bottom: 24px;
-      font-size: 0.9rem;
-      color: var(--text);
-    }
-    code {
-      font-family: 'Fira Code', monospace;
-    }
-    .mermaid {
-      background: transparent !important;
+    *{box-sizing:border-box;margin:0;padding:0}
+    html{scroll-behavior:smooth}
+    body{font-family:'Outfit',sans-serif;color:var(--text);min-height:100vh}
+    a{color:inherit;text-decoration:none}
+    ::selection{background:rgba(106,166,255,0.25)}
+    .container{width:min(1100px,calc(100% - 40px));margin:0 auto}
+    .section-title{font-family:'Syne',sans-serif;font-weight:800;letter-spacing:-0.03em;font-size:clamp(2.4rem,6vw,4.7rem);line-height:1.02}
+    .gradient-text{background:linear-gradient(90deg,var(--accent),var(--accent-2));-webkit-background-clip:text;background-clip:text;color:transparent}
+
+    /* HERO */
+    .blog-header{padding:calc(var(--nav-h) + 92px) 0 52px;text-align:center;position:relative}
+    .blog-header::after{content:"";position:absolute;inset:0;background:radial-gradient(circle at 50% 0%,rgba(106,166,255,0.16),transparent 36%),radial-gradient(circle at 40% 20%,rgba(140,240,216,0.08),transparent 25%);pointer-events:none}
+    .blog-header .container{position:relative;z-index:1}
+    .blog-meta{font-size:0.85rem;color:var(--accent-2);text-transform:uppercase;letter-spacing:0.1em;font-weight:700;margin-bottom:20px;display:block}
+    .eyebrow{display:inline-block;padding:8px 12px;border:1px solid var(--surface-border);border-radius:999px;color:var(--accent-2);background:rgba(140,240,216,0.06);font-size:0.9rem;margin-bottom:18px}
+    .hero-chips{margin-top:28px;display:flex;flex-wrap:wrap;gap:10px;justify-content:center}
+    .chip{background:rgba(255,255,255,0.05);border:1px solid var(--surface-border);color:var(--text);border-radius:999px;padding:8px 12px;font-size:0.92rem}
+
+    /* LAYOUT */
+    .section{padding:0 0 90px}
+    .blog-content{max-width:900px;margin:0 auto;font-size:1.06rem;line-height:1.82;color:var(--text)}
+    .blog-content p{margin-bottom:22px;color:var(--text-muted)}
+    .blog-content h2{font-size:2rem;margin:72px 0 22px;color:var(--text);font-family:'Syne',sans-serif;letter-spacing:-0.03em}
+    .blog-content h3{font-size:1.32rem;margin:40px 0 14px;color:var(--accent)}
+    .blog-content h4{font-size:1.06rem;margin:26px 0 10px;color:var(--text)}
+    .grid{display:grid;grid-template-columns:1fr 1fr;gap:24px;margin:34px 0}
+    .three-col{display:grid;grid-template-columns:repeat(3,minmax(0,1fr));gap:18px;margin:22px 0 30px}
+    .two-col{display:grid;grid-template-columns:repeat(2,minmax(0,1fr));gap:20px;margin-top:18px}
+    .card{background:var(--surface);border:1px solid var(--surface-border);border-radius:var(--radius);padding:24px;box-shadow:var(--shadow)}
+    .callout{border-left:4px solid var(--accent);padding:16px 18px;background:rgba(106,166,255,0.08);border-radius:12px;color:var(--text);margin:18px 0}
+    .warning-callout{border-left-color:var(--warning);background:rgba(255,207,106,0.09)}
+    .danger-callout{border-left-color:var(--danger);background:rgba(255,107,138,0.08)}
+    .success-callout{border-left-color:var(--success);background:rgba(127,240,170,0.08)}
+
+    /* MATH BLOCK */
+    .math-block{background:var(--bg-alt);border:1px solid var(--surface-border);border-radius:var(--radius-sm);padding:22px 26px;margin:18px 0;overflow-x:auto;font-size:1.05rem}
+    .math-label{font-size:0.8rem;color:var(--accent-2);text-transform:uppercase;letter-spacing:0.08em;font-weight:700;margin-bottom:10px;display:block}
+
+    /* CODE */
+    .code{background:var(--bg-alt);border:1px solid var(--surface-border);border-radius:var(--radius-sm);padding:18px;overflow-x:auto;font-size:0.92rem;line-height:1.7;font-family:var(--mono);color:var(--text);white-space:pre}
+    .code .kw{color:var(--accent)}
+    .code .fn{color:var(--accent-2)}
+    .code .cm{color:var(--text-muted);font-style:italic}
+
+    /* TABLE */
+    table{width:100%;border-collapse:collapse;overflow:hidden;border-radius:var(--radius-sm);margin:18px 0;border:1px solid var(--surface-border);background:var(--surface)}
+    th,td{padding:14px;border-bottom:1px solid var(--surface-border);text-align:left;vertical-align:top;font-size:0.95rem}
+    th{color:var(--accent-2);background:rgba(255,255,255,0.03);font-weight:700}
+    td{color:var(--text-muted)}
+
+    /* QUOTE */
+    .quote{font-size:1.1rem;color:var(--text);margin:20px 0;padding:20px 24px;border:1px solid var(--surface-border);border-radius:var(--radius-sm);background:var(--surface);border-left:4px solid var(--path)}
+    .small{font-size:0.93rem;color:var(--text-muted)}
+    .metric{display:flex;flex-direction:column;gap:8px}
+    .metric strong{font-size:1.4rem;color:var(--text)}
+
+    /* ================================================================
+       ALGORITHM VISUALIZER SHARED
+    ================================================================ */
+    .algo-panel{background:var(--surface);border:1px solid var(--surface-border);border-radius:var(--radius);padding:28px;margin:28px 0;box-shadow:var(--shadow)}
+    .algo-panel h3{margin-top:0;color:var(--accent);font-size:1.2rem}
+    .algo-controls{display:flex;flex-wrap:wrap;gap:10px;margin:16px 0}
+    .btn{border:1px solid var(--surface-border);background:var(--surface-soft);color:var(--text);padding:10px 18px;border-radius:999px;cursor:pointer;font-weight:600;font-size:0.92rem;transition:transform .18s,border-color .18s,background .18s;font-family:'Outfit',sans-serif}
+    .btn:hover{transform:translateY(-1px);border-color:rgba(106,166,255,0.4)}
+    .btn.primary{background:linear-gradient(90deg,rgba(106,166,255,0.22),rgba(140,240,216,0.18));border-color:rgba(106,166,255,0.3)}
+    .btn.active{border-color:var(--accent);background:rgba(106,166,255,0.15)}
+    .algo-status{margin-top:14px;padding:14px 18px;border:1px solid var(--surface-border);border-radius:14px;background:var(--surface-soft)}
+    .stats-grid{display:grid;grid-template-columns:repeat(4,minmax(0,1fr));gap:14px;margin-top:14px}
+    .legend{display:flex;flex-wrap:wrap;gap:12px;margin:10px 0 18px}
+    .legend-item{display:flex;align-items:center;gap:8px;font-size:0.88rem;color:var(--text-muted)}
+    .legend-swatch{width:14px;height:14px;border-radius:4px;border:1px solid var(--surface-border)}
+    .speed-select{background:var(--bg-alt);border:1px solid var(--surface-border);color:var(--text);padding:8px 14px;border-radius:999px;font-family:'Outfit',sans-serif;font-size:0.88rem;cursor:pointer}
+
+    /* ================================================================
+       GRID VISUALIZER (A* / Dijkstra grid)
+    ================================================================ */
+    .visualizer-grid{display:grid;grid-template-columns:repeat(28,minmax(0,1fr));gap:2px;background:rgba(255,255,255,0.03);border:1px solid var(--surface-border);border-radius:14px;padding:8px;margin-top:12px}
+    .cell{aspect-ratio:1/1;border-radius:3px;background:rgba(255,255,255,0.04);transition:background .14s,transform .14s,box-shadow .14s;cursor:pointer}
+    .cell.wall{background:var(--wall)}
+    .cell.open{background:var(--open);box-shadow:inset 0 0 0 1px rgba(255,255,255,0.14)}
+    .cell.closed{background:var(--closed)}
+    .cell.current{background:var(--warning);transform:scale(1.1);z-index:2;box-shadow:0 0 8px var(--warning)}
+    .cell.path{background:var(--path);box-shadow:inset 0 0 0 1px rgba(255,255,255,0.22)}
+    .cell.start{background:var(--success)!important;box-shadow:0 0 10px var(--success)}
+    .cell.goal{background:var(--danger)!important;box-shadow:0 0 10px var(--danger)}
+
+    /* ================================================================
+       CITY MAP SVG VISUALIZER
+    ================================================================ */
+    #city-map-container{width:100%;position:relative;background:rgba(8,14,26,0.85);border:1px solid var(--surface-border);border-radius:16px;overflow:hidden;margin-top:12px}
+    [data-theme="light"] #city-map-container{background:rgba(240,245,255,0.9)}
+    #city-svg{width:100%;height:auto;display:block}
+    .city-edge{stroke:rgba(106,166,255,0.18);stroke-width:2;transition:stroke .3s,stroke-width .3s}
+    .city-edge.explored{stroke:rgba(99,217,255,0.6);stroke-width:2.5}
+    .city-edge.on-path{stroke:var(--path);stroke-width:4;filter:drop-shadow(0 0 4px var(--path))}
+    .city-node circle{transition:fill .3s,r .3s}
+    .city-node.open circle{fill:var(--open)}
+    .city-node.closed circle{fill:var(--closed)}
+    .city-node.current circle{fill:var(--warning);filter:drop-shadow(0 0 6px var(--warning))}
+    .city-node.path-node circle{fill:var(--path);filter:drop-shadow(0 0 5px var(--path))}
+    .city-node.start-node circle{fill:var(--success);filter:drop-shadow(0 0 8px var(--success))}
+    .city-node.goal-node circle{fill:var(--danger);filter:drop-shadow(0 0 8px var(--danger))}
+    .node-label{font-family:'Outfit',sans-serif;font-size:10px;fill:var(--text-muted);pointer-events:none;font-weight:500}
+    .edge-weight{font-family:'JetBrains Mono',monospace;font-size:9px;fill:var(--text-muted);pointer-events:none}
+    .weight-badge{fill:var(--bg-alt);rx:4}
+
+    /* ================================================================
+       RRT / PRM CANVAS
+    ================================================================ */
+    #rrt-canvas,#prm-canvas{border-radius:14px;border:1px solid var(--surface-border);display:block;width:100%;max-width:100%}
+    .canvas-wrap{position:relative;background:rgba(8,14,26,0.85);border-radius:14px;overflow:hidden}
+    [data-theme="light"] .canvas-wrap{background:rgba(240,245,255,0.9)}
+
+    /* ================================================================
+       POTENTIAL FIELD CANVAS
+    ================================================================ */
+    #pot-canvas{border-radius:14px;border:1px solid var(--surface-border);display:block;width:100%}
+
+    /* SVG GRID (city-map style) */
+    #grid-svg-wrap{background:rgba(8,14,26,0.88);border:1px solid var(--surface-border);border-radius:16px;overflow:hidden;margin-top:14px}
+    [data-theme="light"] #grid-svg-wrap{background:rgba(237,243,255,0.92)}
+    #grid-svg{width:100%;height:auto;display:block}
+    .gnode{cursor:pointer}
+    .gnode circle{transition:fill .2s,stroke .2s}
+    .gwall-rect{cursor:pointer}
+
+    /* SECTION PILL */
+    .section-pill{display:inline-block;background:rgba(106,166,255,0.1);border:1px solid rgba(106,166,255,0.3);color:var(--accent);border-radius:999px;padding:5px 14px;font-size:0.82rem;font-weight:700;letter-spacing:0.06em;text-transform:uppercase;margin-bottom:14px}
+
+    ul,ol{color:var(--text-muted);padding-left:1.3rem}
+    li+li{margin-top:8px}
+    strong{color:var(--text)}
+
+    @media(max-width:960px){
+      .grid,.two-col,.three-col,.stats-grid{grid-template-columns:1fr}
+      .blog-header{padding-top:calc(var(--nav-h)+70px)}
+      .card{padding:18px}
+      .nav-links{display:none}
     }
   </style>
 </head>
 <body>
+
+  <div class="section-robot blog-swarm" aria-hidden="true" style="position: fixed; z-index: -1;">
+    <div class="swarm-drone d1"><div class="dr-body"></div><div class="dr-prop p1"></div><div class="dr-prop p2"></div><div class="dr-prop p3"></div><div class="dr-prop p4"></div></div>
+    <div class="swarm-drone d2" style="top: 20%; left: 10%;"><div class="dr-body"></div><div class="dr-prop p1"></div><div class="dr-prop p2"></div><div class="dr-prop p3"></div><div class="dr-prop p4"></div></div>
+    <div class="swarm-drone d3" style="top: 80%; left: 5%;"><div class="dr-body"></div><div class="dr-prop p1"></div><div class="dr-prop p2"></div><div class="dr-prop p3"></div><div class="dr-prop p4"></div></div>
+  </div>
+
   <!-- ─── NAV ──────────────────────────────────────────────── -->
   <nav id="navbar" class="scrolled">
     <a href="index.html" class="nav-logo">GR<span class="accent">.</span></a>
     <ul class="nav-links">
-      <li><a href="index.html">&larr; Back to Portfolio</a></li>
-      <li><a href="blog.html" class="gradient-text">Blog Home</a></li>
+      <li><a href="index.html#about">About</a></li>
+      <li><a href="index.html#skills">Skills</a></li>
+      <li><a href="index.html#education">Education</a></li>
+      <li><a href="index.html#experience">Experience</a></li>
+      <li><a href="index.html#projects">Projects</a></li>
+      <li><a href="blog.html" class="gradient-text">Blog</a></li>
+      <li><a href="index.html#contact" class="btn-nav">Contact</a></li>
     </ul>
     <div class="nav-controls" style="display: flex; align-items: center; gap: 16px;">
       <button id="theme-toggle" class="theme-btn" aria-label="Toggle theme" style="background: transparent; border: none; color: var(--text); cursor: pointer; display: flex; align-items: center;">
@@ -119,95 +199,1651 @@
           <path d="M21 12.79A9 9 0 1 1 11.21 3 7 7 0 0 0 21 12.79z"></path>
         </svg>
       </button>
-      <button id="hamburger" aria-label="Toggle menu">
-        <span></span><span></span><span></span>
-      </button>
     </div>
   </nav>
 
-  <!-- ─── HEADER ───────────────────────────────────────────── -->
-  <header class="blog-header">
-    <div class="container">
-      <span class="blog-meta">February 15, 2026 • Autonomous Mobile Robots</span>
-      <h1 class="section-title" style="margin-bottom: 24px;">Nav2 EKF Sensor Fusion on Custom AMRs</h1>
-      <p style="color: var(--text-muted); max-width: 600px; margin: 0 auto;">Integrating wheel odometry, IMU data, and 2D LiDAR into the robot_localization package for a 300kg payload autonomous mobile robot.</p>
+<header class="blog-header" id="top">
+  <div class="container">
+    <span class="blog-meta">Mobile Robotics · Navigation Theory · Full Mathematical Treatment</span>
+    <span class="eyebrow">Complete derivations + live algorithm animations on real city graphs</span>
+    <h1 class="section-title" style="margin:0 0 24px">Autonomous Navigation:<br><span class="gradient-text">Theory to Algorithm</span></h1>
+    <p style="color:var(--text-muted);max-width:780px;margin:0 auto 0">
+      A rigorous, end-to-end treatment of mobile robot navigation — from the mathematics of configuration spaces and potential fields, through the derivation of Dijkstra and A*, to probabilistic roadmaps and RRT. Every concept is derived from first principles and animated on a real-world city graph.
+    </p>
+    <div class="hero-chips">
+      <span class="chip">Configuration Space</span>
+      <span class="chip">Potential Fields</span>
+      <span class="chip">Dijkstra</span>
+      <span class="chip">A* Search</span>
+      <span class="chip">PRM</span>
+      <span class="chip">RRT</span>
+      <span class="chip">Unicycle Kinematics</span>
+      <span class="chip">Differential Flatness</span>
     </div>
-  </header>
+  </div>
+</header>
 
-  <!-- ─── CONTENT ──────────────────────────────────────────── -->
-  <main class="section" style="padding-top: 20px;">
-    <div class="container blog-content">
+<main class="section">
+<div class="container blog-content">
 
-      <h2>1. The Navigation Challenge</h2>
-      <p>Building a 300kg payload AMR is demanding on the hardware level, but the software challenge is equally difficult. A heavy robot experiences slippage, wheel scrub, and IMU drift that can completely disorient its navigation stack. Standard wheel odometry alone is not reliable. If you rely solely on it, the robot will quickly believe it's in a different room.</p>
-      <p>To fix this, we need Sensor Fusion using an Extended Kalman Filter (EKF) to merge multiple imprecise measurements into a single, high-fidelity state estimate.</p>
+<!-- ================================================================
+  1. NAVIGATION OVERVIEW
+================================================================ -->
+<h2>What Does "Navigation" Really Mean?</h2>
+<p>
+  Navigation in robotics is the problem of moving an autonomous agent from a given start state to a desired goal state while respecting the physics of the robot, the geometry of its environment, and — in real deployments — uncertainty in sensing and actuation. It decomposes into three interleaved sub-problems:
+</p>
+<div class="three-col">
+  <div class="card">
+    <h3 style="font-size:1rem;margin-top:0">🗺️ Mapping</h3>
+    <p style="font-size:0.92rem">Building or using a representation of the environment — occupied vs. free space, obstacle geometry, or semantic labels.</p>
+  </div>
+  <div class="card">
+    <h3 style="font-size:1rem;margin-top:0">📍 Localization</h3>
+    <p style="font-size:0.92rem">Estimating the robot's own pose within the map, typically via sensor fusion (IMU, LIDAR, cameras) and Bayesian filtering.</p>
+  </div>
+  <div class="card">
+    <h3 style="font-size:1rem;margin-top:0">🧭 Planning & Control</h3>
+    <p style="font-size:0.92rem">Computing a collision-free trajectory through free space and tracking it with the robot's actuators under kinematic/dynamic constraints.</p>
+  </div>
+</div>
+<p>
+  This blog focuses on the third pillar — planning and the algorithms that enable it. We treat both local and global approaches, derive them mathematically, and animate them on structured examples.
+</p>
 
-      <div class="diagram-box">
-        <div class="mermaid">
-        flowchart TD
-            Odom[Wheel Odometry] -->|Velocity| EKF[robot_localization EKF Filter]
-            IMU[IMU Sensor] -->|Angular Velocity, Acceleration| EKF
-            Lidar[2D LiDAR] -->|Laser Scans| AMCL[AMCL]
-            AMCL -->|Pose Estimate| EKF
-            EKF -->|Fused Odom to Base Link| Nav2[Nav2 Stack]
-        </div>
-      </div>
+<!-- ================================================================
+  2. CONFIGURATION SPACE
+================================================================ -->
+<h2 id="cspace">Configuration Space: The Foundational Abstraction</h2>
+<span class="section-pill">Section 1 — Core Theory</span>
 
-      <h2>2. Understanding the Extended Kalman Filter (EKF)</h2>
-      <p>The standard Kalman Filter works perfectly for linear systems, but our AMR model is non-linear (due to trigonometric functions representing headings). The EKF solves this by taking the Jacobian of the state transition and observation models.</p>
-      
-      <div class="formula-box">
-        \[ \hat{x}_{k|k-1} = f(\hat{x}_{k-1|k-1}, u_k) \]
-        \[ P_{k|k-1} = F_k P_{k-1|k-1} F_k^T + Q_k \]
-        <p style="font-size: 0.9rem; margin-top: 10px; margin-bottom: 0;"><strong>Predict Phase:</strong> The robot guesses its current position based on its previous position and how much it thinks its wheels have turned (\(u_k\)).</p>
-      </div>
+<h3>The Workspace vs. the Configuration Space</h3>
+<p>
+  The <strong>workspace</strong> \(\mathcal{W} \subseteq \mathbb{R}^d\) (with \(d=2\) or \(3\)) is the physical space in which the robot and obstacles exist. The robot body occupies a set \(\mathcal{A}(\mathbf{q}) \subset \mathcal{W}\) that depends on the robot's current <em>configuration</em> \(\mathbf{q}\). Obstacles occupy \(\mathcal{O} \subset \mathcal{W}\).
+</p>
 
-      <div class="formula-box">
-        \[ K_k = P_{k|k-1} H_k^T (H_k P_{k|k-1} H_k^T + R_k)^{-1} \]
-        \[ \hat{x}_{k|k} = \hat{x}_{k|k-1} + K_k (z_k - h(\hat{x}_{k|k-1})) \]
-        <p style="font-size: 0.9rem; margin-top: 10px; margin-bottom: 0;"><strong>Update Phase:</strong> The robot receives new sensor data, like an IMU reading (\(z_k\)), and applies the Kalman Gain (\(K_k\)) to correct the state estimate based on how much it trusts the sensor (\(R_k\)) vs its own prediction.</p>
-      </div>
+<div class="math-block">
+  <span class="math-label">Collision Condition (Workspace)</span>
+  $$\text{Collision if and only if} \quad \mathcal{A}(\mathbf{q}) \cap \mathcal{O} \neq \emptyset$$
+</div>
 
-      <h2>3. Configuring robot_localization</h2>
-      <p>In ROS2, we use the <code>robot_localization</code> package to handle the EKF math. The trick is telling it exactly which parts of which sensor messages to trust.</p>
+<p>
+  The <strong>configuration space</strong> \(\mathcal{C}\) is the space of all possible configurations \(\mathbf{q}\). For a planar rigid body, \(\mathbf{q} = (x, y, \theta) \in \mathbb{R}^2 \times S^1\). For a robot arm with \(n\) joints, \(\mathbf{q} = (\theta_1,\ldots,\theta_n) \in \mathbb{T}^n\).
+</p>
 
-<pre><code>ekf_filter_node:
-  ros__parameters:
-    frequency: 30.0
-    two_d_mode: true
-    publish_tf: true
+<div class="math-block">
+  <span class="math-label">C-Space Obstacle and Free Space</span>
+  $$\mathcal{C}_{\text{obs}} = \{ \mathbf{q} \in \mathcal{C} \mid \mathcal{A}(\mathbf{q}) \cap \mathcal{O} \neq \emptyset \}$$
+  $$\mathcal{C}_{\text{free}} = \mathcal{C} \setminus \mathcal{C}_{\text{obs}}$$
+</div>
 
-    # Wheel Odometry
-    odom0: /odom
-    odom0_config: [false, false, false,
-                   false, false, false,
-                   true,  true,  false,
-                   false, false, true,
-                   false, false, false]
-                   
-    # IMU Data
-    imu0: /imu/data
-    imu0_config: [false, false, false,
-                  false, false, true,
-                  false, false, false,
-                  false, false, true,
-                  true,  true,  false]
-</code></pre>
+<div class="callout">
+  <strong>Key insight:</strong> The planning problem in workspace (avoiding 3D geometry) transforms into a path problem in \(\mathcal{C}_{\text{free}}\): find a continuous path \(\gamma : [0,1] \to \mathcal{C}_{\text{free}}\) such that \(\gamma(0) = \mathbf{q}_0\) and \(\gamma(1) = \mathbf{q}_f\).
+</div>
 
-      <p>Notice the boolean arrays. We instruct the EKF to only look at X/Y velocity and Yaw velocity from the wheel odometry, but rely heavily on the IMU for Yaw orientation and angular velocity. This ensures we get the best traits of both sensors while mitigating their individual weaknesses.</p>
+<h3>Computing C-Space Obstacles (2D Robot Example)</h3>
+<p>
+  For a convex polygonal robot \(\mathcal{A}\) and a convex obstacle \(\mathcal{O}\) in the plane, the C-space obstacle is the <strong>Minkowski difference</strong>:
+</p>
 
-      <h2>4. Nav2 Integration & Results</h2>
-      <p>Once the EKF publishes the high-fidelity <code>odom</code> to <code>base_link</code> transform, we plug it into the Nav2 stack alongside AMCL (Adaptive Monte Carlo Localization) which provides map-level corrections based on LiDAR.</p>
-      <p>The final result is an incredibly stable AMR that can recover from slippage on uneven terrain and accurately trace its path on the map with near-zero long-term drift.</p>
+<div class="math-block">
+  <span class="math-label">Minkowski Difference (point robot after inflation)</span>
+  $$\mathcal{C}_{\text{obs}} = \mathcal{O} \oplus (-\mathcal{A}) = \{ \mathbf{p} - \mathbf{a} \mid \mathbf{p} \in \mathcal{O},\; \mathbf{a} \in \mathcal{A} \}$$
+</div>
+
+<p>
+  Geometrically, this inflates each obstacle by the robot's footprint. A point robot navigating in the inflated space is exactly equivalent to the full robot navigating in the original space. This is why mobile-robot planners typically work with an "inflated costmap."
+</p>
+
+<h3>Completeness Taxonomy</h3>
+<table>
+  <thead><tr><th>Property</th><th>Meaning</th><th>Example Algorithms</th></tr></thead>
+  <tbody>
+    <tr><td><strong>Complete</strong></td><td>Finds a path if one exists; proves infeasibility otherwise</td><td>Exact cell decomposition</td></tr>
+    <tr><td><strong>Resolution Complete</strong></td><td>Complete on the discretized graph</td><td>Dijkstra / A* on grid</td></tr>
+    <tr><td><strong>Probabilistically Complete</strong></td><td>Probability of finding a path → 1 as samples → ∞</td><td>PRM, RRT</td></tr>
+    <tr><td><strong>Incomplete</strong></td><td>May fail even when a path exists</td><td>Pure gradient descent, potential fields</td></tr>
+  </tbody>
+</table>
+
+<!-- ================================================================
+  3. LOCAL PLANNING — POTENTIAL FIELDS
+================================================================ -->
+<h2 id="local">Local Planning: Artificial Potential Fields</h2>
+<span class="section-pill">Section 2 — Local Methods</span>
+
+<h3>The Core Idea</h3>
+<p>
+  Artificial potential fields (APF), introduced by Khatib (1986), treat the robot as a particle in an energy landscape. The goal exerts an <em>attractive</em> force; obstacles exert <em>repulsive</em> forces. The robot follows the negative gradient — steepest descent — of the total potential.
+</p>
+
+<div class="math-block">
+  <span class="math-label">Total Potential</span>
+  $$U(\mathbf{q}) = U_{\text{att}}(\mathbf{q}) + U_{\text{rep}}(\mathbf{q})$$
+  $$\mathbf{F}(\mathbf{q}) = -\nabla_{\mathbf{q}}\, U(\mathbf{q})$$
+</div>
+
+<h3>Attractive Potential — Full Derivation</h3>
+<p>
+  Let \(\mathbf{q}_g\) be the goal configuration. Define the distance \(\rho_g(\mathbf{q}) = \|\mathbf{q} - \mathbf{q}_g\|\). A conic well is simple but has a discontinuous gradient at the origin; a quadratic is smooth but grows unboundedly. The standard fix is the <strong>conic-quadratic blend</strong>:
+</p>
+
+<div class="math-block">
+  <span class="math-label">Conic-Quadratic Attractive Potential</span>
+  $$U_{\text{att}}(\mathbf{q}) = \begin{cases} \dfrac{1}{2}\, k_{\text{att}}\, \rho_g^2(\mathbf{q}) & \rho_g \leq d^* \\ d^*\, k_{\text{att}}\, \rho_g(\mathbf{q}) - \dfrac{1}{2}\, k_{\text{att}}\, (d^*)^2 & \rho_g > d^* \end{cases}$$
+</div>
+
+<p>
+  The resulting attractive force is:
+</p>
+
+<div class="math-block">
+  <span class="math-label">Attractive Force</span>
+  $$\mathbf{F}_{\text{att}}(\mathbf{q}) = -\nabla U_{\text{att}} = \begin{cases} -k_{\text{att}}\,(\mathbf{q} - \mathbf{q}_g) & \rho_g \leq d^* \\ -d^*\, k_{\text{att}}\, \dfrac{\mathbf{q}-\mathbf{q}_g}{\rho_g} & \rho_g > d^* \end{cases}$$
+</div>
+
+<h3>Repulsive Potential — Full Derivation</h3>
+<p>
+  For each obstacle, let \(\rho(\mathbf{q})\) be the distance from configuration \(\mathbf{q}\) to the nearest obstacle boundary. Let \(Q^*\) be the influence radius of the obstacle.
+</p>
+
+<div class="math-block">
+  <span class="math-label">Repulsive Potential (Khatib 1986)</span>
+  $$U_{\text{rep}}(\mathbf{q}) = \begin{cases} \dfrac{1}{2}\, k_{\text{rep}} \left(\dfrac{1}{\rho(\mathbf{q})} - \dfrac{1}{Q^*}\right)^2 & \rho \leq Q^* \\ 0 & \rho > Q^* \end{cases}$$
+</div>
+
+<p>Taking the gradient:</p>
+<div class="math-block">
+  <span class="math-label">Repulsive Force</span>
+  $$\mathbf{F}_{\text{rep}}(\mathbf{q}) = \begin{cases} k_{\text{rep}}\left(\dfrac{1}{\rho} - \dfrac{1}{Q^*}\right)\dfrac{1}{\rho^2}\,\nabla\rho & \rho \leq Q^* \\ \mathbf{0} & \rho > Q^* \end{cases}$$
+</div>
+
+<p>
+  Note that \(\nabla \rho\) points away from the nearest obstacle surface, so \(\mathbf{F}_{\text{rep}}\) pushes the robot away from obstacles. As \(\rho \to 0\), \(\mathbf{F}_{\text{rep}} \to \infty\) — an infinite barrier.
+</p>
+
+<h3>The Local-Minima Problem</h3>
+<p>
+  A configuration \(\mathbf{q}^*\) is a <em>local minimum</em> of \(U\) if \(\nabla U(\mathbf{q}^*) = \mathbf{0}\) but \(\mathbf{q}^* \neq \mathbf{q}_g\). At such a point, attractive and repulsive forces exactly cancel — the robot is stuck.
+</p>
+<div class="math-block">
+  $$\nabla U_{\text{att}}(\mathbf{q}^*) + \nabla U_{\text{rep}}(\mathbf{q}^*) = \mathbf{0} \quad \text{(spurious equilibrium)}$$
+</div>
+
+<div class="warning-callout callout">
+  <strong>Fundamental limitation:</strong> Potential field methods are incomplete. U-shaped obstacles facing the goal direction reliably produce local minima. The fix is either to use <em>navigation functions</em> (provably local-minima-free on sphere-worlds) or to switch to a global planner.
+</div>
+
+<!-- Potential Field Visualizer -->
+<div class="algo-panel">
+  <h3>🔴 Interactive: Artificial Potential Field</h3>
+  <p class="small">Watch the robot (blue dot) descend the gradient. Obstacles create repulsive hills; the goal creates an attractive well. Note how U-shaped obstacles trap the robot in a local minimum.</p>
+  <div class="algo-controls">
+    <button class="btn primary" id="pot-run">▶ Run</button>
+    <button class="btn" id="pot-reset">↺ Reset</button>
+    <button class="btn" id="pot-add-obs">+ Add U-Trap</button>
+  </div>
+  <div class="canvas-wrap">
+    <canvas id="pot-canvas" width="820" height="340"></canvas>
+  </div>
+  <div class="algo-status" id="pot-status">
+    <strong>Ready.</strong> Click Run to animate gradient descent on the potential field.
+  </div>
+</div>
+
+<!-- ================================================================
+  4. GLOBAL PLANNING — GRAPH SEARCH
+================================================================ -->
+<h2 id="global">Global Planning: Graph Search — Dijkstra and A*</h2>
+<span class="section-pill">Section 3 — Optimal Graph Search</span>
+
+<h3>Discretisation: From \(\mathcal{C}_{\text{free}}\) to a Graph</h3>
+<p>
+  The continuous planning problem is intractable in general. A standard approach is to discretise \(\mathcal{C}_{\text{free}}\) into a graph \(G = (V, E)\) where:
+</p>
+<ul>
+  <li>Each vertex \(v \in V\) is a collision-free configuration sample.</li>
+  <li>Each edge \((u,v) \in E\) with weight \(w(u,v) \geq 0\) represents a collision-free local motion whose cost is the arc length (or travel time).</li>
+</ul>
+<p>
+  Path planning reduces to finding the shortest path from the start vertex \(s\) to the goal vertex \(g\) in \(G\).
+</p>
+
+<h3>Dijkstra's Algorithm — Full Derivation</h3>
+<p>
+  Dijkstra's algorithm (1959) solves the single-source shortest-path problem on graphs with non-negative edge weights. It maintains a <strong>cost-to-come</strong> estimate \(g(v)\) for each vertex, initialised as:
+</p>
+
+<div class="math-block">
+  <span class="math-label">Initialisation</span>
+  $$g(s) = 0, \qquad g(v) = +\infty \quad \forall\, v \neq s$$
+</div>
+
+<p>
+  The algorithm uses a min-priority queue \(\text{OPEN}\) ordered by \(g\). At each step:
+</p>
+<ol>
+  <li>Extract \(u = \arg\min_{v \in \text{OPEN}} g(v)\).</li>
+  <li>For each neighbour \(n\) of \(u\): if \(g(u) + w(u,n) < g(n)\), <em>relax</em> the edge:
+    $$g(n) \leftarrow g(u) + w(u,n), \qquad \text{parent}(n) \leftarrow u$$
+  </li>
+  <li>Move \(u\) to \(\text{CLOSED}\).</li>
+</ol>
+
+<div class="math-block">
+  <span class="math-label">Relaxation Condition (Bellman's Principle)</span>
+  $$g^*(v) = \min_{u \in \text{pred}(v)} \left[ g^*(u) + w(u,v) \right]$$
+</div>
+
+<p>
+  <strong>Correctness proof sketch:</strong> When a vertex \(u\) is extracted from OPEN, \(g(u)\) is already optimal. This follows by induction: any other path to \(u\) must pass through a vertex still in OPEN, which by the min-heap property has cost \(\geq g(u)\), and edge weights are non-negative so no shortcut exists.
+</p>
+
+<div class="math-block">
+  <span class="math-label">Complexity</span>
+  $$T = O\bigl((|V| + |E|)\log|V|\bigr) \quad \text{with binary heap}$$
+</div>
+
+<h3>A* Algorithm — Full Derivation</h3>
+<p>
+  A* (Hart, Nilsson, Raphael 1968) augments Dijkstra with a <strong>heuristic</strong> \(h : V \to [0,\infty)\) that estimates the cost-to-go from each vertex to the goal. The priority key becomes:
+</p>
+
+<div class="math-block">
+  <span class="math-label">A* Priority (Evaluation Function)</span>
+  $$f(v) = g(v) + h(v)$$
+</div>
+
+<p>
+  where \(g(v)\) is the exact cost-to-come and \(h(v)\) is the heuristic estimate of cost-to-go.
+</p>
+
+<h4>Admissibility Condition</h4>
+<p>
+  Let \(h^*(v)\) denote the true optimal cost-to-go. The heuristic is <strong>admissible</strong> (never over-estimates) if:
+</p>
+<div class="math-block">
+  $$h(v) \leq h^*(v) \quad \forall\, v \in V$$
+</div>
+<p>
+  <strong>Theorem (A* optimality):</strong> If \(h\) is admissible, A* returns an optimal path.
+</p>
+<p>
+  <em>Proof sketch:</em> Suppose A* returns a suboptimal path to \(g\) with cost \(C' > C^*\). Then there exists a node \(n\) on the optimal path still in OPEN. We have:
+</p>
+<div class="math-block">
+  $$f(n) = g(n) + h(n) \leq g^*(n) + h^*(n) = C^* < C'$$
+</div>
+<p>
+  So \(n\) would be expanded before \(g\) — contradiction. \(\square\)
+</p>
+
+<h4>Consistency (Monotonicity)</h4>
+<p>
+  A stronger condition is <strong>consistency</strong>: for every edge \((u,v)\),
+</p>
+<div class="math-block">
+  $$h(u) \leq w(u,v) + h(v)$$
+</div>
+<p>
+  Consistency implies admissibility and also means \(f\)-values are non-decreasing along any path A* expands, so each vertex is expanded at most once.
+</p>
+
+<h4>Common Heuristics in Robotics</h4>
+<table>
+  <thead><tr><th>Heuristic</th><th>Formula</th><th>Admissible?</th><th>Notes</th></tr></thead>
+  <tbody>
+    <tr><td>Euclidean distance</td><td>\(h = \|\mathbf{q} - \mathbf{q}_g\|_2\)</td><td>Yes (unit cost grid)</td><td>Best for continuous-space, holonomic robots</td></tr>
+    <tr><td>Manhattan distance</td><td>\(h = |r_g - r| + |c_g - c|\)</td><td>Yes (4-connected grid)</td><td>Fast to compute on occupancy grids</td></tr>
+    <tr><td>Chebyshev distance</td><td>\(h = \max(|r_g-r|, |c_g-c|)\)</td><td>Yes (8-connected grid)</td><td>Better for 8-connected grids</td></tr>
+    <tr><td>Weighted A*</td><td>\(h_w = \varepsilon \cdot h, \varepsilon > 1\)</td><td>No (\(\varepsilon\)-suboptimal)</td><td>Faster search, bounded suboptimality</td></tr>
+  </tbody>
+</table>
+
+<h3>Dijkstra vs A* — The Information-Theoretic View</h3>
+<p>
+  Dijkstra knows only where the robot has been (\(g\)). A* knows where it has been <em>and</em> roughly how far it still needs to go (\(h\)). The more informative the heuristic (tighter lower bound), the fewer states A* needs to expand. In the limit, a perfect heuristic \(h = h^*\) causes A* to expand only the nodes on the optimal path.
+</p>
+
+<div class="quote">
+  Dijkstra: "Expand the node I know is cheapest to reach." <br>
+  A*: "Expand the node I estimate gives the cheapest complete path."
+</div>
+
+<!-- Grid Visualizer: Dijkstra / A* -->
+<div class="algo-panel" id="grid-demo">
+  <h3>🔵 Grid Navigation: A* vs Dijkstra — Node-Graph View</h3>
+  <p class="small">Click any free node to toggle a wall, then re-run. 8-connected grid — diagonal moves cost √2. Watch how A*'s octile heuristic dramatically focuses the search cone vs Dijkstra's uniform flood-fill.</p>
+  <div class="algo-controls">
+    <button class="btn primary" id="run-astar">▶ Run A*</button>
+    <button class="btn" id="run-dijkstra">▶ Run Dijkstra</button>
+    <button class="btn" id="reset-grid">↺ Reset</button>
+    <select class="speed-select" id="grid-speed">
+      <option value="45">Normal</option>
+      <option value="12">Fast</option>
+      <option value="100">Slow</option>
+    </select>
+  </div>
+  <div class="legend">
+    <div class="legend-item"><span class="legend-swatch" style="background:var(--success);box-shadow:0 0 6px var(--success)"></span>Start</div>
+    <div class="legend-item"><span class="legend-swatch" style="background:var(--danger);box-shadow:0 0 6px var(--danger)"></span>Goal</div>
+    <div class="legend-item"><span class="legend-swatch" style="background:rgba(27,36,56,0.9);border:1px solid rgba(106,166,255,0.15)"></span>Wall</div>
+    <div class="legend-item"><span class="legend-swatch" style="background:var(--open);box-shadow:0 0 5px var(--open)"></span>Frontier</div>
+    <div class="legend-item"><span class="legend-swatch" style="background:var(--closed)"></span>Expanded</div>
+    <div class="legend-item"><span class="legend-swatch" style="background:var(--path);box-shadow:0 0 6px var(--path)"></span>Optimal Path</div>
+    <div class="legend-item"><span class="legend-swatch" style="background:var(--warning);box-shadow:0 0 6px var(--warning)"></span>Current Node</div>
+  </div>
+  <div id="grid-svg-wrap">
+    <svg id="grid-svg" viewBox="0 0 820 424" xmlns="http://www.w3.org/2000/svg">
+      <defs>
+        <filter id="gnode-glow" x="-70%" y="-70%" width="240%" height="240%">
+          <feGaussianBlur stdDeviation="3" result="blur"/>
+          <feMerge><feMergeNode in="blur"/><feMergeNode in="SourceGraphic"/></feMerge>
+        </filter>
+        <filter id="gnode-glow-strong" x="-80%" y="-80%" width="260%" height="260%">
+          <feGaussianBlur stdDeviation="5.5" result="blur"/>
+          <feMerge><feMergeNode in="blur"/><feMergeNode in="SourceGraphic"/></feMerge>
+        </filter>
+        <filter id="gedge-glow" x="-20%" y="-50%" width="140%" height="200%">
+          <feGaussianBlur stdDeviation="2" result="blur"/>
+          <feMerge><feMergeNode in="blur"/><feMergeNode in="SourceGraphic"/></feMerge>
+        </filter>
+      </defs>
+      <g id="g-bg-layer"></g>
+      <g id="g-edges-layer"></g>
+      <g id="g-nodes-layer"></g>
+    </svg>
+  </div>
+  <div class="algo-status">
+    <strong id="status-title">Ready</strong>
+    <p id="status-text" style="margin:8px 0 0">Select an algorithm to animate.</p>
+    <div class="stats-grid">
+      <div class="metric"><span class="small">Algorithm</span><strong id="stat-algo">—</strong></div>
+      <div class="metric"><span class="small">Expanded</span><strong id="stat-closed">—</strong></div>
+      <div class="metric"><span class="small">Path Cost</span><strong id="stat-length">—</strong></div>
+      <div class="metric"><span class="small">Peak Frontier</span><strong id="stat-frontier">—</strong></div>
     </div>
-  </main>
+  </div>
+</div>
 
-  <!-- ─── FOOTER ───────────────────────────────────────────── -->
-  <footer>
-    <div class="container">
-      <p>&copy; 2026 Ganesh Reddy. All rights reserved.</p>
+<!-- ================================================================
+  5. CITY MAP DEMO
+================================================================ -->
+<h2 id="city-demo">Real-World Demo: Shortest Path on a City Graph</h2>
+<span class="section-pill">Section 4 — City Navigation</span>
+
+<p>
+  Grid maps are convenient abstractions but real autonomous vehicles operate on road networks — weighted graphs where vertices are intersections and edge weights encode travel distance or time. Below is a simplified city graph of <strong>Singapore</strong> modelling key districts, MRT interchanges, and expressway connections. Edge weights are approximate road distances in kilometres.
+</p>
+<p>
+  Select a source and destination, then run Dijkstra or A* to watch the algorithm expand nodes and recover the optimal route. The heuristic for A* is the straight-line (Euclidean) distance on the map.
+</p>
+
+<div class="algo-panel" id="city-panel">
+  <h3>🗺️ Singapore City Road Graph</h3>
+  <div class="algo-controls">
+    <label style="color:var(--text-muted);font-size:0.9rem">From:
+      <select id="city-start" class="speed-select" style="margin-left:8px"></select>
+    </label>
+    <label style="color:var(--text-muted);font-size:0.9rem">To:
+      <select id="city-goal" class="speed-select" style="margin-left:8px"></select>
+    </label>
+    <button class="btn primary" id="city-astar">A*</button>
+    <button class="btn" id="city-dijkstra">Dijkstra</button>
+    <button class="btn" id="city-reset">↺ Reset</button>
+    <select class="speed-select" id="city-speed">
+      <option value="320">Normal</option>
+      <option value="100">Fast</option>
+      <option value="700">Slow</option>
+    </select>
+  </div>
+  <div class="legend">
+    <div class="legend-item"><span class="legend-swatch" style="background:var(--success)"></span>Start</div>
+    <div class="legend-item"><span class="legend-swatch" style="background:var(--danger)"></span>Goal</div>
+    <div class="legend-item"><span class="legend-swatch" style="background:var(--open)"></span>Frontier</div>
+    <div class="legend-item"><span class="legend-swatch" style="background:var(--closed)"></span>Expanded</div>
+    <div class="legend-item"><span class="legend-swatch" style="background:var(--path)"></span>Shortest Path</div>
+  </div>
+  <div id="city-map-container">
+    <svg id="city-svg" viewBox="0 0 820 440" xmlns="http://www.w3.org/2000/svg">
+      <defs>
+        <filter id="glow"><feGaussianBlur stdDeviation="3" result="blur"/><feMerge><feMergeNode in="blur"/><feMergeNode in="SourceGraphic"/></feMerge></filter>
+      </defs>
+      <g id="city-edges-layer"></g>
+      <g id="city-nodes-layer"></g>
+    </svg>
+  </div>
+  <div class="algo-status">
+    <strong id="city-status-title">Ready</strong>
+    <p id="city-status-text" style="margin:8px 0 0">Choose start and goal, then run an algorithm.</p>
+    <div class="stats-grid">
+      <div class="metric"><span class="small">Algorithm</span><strong id="city-stat-algo">—</strong></div>
+      <div class="metric"><span class="small">Nodes Expanded</span><strong id="city-stat-closed">—</strong></div>
+      <div class="metric"><span class="small">Path Distance</span><strong id="city-stat-dist">—</strong></div>
+      <div class="metric"><span class="small">Path Hops</span><strong id="city-stat-hops">—</strong></div>
     </div>
-  </footer>
+  </div>
+</div>
+
+<!-- ================================================================
+  6. SAMPLING-BASED PLANNING
+================================================================ -->
+<h2 id="sampling">Sampling-Based Planning: PRM and RRT</h2>
+<span class="section-pill">Section 5 — Probabilistic Methods</span>
+
+<h3>Why Grid Search Breaks Down</h3>
+<p>
+  Grid-based search suffers from the <em>curse of dimensionality</em>. For a \(d\)-dimensional configuration space with resolution \(\varepsilon\), the number of grid cells scales as \(O(\varepsilon^{-d})\). A 6-DOF robot arm with \(\varepsilon = 0.01\) rad requires \(\sim 10^{12}\) cells — computationally intractable.
+</p>
+
+<h3>Probabilistic Roadmap Method (PRM)</h3>
+<p>
+  PRM (Kavraki et al., 1996) constructs a roadmap by sampling random configurations in \(\mathcal{C}_{\text{free}}\) and connecting nearby samples with a local planner.
+</p>
+
+<div class="math-block">
+  <span class="math-label">PRM Algorithm</span>
+  $$\textbf{Learning phase:}$$
+  $$\text{For } i = 1,\ldots,N: \quad \mathbf{q}_i \sim \text{Uniform}(\mathcal{C}), \quad \text{if } \mathbf{q}_i \in \mathcal{C}_{\text{free}} \Rightarrow V \leftarrow V \cup \{\mathbf{q}_i\}$$
+  $$\text{For each } \mathbf{q} \in V: \text{ connect to } k\text{-nearest } \mathbf{q}' \in V \text{ if local path } \mathbf{q}\to\mathbf{q}' \subset \mathcal{C}_{\text{free}}$$
+  $$\textbf{Query phase:} \quad \text{Connect } \mathbf{q}_0, \mathbf{q}_f \text{ to roadmap, run Dijkstra/A*}$$
+</div>
+
+<p>
+  <strong>Asymptotic optimality:</strong> PRM* (Karaman & Frazzoli, 2011) modifies the connection radius to \(r = \gamma\left(\frac{\log N}{N}\right)^{1/d}\) (for a problem-dependent \(\gamma\)), guaranteeing that the solution cost converges to optimal as \(N \to \infty\).
+</p>
+
+<h3>Rapidly-Exploring Random Trees (RRT)</h3>
+<p>
+  RRT (LaValle, 1998) grows a tree from the start configuration by iteratively sampling a random state and extending the tree toward it.
+</p>
+
+<div class="math-block">
+  <span class="math-label">RRT Extension Step</span>
+  $$\mathbf{q}_{\text{rand}} \sim \text{Uniform}(\mathcal{C})$$
+  $$\mathbf{q}_{\text{near}} = \arg\min_{\mathbf{q} \in T} \|\mathbf{q} - \mathbf{q}_{\text{rand}}\|$$
+  $$\mathbf{q}_{\text{new}} = \mathbf{q}_{\text{near}} + \delta \cdot \frac{\mathbf{q}_{\text{rand}} - \mathbf{q}_{\text{near}}}{\|\mathbf{q}_{\text{rand}} - \mathbf{q}_{\text{near}}\|}$$
+  $$\text{If edge } (\mathbf{q}_{\text{near}}, \mathbf{q}_{\text{new}}) \subset \mathcal{C}_{\text{free}}: \quad T \leftarrow T \cup \{(\mathbf{q}_{\text{near}}, \mathbf{q}_{\text{new}})\}$$
+</div>
+
+<p>
+  The key geometric property of RRT is <strong>Voronoi bias</strong>: at each step, the probability that a node is selected for extension equals the volume of its Voronoi region relative to all other nodes. Nodes with large Voronoi regions (at the frontier of the explored space) are selected most often, so the tree expands rapidly into unexplored territory.
+</p>
+
+<div class="callout success-callout">
+  <strong>RRT* (asymptotically optimal):</strong> After each extension, RRT* rewires the tree by checking if newly found vertices can be connected to other near vertices through cheaper paths. This ensures the solution cost converges to optimal as samples → ∞.
+</div>
+
+<div class="two-col">
+  <div class="card">
+    <h3 style="font-size:1rem;margin-top:0">PRM — Multi-Query</h3>
+    <p style="font-size:0.9rem">Build the roadmap once, answer many queries. Best when the environment is static and many robot tasks must be planned.</p>
+    <p class="small">Complexity: \(O(N \log N)\) construction, \(O(|V|+|E|)\log|V|)\) per query.</p>
+  </div>
+  <div class="card">
+    <h3 style="font-size:1rem;margin-top:0">RRT — Single-Query</h3>
+    <p style="font-size:0.9rem">Grow a tree on demand toward the goal. Best for a single query or dynamic environments where the roadmap would be stale.</p>
+    <p class="small">Complexity: \(O(N \log N)\) per query with \(k\)-d tree nearest-neighbour.</p>
+  </div>
+</div>
+
+<!-- PRM Visualizer -->
+<div class="algo-panel">
+  <h3>🟢 Interactive: PRM (Probabilistic Roadmap)</h3>
+  <div class="algo-controls">
+    <button class="btn primary" id="prm-build">Build Roadmap</button>
+    <button class="btn" id="prm-query">Query Path</button>
+    <button class="btn" id="prm-reset">↺ Reset</button>
+    <label style="color:var(--text-muted);font-size:0.88rem">Samples:
+      <select class="speed-select" id="prm-n" style="margin-left:6px">
+        <option value="80">80</option>
+        <option value="150" selected>150</option>
+        <option value="250">250</option>
+      </select>
+    </label>
+  </div>
+  <div class="canvas-wrap"><canvas id="prm-canvas" width="820" height="380"></canvas></div>
+  <div class="algo-status" id="prm-status"><strong>Ready.</strong> Click "Build Roadmap" to sample and connect free-space configurations.</div>
+</div>
+
+<!-- RRT Visualizer -->
+<div class="algo-panel">
+  <h3>🌿 Interactive: RRT (Rapidly-Exploring Random Tree)</h3>
+  <div class="algo-controls">
+    <button class="btn primary" id="rrt-run">▶ Grow Tree</button>
+    <button class="btn" id="rrt-reset">↺ Reset</button>
+    <label style="color:var(--text-muted);font-size:0.88rem">Step size δ:
+      <select class="speed-select" id="rrt-delta" style="margin-left:6px">
+        <option value="25">25px</option>
+        <option value="40" selected>40px</option>
+        <option value="60">60px</option>
+      </select>
+    </label>
+    <label style="color:var(--text-muted);font-size:0.88rem">Goal bias:
+      <select class="speed-select" id="rrt-bias" style="margin-left:6px">
+        <option value="0.05">5%</option>
+        <option value="0.15" selected>15%</option>
+        <option value="0.3">30%</option>
+      </select>
+    </label>
+  </div>
+  <div class="canvas-wrap"><canvas id="rrt-canvas" width="820" height="380"></canvas></div>
+  <div class="algo-status" id="rrt-status"><strong>Ready.</strong> Click "Grow Tree" to watch RRT expand. The Voronoi bias ensures rapid space exploration.</div>
+</div>
+
+<!-- ================================================================
+  7. MOBILE ROBOT KINEMATICS
+================================================================ -->
+<h2 id="mobile">Mobile Robot Kinematics and Nonholonomic Constraints</h2>
+<span class="section-pill">Section 6 — Mobile Robot Models</span>
+
+<h3>The Unicycle Model</h3>
+<p>
+  The unicycle (or kinematic car without steering limits) is the canonical mobile robot model. It captures the rolling-without-slipping assumption: the wheel's velocity vector always points along the robot heading \(\theta\).
+</p>
+
+<div class="math-block">
+  <span class="math-label">Unicycle Kinematic Model</span>
+  $$\dot{x} = v\cos\theta, \qquad \dot{y} = v\sin\theta, \qquad \dot{\theta} = \omega$$
+</div>
+
+<p>
+  Eliminating \(v\) by differentiating \(\dot{x}/\cos\theta = \dot{y}/\sin\theta\) yields the <strong>nonholonomic constraint</strong>:
+</p>
+
+<div class="math-block">
+  <span class="math-label">Nonholonomic (Pfaffian) Constraint</span>
+  $$\dot{x}\sin\theta - \dot{y}\cos\theta = 0$$
+  $$\Leftrightarrow \quad \begin{bmatrix} \sin\theta & -\cos\theta & 0 \end{bmatrix} \begin{bmatrix}\dot{x}\\\dot{y}\\\dot{\theta}\end{bmatrix} = 0$$
+</div>
+
+<p>
+  This is a <em>velocity constraint</em> (non-integrable), not a position constraint. The robot can still reach any \((x,y,\theta)\) in \(\mathbb{R}^2 \times S^1\) — but not in an arbitrary direction at a given instant. This is what makes mobile robot planning fundamentally harder than holonomic planning.
+</p>
+
+<h3>Differential Drive Robot</h3>
+<p>
+  Most wheeled indoor robots use differential drive: two independently controlled wheels of radius \(r_w\) on an axle of half-width \(l_w\). Let \(\omega_l, \omega_r\) be left/right wheel angular velocities.
+</p>
+
+<div class="math-block">
+  <span class="math-label">Forward Kinematics (Differential Drive)</span>
+  $$v = \frac{r_w}{2}(\omega_r + \omega_l), \qquad \omega = \frac{r_w}{2 l_w}(\omega_r - \omega_l)$$
+</div>
+
+<p>The inverse maps body velocities back to wheel rates:</p>
+
+<div class="math-block">
+  <span class="math-label">Inverse Kinematics</span>
+  $$\omega_r = \frac{v + l_w \omega}{r_w}, \qquad \omega_l = \frac{v - l_w \omega}{r_w}$$
+</div>
+
+<p>
+  Special cases:
+  \(\omega_l = \omega_r\) → straight line; \(\omega_l = -\omega_r\) → rotate in place (radius \(= 0\)); general case → circular arc of radius \(R = l_w(\omega_r+\omega_l)/(\omega_r-\omega_l)\).
+</p>
+
+<h3>Bicycle / Front-Wheel Steering Model (Ackermann)</h3>
+<p>
+  For cars and many outdoor AGVs, the front wheels steer while the rear wheels drive. With wheelbase \(L\) and steering angle \(\xi\):
+</p>
+
+<div class="math-block">
+  <span class="math-label">Kinematic Bicycle Model</span>
+  $$\dot{x} = v\cos\theta, \quad \dot{y} = v\sin\theta, \quad \dot{\theta} = \frac{v}{L}\tan\xi$$
+</div>
+
+<p>
+  Unlike differential drive, this robot <em>cannot</em> rotate in place. The minimum turning radius is \(R_{\min} = L/\tan\xi_{\max}\), which must be respected in path planning (Dubins paths, Reeds-Shepp curves).
+</p>
+
+<h3>Differential Flatness — Planning in Output Space</h3>
+<p>
+  A system is <strong>differentially flat</strong> if there exists a <em>flat output</em> \(\mathbf{z}(t)\) such that all states and inputs can be expressed algebraically in terms of \(\mathbf{z}\) and a finite number of its time derivatives — without integrating the dynamics.
+</p>
+
+<div class="math-block">
+  <span class="math-label">Flat Output for the Unicycle</span>
+  $$\mathbf{z} = \begin{bmatrix} x \\ y \end{bmatrix} \quad \Rightarrow \quad v = \pm\sqrt{\dot{x}^2 + \dot{y}^2}, \quad \theta = \text{atan2}(\dot{y}, \dot{x}), \quad \omega = \frac{\ddot{y}\dot{x} - \ddot{x}\dot{y}}{\dot{x}^2 + \dot{y}^2}$$
+</div>
+
+<p>
+  This is a powerful result: design \(x(t), y(t)\) as any smooth parametric curve (e.g., cubic splines, Bézier), then <em>recover} the robot's heading and angular velocity analytically. No integration needed.
+</p>
+
+<div class="math-block">
+  <span class="math-label">Cubic Spline Trajectory (Example)</span>
+  $$x(t) = a_0 + a_1 t + a_2 t^2 + a_3 t^3$$
+  $$y(t) = b_0 + b_1 t + b_2 t^2 + b_3 t^3$$
+  $$\text{Boundary conditions: } x(0),\dot{x}(0),x(T),\dot{x}(T) \text{ fix } a_0,\ldots,a_3 \text{ uniquely}$$
+</div>
+
+<div class="callout">
+  <strong>Why flatness matters for planners:</strong> Instead of solving a constrained ODE boundary-value problem, path planning reduces to unconstrained curve design in \((x,y)\)-space. The kinematic constraints are satisfied automatically by the reconstruction formulae.
+</div>
+
+<h3>Algorithm Comparison Summary</h3>
+<table>
+  <thead><tr><th>Algorithm</th><th>Completeness</th><th>Optimality</th><th>Complexity</th><th>Best For</th></tr></thead>
+  <tbody>
+    <tr><td>Potential Fields</td><td>Incomplete</td><td>No</td><td>\(O(1)\) per step</td><td>Reactive local avoidance</td></tr>
+    <tr><td>Dijkstra</td><td>Res. complete</td><td>Yes (on graph)</td><td>\(O((V+E)\log V)\)</td><td>Small/medium graphs, no heuristic</td></tr>
+    <tr><td>A*</td><td>Res. complete</td><td>Yes (admissible h)</td><td>\(O((V+E)\log V)\) best case better</td><td>Grid maps with good heuristic</td></tr>
+    <tr><td>PRM</td><td>Prob. complete</td><td>No (PRM*: yes)</td><td>\(O(N\log N)\) build</td><td>Multi-query, high-dim C-space</td></tr>
+    <tr><td>RRT</td><td>Prob. complete</td><td>No (RRT*: yes)</td><td>\(O(N\log N)\)</td><td>Single-query, kinodynamic</td></tr>
+    <tr><td>D* Lite</td><td>Res. complete</td><td>Yes</td><td>Efficient replanning</td><td>Dynamic environments</td></tr>
+  </tbody>
+</table>
+
+</div><!-- end blog-content -->
+</main>
+
+<footer style="border-top:1px solid var(--surface-border);padding:28px 0;margin-top:60px">
+  <div class="container">
+    <p style="color:var(--text-muted);font-size:0.9rem;margin:0">
+      <strong style="color:var(--text)">Mobile Robotics Navigation — Full Theory Reference.</strong>
+      Mathematical treatment of configuration spaces, potential fields, Dijkstra, A*, PRM, RRT, unicycle kinematics, and differential flatness.
+    </p>
+  </div>
+</footer>
+
+<script>
+// ============================================================
+//  THEME TOGGLE — handled in grid section below
+// ============================================================
+
+// ============================================================
+//  UTILITY
+// ============================================================
+const html = document.documentElement;
+function lerp(a,b,t){ return a + (b-a)*t; }
+function dist(a,b){ return Math.sqrt((a.x-b.x)**2+(a.y-b.y)**2); }
+function clamp(v,lo,hi){ return Math.min(hi,Math.max(lo,v)); }
+function isDark(){ return html.getAttribute('data-theme') !== 'light'; }
+function cssVar(name){ return getComputedStyle(document.documentElement).getPropertyValue(name).trim(); }
+
+// ============================================================
+//  SVG GRID VISUALIZER — City-map style (A* / Dijkstra)
+// ============================================================
+const G_ROWS=14, G_COLS=22;
+const G_PAD_X=30, G_PAD_Y=30;
+const G_SPX=35, G_SPY=26;  // pixel spacing between nodes
+const G_R_FREE=6.5, G_R_SP=11, G_R_WALL=4.5;
+const G_START={r:1,c:1}, G_GOAL={r:12,c:20};
+
+// Wall rectangles [r, c, height, width] — designed for 14×22 grid
+const G_WALL_RECTS=[
+  // Horizontal barriers with deliberate gaps
+  [2, 3,  1, 7],  // top-left barrier (gap at 0-2 and 10+)
+  [2, 13, 1, 7],  // top-right barrier (gap at 10-12 and 20+)
+  [4, 1,  1, 4],  // mid-top-left
+  [4, 7,  1, 6],  // mid-top-center
+  [4, 17, 1, 4],  // mid-top-right
+  [7, 0,  1, 5],  // mid-left (gap at 5-6)
+  [7, 8,  1, 6],  // mid-center (gap at 6-7, 14-15)
+  [7, 17, 1, 5],  // mid-right
+  [10,2,  1, 5],  // lower-left
+  [10,9,  1, 5],  // lower-center
+  [10,17, 1, 4],  // lower-right
+  // Vertical barriers
+  [0, 11, 3, 1],  // top-center vertical
+  [0, 6,  2, 1],  // top-left-center vertical
+  [3, 16, 4, 1],  // right-side vertical
+  [5, 5,  4, 1],  // mid-left vertical
+  [5, 13, 3, 1],  // mid-right vertical
+  [8, 10, 3, 1],  // lower-center vertical
+];
+
+const wallSet=new Set();
+for(const [r,c,h,w] of G_WALL_RECTS)
+  for(let rr=r;rr<r+h;rr++) for(let cc=c;cc<c+w;cc++) wallSet.add(`${rr},${cc}`);
+
+// Remove start/goal from wall set just in case
+wallSet.delete(`${G_START.r},${G_START.c}`);
+wallSet.delete(`${G_GOAL.r},${G_GOAL.c}`);
+
+const svgNsG='http://www.w3.org/2000/svg';
+const gBgLayer   = document.getElementById('g-bg-layer');
+const gEdgesLayer= document.getElementById('g-edges-layer');
+const gNodesLayer= document.getElementById('g-nodes-layer');
+
+const gNodeEls={};   // key → <g> element
+const gEdgeEls={};   // canonical edge-key → <line> element
+let gridTimer=null, gridAnimMode='', gridPrevCurrent=null;
+
+function gKey(r,c){return `${r},${c}`;}
+function gParseKey(k){const[r,c]=k.split(',').map(Number);return{r,c};}
+function gPos(r,c){return{x:G_PAD_X+c*G_SPX, y:G_PAD_Y+r*G_SPY};}
+const isGStart=k=>k===gKey(G_START.r,G_START.c);
+const isGGoal =k=>k===gKey(G_GOAL.r, G_GOAL.c);
+
+function gEdgeKey(r1,c1,r2,c2){
+  const k1=gKey(r1,c1), k2=gKey(r2,c2); return k1<k2?k1+'|'+k2:k2+'|'+k1;
+}
+
+// ---- Build / rebuild full SVG ----
+function buildGridSVG(){
+  gBgLayer.innerHTML=''; gEdgesLayer.innerHTML=''; gNodesLayer.innerHTML='';
+  Object.keys(gNodeEls).forEach(k=>delete gNodeEls[k]);
+  Object.keys(gEdgeEls).forEach(k=>delete gEdgeEls[k]);
+
+  const dark=isDark();
+  const DIRS8=[[0,1],[1,0],[0,-1],[-1,0],[1,1],[1,-1],[-1,1],[-1,-1]];
+  const edgesSeen=new Set();
+
+  // ── Background subtle grid dots ──
+  for(let r=0;r<G_ROWS;r++) for(let c=0;c<G_COLS;c++){
+    if(wallSet.has(gKey(r,c))) continue;
+    const {x,y}=gPos(r,c);
+    const dot=document.createElementNS(svgNsG,'circle');
+    dot.setAttribute('cx',x); dot.setAttribute('cy',y); dot.setAttribute('r',1.2);
+    dot.setAttribute('fill',dark?'rgba(106,166,255,0.06)':'rgba(53,109,255,0.05)');
+    gBgLayer.appendChild(dot);
+  }
+
+  // ── Edges (drawn behind nodes) ──
+  for(let r=0;r<G_ROWS;r++){
+    for(let c=0;c<G_COLS;c++){
+      if(wallSet.has(gKey(r,c))) continue;
+      const {x:ax,y:ay}=gPos(r,c);
+      for(const [dr,dc] of DIRS8){
+        const nr=r+dr, nc=c+dc;
+        if(nr<0||nr>=G_ROWS||nc<0||nc>=G_COLS) continue;
+        if(wallSet.has(gKey(nr,nc))) continue;
+        const ek=gEdgeKey(r,c,nr,nc);
+        if(edgesSeen.has(ek)) continue;
+        edgesSeen.add(ek);
+        const {x:bx,y:by}=gPos(nr,nc);
+        const isDiag=(dr!==0&&dc!==0);
+        const line=document.createElementNS(svgNsG,'line');
+        line.setAttribute('x1',ax); line.setAttribute('y1',ay);
+        line.setAttribute('x2',bx); line.setAttribute('y2',by);
+        line.setAttribute('stroke', dark
+          ? (isDiag?'rgba(106,166,255,0.06)':'rgba(106,166,255,0.1)')
+          : (isDiag?'rgba(53,109,255,0.05)':'rgba(53,109,255,0.09)'));
+        line.setAttribute('stroke-width', isDiag?'0.8':'1');
+        line.setAttribute('stroke-linecap','round');
+        gEdgesLayer.appendChild(line);
+        gEdgeEls[ek]=line;
+      }
+    }
+  }
+
+  // ── Wall blocks ──
+  for(let r=0;r<G_ROWS;r++){
+    for(let c=0;c<G_COLS;c++){
+      const k=gKey(r,c);
+      if(!wallSet.has(k)) continue;
+      const {x,y}=gPos(r,c);
+      const sz=G_R_WALL*2;
+      // Grouped wall "building" tiles — connect adjacent walls visually
+      const rect=document.createElementNS(svgNsG,'rect');
+      rect.setAttribute('x', x-G_R_WALL-1); rect.setAttribute('y', y-G_R_WALL-1);
+      rect.setAttribute('width', sz+2); rect.setAttribute('height', sz+2);
+      rect.setAttribute('rx','3');
+      rect.setAttribute('fill', dark?'rgba(22,32,52,0.92)':'rgba(195,208,230,0.95)');
+      rect.setAttribute('stroke', dark?'rgba(106,166,255,0.1)':'rgba(53,109,255,0.08)');
+      rect.setAttribute('stroke-width','0.8');
+      rect.setAttribute('class','gwall-rect');
+      rect.style.cursor='pointer';
+      rect.addEventListener('click',()=>{ wallSet.delete(k); buildGridSVG(); });
+      gNodesLayer.appendChild(rect);
+    }
+  }
+
+  // ── Free nodes ──
+  for(let r=0;r<G_ROWS;r++){
+    for(let c=0;c<G_COLS;c++){
+      const k=gKey(r,c);
+      if(wallSet.has(k)) continue;
+      const iS=isGStart(k), iG=isGGoal(k);
+      const {x,y}=gPos(r,c);
+      const g=document.createElementNS(svgNsG,'g');
+      g.setAttribute('class','gnode');
+
+      const circ=document.createElementNS(svgNsG,'circle');
+      const R = iS||iG ? G_R_SP : G_R_FREE;
+      circ.setAttribute('cx',x); circ.setAttribute('cy',y); circ.setAttribute('r',R);
+
+      if(iS){
+        circ.setAttribute('fill','var(--success)');
+        circ.setAttribute('stroke','rgba(127,240,170,0.75)');
+        circ.setAttribute('stroke-width','2');
+        circ.setAttribute('filter','url(#gnode-glow)');
+      } else if(iG){
+        circ.setAttribute('fill','var(--danger)');
+        circ.setAttribute('stroke','rgba(255,107,138,0.75)');
+        circ.setAttribute('stroke-width','2');
+        circ.setAttribute('filter','url(#gnode-glow)');
+      } else {
+        circ.setAttribute('fill', dark?'rgba(106,166,255,0.14)':'rgba(53,109,255,0.1)');
+        circ.setAttribute('stroke', dark?'rgba(106,166,255,0.32)':'rgba(53,109,255,0.28)');
+        circ.setAttribute('stroke-width','1');
+      }
+      g.appendChild(circ);
+
+      // Labels for start / goal
+      if(iS||iG){
+        const t=document.createElementNS(svgNsG,'text');
+        t.setAttribute('x',x); t.setAttribute('y',y+4);
+        t.setAttribute('text-anchor','middle');
+        t.setAttribute('fill', dark?'#09111f':'#f3f7ff');
+        t.setAttribute('font-size','10'); t.setAttribute('font-weight','800');
+        t.setAttribute('font-family','Outfit,sans-serif');
+        t.setAttribute('pointer-events','none');
+        t.textContent = iS?'S':'G';
+        g.appendChild(t);
+      }
+
+      // Click-to-wall (non-special nodes)
+      if(!iS&&!iG){
+        g.addEventListener('click',()=>{ wallSet.add(k); buildGridSVG(); });
+      }
+      gNodesLayer.appendChild(g);
+      gNodeEls[k]=g;
+    }
+  }
+}
+
+// ---- Set node visual state ----
+const G_NODE_STYLES={
+  'default': { fill_d:'rgba(106,166,255,0.14)', fill_l:'rgba(53,109,255,0.1)',
+               stroke_d:'rgba(106,166,255,0.32)', stroke_l:'rgba(53,109,255,0.28)',
+               sw:1, r:G_R_FREE, filter:'' },
+  'open':    { fill_d:'var(--open)',  fill_l:'var(--open)',
+               stroke_d:'rgba(99,217,255,0.8)',  stroke_l:'rgba(20,152,213,0.8)',
+               sw:1.5, r:G_R_FREE, filter:'url(#gnode-glow)' },
+  'current': { fill_d:'var(--warning)', fill_l:'var(--warning)',
+               stroke_d:'rgba(255,207,106,0.95)', stroke_l:'rgba(182,122,0,0.9)',
+               sw:2.5, r:G_R_FREE+3.5, filter:'url(#gnode-glow-strong)' },
+  'closed':  { fill_d:'var(--closed)', fill_l:'rgba(185,200,231,0.85)',
+               stroke_d:'rgba(75,99,143,0.5)', stroke_l:'rgba(100,130,180,0.5)',
+               sw:1, r:G_R_FREE, filter:'' },
+  'path':    { fill_d:'var(--path)', fill_l:'var(--path)',
+               stroke_d:'rgba(155,140,255,0.95)', stroke_l:'rgba(106,88,248,0.9)',
+               sw:2, r:G_R_FREE+2, filter:'url(#gnode-glow)' },
+};
+
+function setGNodeState(k, state){
+  const gEl=gNodeEls[k]; if(!gEl||isGStart(k)||isGGoal(k)) return;
+  const s=G_NODE_STYLES[state]||G_NODE_STYLES['default'];
+  const circ=gEl.querySelector('circle');
+  const dark=isDark();
+  circ.setAttribute('fill', dark?s.fill_d:s.fill_l);
+  circ.setAttribute('stroke', dark?s.stroke_d:s.stroke_l);
+  circ.setAttribute('stroke-width', s.sw);
+  circ.setAttribute('r', s.r);
+  if(s.filter) circ.setAttribute('filter',s.filter);
+  else circ.removeAttribute('filter');
+}
+
+// ---- Set edge visual state ----
+function setGEdgeState(ka, kb, state){
+  const a=gParseKey(ka), b=gParseKey(kb);
+  const el=gEdgeEls[gEdgeKey(a.r,a.c,b.r,b.c)]; if(!el) return;
+  const isDiag=(a.r!==b.r&&a.c!==b.c);
+  if(state==='explored'){
+    el.setAttribute('stroke',isDark()?'rgba(99,217,255,0.5)':'rgba(20,152,213,0.45)');
+    el.setAttribute('stroke-width',isDiag?'1.2':'1.8');
+  } else if(state==='path'){
+    el.setAttribute('stroke','var(--path)');
+    el.setAttribute('stroke-width','3');
+    el.setAttribute('filter','url(#gedge-glow)');
+  } else {
+    el.setAttribute('stroke',isDiag
+      ?(isDark()?'rgba(106,166,255,0.06)':'rgba(53,109,255,0.05)')
+      :(isDark()?'rgba(106,166,255,0.1)':'rgba(53,109,255,0.09)'));
+    el.setAttribute('stroke-width',isDiag?'0.8':'1');
+    el.removeAttribute('filter');
+  }
+}
+
+// ---- Reset ----
+function resetGridVisuals(){
+  if(gridTimer){clearInterval(gridTimer);gridTimer=null;}
+  gridPrevCurrent=null;
+  buildGridSVG();
+  document.getElementById('status-title').textContent='Ready';
+  document.getElementById('status-text').textContent='Select an algorithm to animate.';
+  ['stat-algo','stat-closed','stat-length','stat-frontier'].forEach(id=>document.getElementById(id).textContent='—');
+}
+
+// ---- 8-connected neighbours with cost ----
+function gNeighbours(k){
+  const {r,c}=gParseKey(k);
+  const DIRS8=[[0,1,1],[1,0,1],[0,-1,1],[-1,0,1],[1,1,Math.SQRT2],[1,-1,Math.SQRT2],[-1,1,Math.SQRT2],[-1,-1,Math.SQRT2]];
+  return DIRS8.map(([dr,dc,cost])=>{
+    const nr=r+dr,nc=c+dc,nk=gKey(nr,nc);
+    if(nr<0||nr>=G_ROWS||nc<0||nc>=G_COLS||wallSet.has(nk)) return null;
+    return{key:nk,cost};
+  }).filter(Boolean);
+}
+
+// Octile distance — admissible heuristic for 8-connected unit grid
+function gHeuristic(ka,kb){
+  const a=gParseKey(ka),b=gParseKey(kb);
+  const dx=Math.abs(a.c-b.c), dy=Math.abs(a.r-b.r);
+  return Math.max(dx,dy)+(Math.SQRT2-1)*Math.min(dx,dy);
+}
+
+// ---- Run full search, return step-list ----
+function runGridSearch(mode){
+  const s=gKey(G_START.r,G_START.c), g=gKey(G_GOAL.r,G_GOAL.c);
+  const open=[s], openSet=new Set([s]), closed=new Set(), cameFrom={};
+  const gScore={[s]:0}, fScore={[s]:mode==='astar'?gHeuristic(s,g):0};
+  const steps=[]; let maxFront=1;
+
+  while(open.length){
+    open.sort((a,b)=>(fScore[a]??Infinity)-(fScore[b]??Infinity)||(gScore[a]??Infinity)-(gScore[b]??Infinity));
+    const cur=open.shift(); openSet.delete(cur);
+    steps.push({kind:'current',node:cur});
+
+    if(cur===g){
+      // Reconstruct path
+      const path=[]; let c=cur;
+      while(c){path.unshift(c); c=cameFrom[c];}
+      steps.push({kind:'path',path});
+      return{found:true,path,steps,cost:(gScore[g]||0).toFixed(2),closed:closed.size,frontier:maxFront};
+    }
+    closed.add(cur); steps.push({kind:'closed',node:cur});
+
+    for(const {key:nb,cost:w} of gNeighbours(cur)){
+      if(closed.has(nb)) continue;
+      const tg=(gScore[cur]??Infinity)+w;
+      if(tg<(gScore[nb]??Infinity)){
+        cameFrom[nb]=cur; gScore[nb]=tg;
+        fScore[nb]=tg+(mode==='astar'?gHeuristic(nb,g):0);
+        if(!openSet.has(nb)){
+          open.push(nb); openSet.add(nb);
+          steps.push({kind:'open',node:nb,parent:cur});
+          maxFront=Math.max(maxFront,openSet.size);
+        } else {
+          steps.push({kind:'relax',node:nb,parent:cur});
+        }
+      }
+    }
+  }
+  return{found:false,path:[],steps,cost:'∞',closed:closed.size,frontier:maxFront};
+}
+
+// ---- Apply single animation step ----
+function applyGridStep(step){
+  if(step.kind==='open'){
+    setGNodeState(step.node,'open');
+    if(step.parent) setGEdgeState(step.parent, step.node, 'explored');
+    document.getElementById('status-title').textContent='Frontier updated';
+    document.getElementById('status-text').textContent=
+      gridAnimMode==='astar'
+      ? `f = g + h — new node discovered via ${step.parent||'start'}.`
+      : `g-cost updated — new node added to priority queue.`;
+  }
+  if(step.kind==='relax'){
+    if(step.parent) setGEdgeState(step.parent, step.node, 'explored');
+  }
+  if(step.kind==='current'){
+    // Demote previous current → closed colour handled on next 'closed' step
+    if(gridPrevCurrent && !isGStart(gridPrevCurrent) && !isGGoal(gridPrevCurrent)){
+      // Leave it in current colour briefly — the closed step will fix it
+    }
+    gridPrevCurrent=step.node;
+    setGNodeState(step.node,'current');
+    document.getElementById('status-title').textContent='Expanding node';
+    document.getElementById('status-text').textContent=
+      gridAnimMode==='astar'
+      ? 'A* picks node with smallest f = g + h. Heuristic biases toward goal.'
+      : 'Dijkstra picks node with smallest g. No heuristic — explores uniformly.';
+  }
+  if(step.kind==='closed'){
+    setGNodeState(step.node,'closed');
+  }
+  if(step.kind==='path'){
+    step.path.forEach(k=>{ if(!isGStart(k)&&!isGGoal(k)) setGNodeState(k,'path'); });
+    for(let i=0;i<step.path.length-1;i++) setGEdgeState(step.path[i],step.path[i+1],'path');
+    document.getElementById('status-title').textContent='✓ Optimal path found!';
+    document.getElementById('status-text').textContent=
+      'Path reconstructed via predecessor pointers — each violet edge is on the shortest route.';
+  }
+}
+
+// ---- Animate ----
+function animateGrid(mode){
+  gridAnimMode=mode;
+  resetGridVisuals();
+  const res=runGridSearch(mode);
+  document.getElementById('stat-algo').textContent=mode==='astar'?'A* (octile h)':'Dijkstra';
+  document.getElementById('stat-closed').textContent=res.closed;
+  document.getElementById('stat-length').textContent=res.cost;
+  document.getElementById('stat-frontier').textContent=res.frontier;
+  if(!res.found){
+    document.getElementById('status-title').textContent='No path found';
+    document.getElementById('status-text').textContent='All reachable nodes exhausted — goal is blocked by walls.';
+    return;
+  }
+  const delay=parseInt(document.getElementById('grid-speed').value);
+  let i=0;
+  gridTimer=setInterval(()=>{
+    if(i>=res.steps.length){ clearInterval(gridTimer); gridTimer=null; return; }
+    // Batch multiple steps per tick at fast speed
+    const batch=delay<20?4:1;
+    for(let b=0;b<batch&&i<res.steps.length;b++) applyGridStep(res.steps[i++]);
+  },delay);
+}
+
+document.getElementById('run-astar').addEventListener('click',()=>animateGrid('astar'));
+document.getElementById('run-dijkstra').addEventListener('click',()=>animateGrid('dijkstra'));
+document.getElementById('reset-grid').addEventListener('click',resetGridVisuals);
+
+// Rebuild on theme change too
+document.getElementById('theme-toggle').addEventListener('click',()=>{
+  const isLight=html.getAttribute('data-theme')==='light';
+  if(isLight){html.removeAttribute('data-theme');localStorage.setItem('theme','dark');}
+  else{html.setAttribute('data-theme','light');localStorage.setItem('theme','light');}
+  setTimeout(()=>{ buildGridSVG(); drawPotential(); prmDraw(); rrtDraw(); },60);
+});
+
+buildGridSVG();
+
+// ============================================================
+//  CITY MAP — Singapore road graph
+// ============================================================
+const CITY_NODES = [
+  {id:'changi',  label:'Changi Airport', x:770, y:290},
+  {id:'tampines',label:'Tampines',        x:660, y:230},
+  {id:'pasir',   label:'Pasir Ris',       x:720, y:180},
+  {id:'bedok',   label:'Bedok',           x:590, y:300},
+  {id:'tanah',   label:'Tanah Merah',     x:640, y:340},
+  {id:'marine',  label:'Marine Parade',   x:510, y:330},
+  {id:'paya',    label:'Paya Lebar',      x:490, y:250},
+  {id:'geylang', label:'Geylang',         x:430, y:300},
+  {id:'kallang', label:'Kallang',         x:390, y:250},
+  {id:'cityhall',label:'City Hall',       x:330, y:280},
+  {id:'marina',  label:'Marina Bay',      x:360, y:340},
+  {id:'chinatown',label:'Chinatown',      x:300, y:320},
+  {id:'tanjong', label:'Tanjong Pagar',   x:280, y:370},
+  {id:'queens',  label:'Queenstown',      x:220, y:320},
+  {id:'buona',   label:'Buona Vista',     x:175, y:260},
+  {id:'clementi',label:'Clementi',        x:130, y:290},
+  {id:'jurong',  label:'Jurong East',     x: 80, y:240},
+  {id:'boon',    label:'Boon Lay',        x: 45, y:300},
+  {id:'bishan',  label:'Bishan',          x:380, y:160},
+  {id:'amk',     label:'Ang Mo Kio',      x:440, y:120},
+  {id:'woodlands',label:'Woodlands',      x:280, y: 80},
+  {id:'sembawang',label:'Sembawang',      x:380, y: 60},
+  {id:'punggol', label:'Punggol',         x:600, y:120},
+  {id:'yishun',  label:'Yishun',          x:330, y:110},
+  {id:'serangoon',label:'Serangoon',      x:490, y:170},
+];
+
+const CITY_EDGES = [
+  // East corridor
+  {a:'changi',   b:'pasir',    w:5.2},
+  {a:'changi',   b:'tampines', w:6.1},
+  {a:'changi',   b:'tanah',    w:8.3},
+  {a:'pasir',    b:'tampines', w:4.0},
+  {a:'tampines', b:'bedok',    w:5.5},
+  {a:'tampines', b:'punggol',  w:7.0},
+  {a:'bedok',    b:'tanah',    w:3.8},
+  {a:'bedok',    b:'marine',   w:5.2},
+  {a:'tanah',    b:'marine',   w:6.1},
+  // Central-east
+  {a:'marine',   b:'paya',     w:4.4},
+  {a:'marine',   b:'geylang',  w:3.9},
+  {a:'paya',     b:'geylang',  w:3.5},
+  {a:'paya',     b:'serangoon',w:5.0},
+  {a:'geylang',  b:'kallang',  w:2.8},
+  {a:'kallang',  b:'cityhall', w:3.2},
+  {a:'kallang',  b:'bishan',   w:6.0},
+  // Central
+  {a:'cityhall', b:'marina',   w:1.8},
+  {a:'cityhall', b:'chinatown',w:2.2},
+  {a:'marina',   b:'chinatown',w:2.0},
+  {a:'chinatown',b:'tanjong',  w:1.9},
+  {a:'tanjong',  b:'queens',   w:3.5},
+  // West corridor
+  {a:'queens',   b:'buona',    w:3.8},
+  {a:'queens',   b:'chinatown',w:3.2},
+  {a:'buona',    b:'clementi', w:3.5},
+  {a:'clementi', b:'jurong',   w:5.2},
+  {a:'jurong',   b:'boon',     w:3.8},
+  // North
+  {a:'bishan',   b:'amk',      w:4.2},
+  {a:'bishan',   b:'yishun',   w:8.5},
+  {a:'amk',      b:'serangoon',w:4.5},
+  {a:'amk',      b:'yishun',   w:5.0},
+  {a:'yishun',   b:'woodlands',w:6.2},
+  {a:'woodlands',b:'sembawang',w:4.8},
+  {a:'sembawang',b:'punggol',  w:12.0},
+  {a:'punggol',  b:'serangoon',w:9.0},
+  {a:'serangoon',b:'paya',     w:4.2},
+  {a:'woodlands',b:'yishun',   w:5.5},
+  {a:'buona',    b:'bishan',   w:9.0},
+  {a:'woodlands',b:'bishan',   w:10.0},
+  {a:'clementi', b:'queens',   w:3.0},
+  {a:'jurong',   b:'clementi', w:5.2},
+];
+
+// Build adjacency
+const cityAdj={};
+CITY_NODES.forEach(n=>cityAdj[n.id]=[]);
+CITY_EDGES.forEach(e=>{
+  cityAdj[e.a].push({to:e.b,w:e.w});
+  cityAdj[e.b].push({to:e.a,w:e.w});
+});
+
+// Populate dropdowns
+const cityStartSel=document.getElementById('city-start');
+const cityGoalSel=document.getElementById('city-goal');
+CITY_NODES.forEach(n=>{
+  const o1=new Option(n.label,n.id); cityStartSel.appendChild(o1);
+  const o2=new Option(n.label,n.id); cityGoalSel.appendChild(o2);
+});
+cityStartSel.value='jurong';
+cityGoalSel.value='changi';
+
+// Draw base map
+const svgNS='http://www.w3.org/2000/svg';
+const edgesLayer=document.getElementById('city-edges-layer');
+const nodesLayer=document.getElementById('city-nodes-layer');
+
+const svgEdgeEls={}, svgNodeEls={};
+
+function buildCitySVG(){
+  edgesLayer.innerHTML=''; nodesLayer.innerHTML='';
+  // Draw edges
+  CITY_EDGES.forEach(e=>{
+    const A=CITY_NODES.find(n=>n.id===e.a), B=CITY_NODES.find(n=>n.id===e.b);
+    const line=document.createElementNS(svgNS,'line');
+    line.setAttribute('x1',A.x); line.setAttribute('y1',A.y);
+    line.setAttribute('x2',B.x); line.setAttribute('y2',B.y);
+    line.setAttribute('class','city-edge');
+    line.setAttribute('stroke-linecap','round');
+    edgesLayer.appendChild(line);
+    const key=e.a+'-'+e.b;
+    svgEdgeEls[key]=line; svgEdgeEls[e.b+'-'+e.a]=line;
+    // Weight label
+    const mx=(A.x+B.x)/2, my=(A.y+B.y)/2;
+    const rect=document.createElementNS(svgNS,'rect');
+    rect.setAttribute('x',mx-12); rect.setAttribute('y',my-8);
+    rect.setAttribute('width',24); rect.setAttribute('height',13);
+    rect.setAttribute('rx',3); rect.setAttribute('class','weight-badge');
+    rect.setAttribute('opacity','0.75');
+    edgesLayer.appendChild(rect);
+    const wt=document.createElementNS(svgNS,'text');
+    wt.setAttribute('x',mx); wt.setAttribute('y',my+2);
+    wt.setAttribute('text-anchor','middle'); wt.setAttribute('class','edge-weight');
+    wt.textContent=e.w.toFixed(1);
+    edgesLayer.appendChild(wt);
+  });
+  // Draw nodes
+  CITY_NODES.forEach(n=>{
+    const g=document.createElementNS(svgNS,'g');
+    g.setAttribute('class','city-node'); g.setAttribute('id','cnode-'+n.id);
+    const c=document.createElementNS(svgNS,'circle');
+    c.setAttribute('cx',n.x); c.setAttribute('cy',n.y); c.setAttribute('r',8);
+    c.setAttribute('fill','rgba(106,166,255,0.35)');
+    c.setAttribute('stroke','rgba(106,166,255,0.6)'); c.setAttribute('stroke-width','1.5');
+    const t=document.createElementNS(svgNS,'text');
+    t.setAttribute('x',n.x); t.setAttribute('y',n.y-13);
+    t.setAttribute('text-anchor','middle'); t.setAttribute('class','node-label');
+    t.textContent=n.label;
+    g.appendChild(c); g.appendChild(t);
+    nodesLayer.appendChild(g);
+    svgNodeEls[n.id]=g;
+  });
+}
+
+function cityResetVisuals(){
+  CITY_EDGES.forEach(e=>{
+    const k=e.a+'-'+e.b, el=svgEdgeEls[k];
+    if(el){ el.setAttribute('class','city-edge'); el.setAttribute('stroke-width','2'); }
+  });
+  CITY_NODES.forEach(n=>{
+    const g=svgNodeEls[n.id]; if(!g) return;
+    g.setAttribute('class','city-node');
+    const c=g.querySelector('circle');
+    c.setAttribute('fill','rgba(106,166,255,0.35)');
+    c.setAttribute('stroke','rgba(106,166,255,0.6)');
+    c.setAttribute('r',8); c.removeAttribute('filter');
+  });
+  ['city-status-title','city-stat-algo','city-stat-closed','city-stat-dist','city-stat-hops'].forEach(id=>{
+    const el=document.getElementById(id);
+    if(el) el.textContent = id==='city-status-title'?'Ready':'—';
+  });
+  document.getElementById('city-status-text').textContent='Choose start and goal, then run an algorithm.';
+}
+
+function setCityNodeClass(id, cls){
+  const g=svgNodeEls[id]; if(!g) return;
+  g.setAttribute('class','city-node '+cls);
+  const c=g.querySelector('circle');
+  const colors={
+    'start-node':['var(--success)','rgba(127,240,170,0.8)'],
+    'goal-node':['var(--danger)','rgba(255,107,138,0.8)'],
+    'open':['var(--open)','rgba(99,217,255,0.7)'],
+    'closed':['var(--closed)','rgba(75,99,143,0.7)'],
+    'current':['var(--warning)','rgba(255,207,106,0.9)'],
+    'path-node':['var(--path)','rgba(155,140,255,0.9)'],
+  };
+  if(colors[cls]){
+    c.setAttribute('fill',colors[cls][0]); c.setAttribute('stroke',colors[cls][1]);
+    c.setAttribute('r', ['current','start-node','goal-node','path-node'].includes(cls)?10:8);
+    if(['current','start-node','goal-node','path-node'].includes(cls)) c.setAttribute('filter','url(#glow)');
+    else c.removeAttribute('filter');
+  }
+}
+
+function cityHeuristic(a,b){
+  const A=CITY_NODES.find(n=>n.id===a), B=CITY_NODES.find(n=>n.id===b);
+  if(!A||!B) return 0;
+  return Math.sqrt((A.x-B.x)**2+(A.y-B.y)**2) * 0.025; // scale px→km approx
+}
+
+function runCitySearch(mode,startId,goalId){
+  const open=[startId], openSet=new Set([startId]), closed=new Set(), cameFrom={};
+  const g={[startId]:0}, f={[startId]:mode==='astar'?cityHeuristic(startId,goalId):0};
+  const steps=[];
+  while(open.length){
+    open.sort((a,b)=>(f[a]??Infinity)-(f[b]??Infinity)||(g[a]??Infinity)-(g[b]??Infinity));
+    const cur=open.shift(); openSet.delete(cur);
+    steps.push({kind:'current',node:cur});
+    if(cur===goalId){
+      const path=[]; let c=cur;
+      while(c){ path.unshift(c); c=cameFrom[c]; }
+      steps.push({kind:'path',path});
+      return{found:true,path,steps,dist:(g[goalId]||0).toFixed(1),closed:closed.size};
+    }
+    closed.add(cur); steps.push({kind:'closed',node:cur});
+    for(const {to,w} of (cityAdj[cur]||[])){
+      if(closed.has(to)) continue;
+      const tg=(g[cur]??Infinity)+w;
+      if(tg<(g[to]??Infinity)){
+        cameFrom[to]=cur; g[to]=tg;
+        f[to]=tg+(mode==='astar'?cityHeuristic(to,goalId):0);
+        if(!openSet.has(to)){ open.push(to); openSet.add(to); steps.push({kind:'open',node:to}); }
+      }
+    }
+  }
+  return{found:false,steps,closed:closed.size};
+}
+
+let cityTimer=null;
+function animateCity(mode){
+  if(cityTimer){ clearInterval(cityTimer); cityTimer=null; }
+  const startId=cityStartSel.value, goalId=cityGoalSel.value;
+  if(startId===goalId){ document.getElementById('city-status-title').textContent='Same start and goal!'; return; }
+  cityResetVisuals();
+  const res=runCitySearch(mode,startId,goalId);
+  document.getElementById('city-stat-algo').textContent=mode==='astar'?'A*':'Dijkstra';
+  document.getElementById('city-stat-closed').textContent=res.closed;
+  const delay=parseInt(document.getElementById('city-speed').value);
+  let i=0;
+  setCityNodeClass(startId,'start-node');
+  setCityNodeClass(goalId,'goal-node');
+  cityTimer=setInterval(()=>{
+    if(i>=res.steps.length){ clearInterval(cityTimer); cityTimer=null; return; }
+    const step=res.steps[i++];
+    if(step.kind==='open'){ if(step.node!==startId&&step.node!==goalId) setCityNodeClass(step.node,'open'); }
+    if(step.kind==='current'){
+      document.getElementById('city-status-title').textContent='Expanding: '+CITY_NODES.find(n=>n.id===step.node)?.label;
+      if(step.node!==startId&&step.node!==goalId) setCityNodeClass(step.node,'current');
+    }
+    if(step.kind==='closed'){ if(step.node!==startId&&step.node!==goalId) setCityNodeClass(step.node,'closed'); }
+    if(step.kind==='path'){
+      step.path.forEach(id=>{ if(id!==startId&&id!==goalId) setCityNodeClass(id,'path-node'); });
+      // Highlight edges
+      for(let j=0;j<step.path.length-1;j++){
+        const k=step.path[j]+'-'+step.path[j+1], el=svgEdgeEls[k];
+        if(el){ el.setAttribute('class','city-edge on-path'); el.setAttribute('stroke-width','4'); }
+      }
+      document.getElementById('city-stat-dist').textContent=(res.dist||'?')+' km';
+      document.getElementById('city-stat-hops').textContent=step.path.length-1;
+      document.getElementById('city-status-title').textContent='Shortest Path Found!';
+      document.getElementById('city-status-text').textContent=
+        'Route: '+step.path.map(id=>CITY_NODES.find(n=>n.id===id)?.label).join(' → ');
+    }
+  },delay);
+}
+
+document.getElementById('city-astar').addEventListener('click',()=>animateCity('astar'));
+document.getElementById('city-dijkstra').addEventListener('click',()=>animateCity('dijkstra'));
+document.getElementById('city-reset').addEventListener('click',()=>{ if(cityTimer){clearInterval(cityTimer);cityTimer=null;} cityResetVisuals(); setCityNodeClass(cityStartSel.value,'start-node'); setCityNodeClass(cityGoalSel.value,'goal-node'); });
+
+buildCitySVG();
+cityResetVisuals();
+setCityNodeClass('jurong','start-node');
+setCityNodeClass('changi','goal-node');
+
+// ============================================================
+//  POTENTIAL FIELD VISUALIZER
+// ============================================================
+const potCanvas=document.getElementById('pot-canvas');
+const potCtx=potCanvas.getContext('2d');
+const POT_W=potCanvas.width, POT_H=potCanvas.height;
+
+let potObstacles=[
+  {x:280,y:170,r:40},{x:500,y:120,r:35},{x:380,y:250,r:30}
+];
+let potGoal={x:720,y:280};
+let potRobot={x:60,y:60};
+let potRunning=false, potAnim=null;
+let potTrail=[];
+let potUTrap=false;
+
+const K_ATT=0.004, K_REP=1800, Q_STAR=90;
+
+function potGrad(robot){
+  let fx=0,fy=0;
+  // Attractive
+  const dx=robot.x-potGoal.x, dy=robot.y-potGoal.y, dg=Math.sqrt(dx*dx+dy*dy);
+  const d_star=200;
+  if(dg<d_star){ fx-=K_ATT*dx; fy-=K_ATT*dy; }
+  else { fx-=K_ATT*d_star*dx/dg; fy-=K_ATT*d_star*dy/dg; }
+  // Repulsive
+  for(const obs of potObstacles){
+    const ox=robot.x-obs.x, oy=robot.y-obs.y;
+    const rho=Math.max(0.01, Math.sqrt(ox*ox+oy*oy)-obs.r);
+    if(rho<Q_STAR){
+      const factor=K_REP*(1/rho-1/Q_STAR)/(rho*rho);
+      const dn=Math.sqrt(ox*ox+oy*oy)||1;
+      fx+=factor*ox/dn; fy+=factor*oy/dn;
+    }
+  }
+  return{fx,fy};
+}
+
+function drawPotential(){
+  potCtx.clearRect(0,0,POT_W,POT_H);
+  const dark=isDark();
+  // Background
+  potCtx.fillStyle=dark?'#0b1525':'#eff3fc';
+  potCtx.fillRect(0,0,POT_W,POT_H);
+  // Draw potential field heatmap (coarse)
+  const step=16;
+  for(let px=0;px<POT_W;px+=step){
+    for(let py=0;py<POT_H;py+=step){
+      const g=potGrad({x:px,y:py});
+      const mag=Math.min(1,Math.sqrt(g.fx*g.fx+g.fy*g.fy)/0.3);
+      potCtx.globalAlpha=0.12;
+      potCtx.fillStyle=`hsl(${200+mag*120},80%,${dark?40:55}%)`;
+      potCtx.fillRect(px,py,step,step);
+    }
+  }
+  potCtx.globalAlpha=1;
+  // Draw arrows
+  const arrowStep=36;
+  for(let px=arrowStep/2;px<POT_W;px+=arrowStep){
+    for(let py=arrowStep/2;py<POT_H;py+=arrowStep){
+      const g=potGrad({x:px,y:py});
+      const mag=Math.sqrt(g.fx*g.fx+g.fy*g.fy)||1;
+      const len=Math.min(14, mag*60);
+      const ax=g.fx/mag*len, ay=g.fy/mag*len;
+      potCtx.strokeStyle=dark?'rgba(106,166,255,0.35)':'rgba(53,109,255,0.3)';
+      potCtx.lineWidth=1;
+      potCtx.beginPath(); potCtx.moveTo(px,py); potCtx.lineTo(px+ax,py+ay); potCtx.stroke();
+    }
+  }
+  // Obstacles
+  for(const obs of potObstacles){
+    const grad=potCtx.createRadialGradient(obs.x,obs.y,obs.r*0.3,obs.x,obs.y,obs.r+Q_STAR*0.6);
+    grad.addColorStop(0,dark?'rgba(255,107,138,0.8)':'rgba(214,67,102,0.75)');
+    grad.addColorStop(1,'rgba(255,107,138,0)');
+    potCtx.fillStyle=grad; potCtx.beginPath(); potCtx.arc(obs.x,obs.y,obs.r+Q_STAR*0.6,0,Math.PI*2); potCtx.fill();
+    potCtx.fillStyle=dark?'#ff6b8a':'#d64366';
+    potCtx.beginPath(); potCtx.arc(obs.x,obs.y,obs.r,0,Math.PI*2); potCtx.fill();
+    potCtx.strokeStyle='rgba(255,255,255,0.3)'; potCtx.lineWidth=1.5; potCtx.stroke();
+    potCtx.fillStyle=dark?'#edf3ff':'#142035'; potCtx.font='bold 11px Outfit'; potCtx.textAlign='center';
+    potCtx.fillText('OBS',obs.x,obs.y+4);
+  }
+  // Trail
+  if(potTrail.length>1){
+    potCtx.strokeStyle=dark?'rgba(140,240,216,0.6)':'rgba(10,168,138,0.6)'; potCtx.lineWidth=2;
+    potCtx.beginPath(); potCtx.moveTo(potTrail[0].x,potTrail[0].y);
+    potTrail.forEach(p=>potCtx.lineTo(p.x,p.y)); potCtx.stroke();
+  }
+  // Goal
+  potCtx.fillStyle=dark?'#7ff0aa':'#179f5e';
+  potCtx.beginPath(); potCtx.arc(potGoal.x,potGoal.y,14,0,Math.PI*2); potCtx.fill();
+  potCtx.strokeStyle='white'; potCtx.lineWidth=2; potCtx.stroke();
+  potCtx.fillStyle=dark?'#09111f':'#f3f7ff'; potCtx.font='bold 10px Outfit'; potCtx.textAlign='center';
+  potCtx.fillText('GOAL',potGoal.x,potGoal.y+4);
+  // Robot
+  potCtx.fillStyle=dark?'#6aa6ff':'#356dff';
+  potCtx.shadowColor=dark?'#6aa6ff':'#356dff'; potCtx.shadowBlur=12;
+  potCtx.beginPath(); potCtx.arc(potRobot.x,potRobot.y,10,0,Math.PI*2); potCtx.fill();
+  potCtx.shadowBlur=0;
+  potCtx.strokeStyle='white'; potCtx.lineWidth=1.5; potCtx.stroke();
+}
+
+function potStep(){
+  const g=potGrad(potRobot);
+  const speed=2.5, mag=Math.sqrt(g.fx*g.fx+g.fy*g.fy)||1;
+  potRobot.x+=g.fx/mag*speed; potRobot.y+=g.fy/mag*speed;
+  potRobot.x=clamp(potRobot.x,8,POT_W-8); potRobot.y=clamp(potRobot.y,8,POT_H-8);
+  potTrail.push({x:potRobot.x,y:potRobot.y});
+  if(potTrail.length>300) potTrail.shift();
+  const dx=potRobot.x-potGoal.x, dy=potRobot.y-potGoal.y;
+  if(Math.sqrt(dx*dx+dy*dy)<15){
+    potRunning=false; clearInterval(potAnim);
+    document.getElementById('pot-status').innerHTML='<strong style="color:var(--success)">Goal Reached!</strong> The robot successfully navigated to the goal.';
+    return;
+  }
+  drawPotential();
+}
+
+document.getElementById('pot-run').addEventListener('click',()=>{
+  if(potAnim) clearInterval(potAnim);
+  potRunning=true; potAnim=setInterval(potStep,30);
+  document.getElementById('pot-status').innerHTML='<strong>Running gradient descent</strong> on the potential field...';
+});
+document.getElementById('pot-reset').addEventListener('click',()=>{
+  clearInterval(potAnim); potRunning=false; potTrail=[];
+  potRobot={x:60,y:60}; potUTrap=false;
+  potObstacles=[{x:280,y:170,r:40},{x:500,y:120,r:35},{x:380,y:250,r:30}];
+  drawPotential();
+  document.getElementById('pot-status').innerHTML='<strong>Ready.</strong> Click Run to animate gradient descent on the potential field.';
+});
+document.getElementById('pot-add-obs').addEventListener('click',()=>{
+  // Add a U-trap around the middle
+  potObstacles.push({x:420,y:80,r:28},{x:350,y:180,r:25},{x:490,y:180,r:25});
+  potGoal={x:420,y:180}; potRobot={x:60,y:170}; potTrail=[];
+  clearInterval(potAnim); potRunning=false;
+  drawPotential();
+  document.getElementById('pot-status').innerHTML='<strong>U-trap added!</strong> Goal is inside the U. Potential fields will get stuck. Run to see local minima.';
+});
+drawPotential();
+
+// ============================================================
+//  PRM VISUALIZER
+// ============================================================
+const prmCanvas=document.getElementById('prm-canvas');
+const prmCtx=prmCanvas.getContext('2d');
+const PRM_W=prmCanvas.width, PRM_H=prmCanvas.height;
+
+const PRM_START={x:60,y:PRM_H-60};
+const PRM_GOAL={x:PRM_W-60,y:60};
+const PRM_OBSTACLES=[
+  {x:180,y:120,w:30,h:180},{x:320,y:80,w:30,h:160},{x:460,y:140,w:30,h:200},
+  {x:600,y:60,w:30,h:180},{x:700,y:200,w:80,h:30},{x:140,y:310,w:180,h:30},
+  {x:380,y:280,w:150,h:30}
+];
+
+function prmInObs(x,y){
+  for(const o of PRM_OBSTACLES) if(x>=o.x-6&&x<=o.x+o.w+6&&y>=o.y-6&&y<=o.y+o.h+6) return true;
+  return x<10||x>PRM_W-10||y<10||y>PRM_H-10;
+}
+function prmEdgeFree(ax,ay,bx,by){
+  const steps=20;
+  for(let i=0;i<=steps;i++) if(prmInObs(lerp(ax,bx,i/steps),lerp(ay,by,i/steps))) return false;
+  return true;
+}
+
+let prmNodes=[], prmEdges=[], prmPath=[];
+
+function prmBuild(){
+  prmNodes=[]; prmEdges=[];
+  const N=parseInt(document.getElementById('prm-n').value);
+  prmNodes.push({x:PRM_START.x,y:PRM_START.y,id:0});
+  prmNodes.push({x:PRM_GOAL.x,y:PRM_GOAL.y,id:1});
+  for(let i=0;i<N;i++){
+    let x,y,attempts=0;
+    do{ x=15+Math.random()*(PRM_W-30); y=15+Math.random()*(PRM_H-30); attempts++; } while(prmInObs(x,y)&&attempts<50);
+    if(!prmInObs(x,y)) prmNodes.push({x,y,id:prmNodes.length});
+  }
+  const K=8;
+  for(let i=0;i<prmNodes.length;i++){
+    const a=prmNodes[i];
+    const sorted=[...prmNodes].filter(n=>n.id!==a.id).sort((p,q)=>dist(a,p)-dist(a,q)).slice(0,K);
+    for(const b of sorted){
+      if(prmEdgeFree(a.x,a.y,b.x,b.y)) prmEdges.push({a,b});
+    }
+  }
+  document.getElementById('prm-status').innerHTML=`<strong>Roadmap built:</strong> ${prmNodes.length} nodes, ${prmEdges.length} edges. Click "Query Path" to find the route.`;
+  prmPath=[]; prmDraw();
+}
+
+function prmQuery(){
+  const adj={};
+  prmNodes.forEach(n=>{adj[n.id]=[];});
+  prmEdges.forEach(e=>{ adj[e.a.id].push({n:e.b,w:dist(e.a,e.b)}); adj[e.b.id].push({n:e.a,w:dist(e.a,e.b)}); });
+  const g={0:0}, f={0:dist(prmNodes[0],prmNodes[1])}, open=[0], closed=new Set(), cameFrom={};
+  while(open.length){
+    open.sort((a,b)=>(f[a]??Infinity)-(f[b]??Infinity));
+    const cur=open.shift(); if(closed.has(cur)) continue; closed.add(cur);
+    if(cur===1){ let c=1; prmPath=[]; while(c!==undefined){prmPath.unshift(c);c=cameFrom[c];} break; }
+    for(const {n,w} of (adj[cur]||[])){
+      const tg=(g[cur]??Infinity)+w;
+      if(tg<(g[n.id]??Infinity)){ g[n.id]=tg; cameFrom[n.id]=cur; f[n.id]=tg+dist(n,prmNodes[1]); if(!closed.has(n.id)) open.push(n.id); }
+    }
+  }
+  prmDraw();
+  if(prmPath.length>1) document.getElementById('prm-status').innerHTML=`<strong>Path found:</strong> ${prmPath.length} waypoints, distance ${(g[1]||0).toFixed(0)}px.`;
+  else document.getElementById('prm-status').innerHTML='<strong>No path found.</strong> Try more samples.';
+}
+
+function prmDraw(){
+  prmCtx.clearRect(0,0,PRM_W,PRM_H);
+  const dark=isDark();
+  prmCtx.fillStyle=dark?'#0b1525':'#eff3fc'; prmCtx.fillRect(0,0,PRM_W,PRM_H);
+  // Obstacles
+  prmCtx.fillStyle=dark?'#1b2438':'#d0d8ee';
+  PRM_OBSTACLES.forEach(o=>{ prmCtx.beginPath(); prmCtx.roundRect(o.x,o.y,o.w,o.h,6); prmCtx.fill(); });
+  // Edges
+  prmEdges.forEach(e=>{
+    const onPath=prmPath.length>1&&prmPath.some((id,i)=>i>0&&((prmPath[i-1]===e.a.id&&id===e.b.id)||(prmPath[i-1]===e.b.id&&id===e.a.id)));
+    prmCtx.strokeStyle=onPath?(dark?'rgba(155,140,255,0.9)':'rgba(106,88,248,0.85)'):( dark?'rgba(106,166,255,0.15)':'rgba(53,109,255,0.12)');
+    prmCtx.lineWidth=onPath?3:1;
+    prmCtx.beginPath(); prmCtx.moveTo(e.a.x,e.a.y); prmCtx.lineTo(e.b.x,e.b.y); prmCtx.stroke();
+  });
+  // Nodes
+  prmNodes.forEach(n=>{
+    const onPath=prmPath.includes(n.id);
+    const isS=n.id===0, isG=n.id===1;
+    prmCtx.fillStyle=isS?'#7ff0aa':isG?'#ff6b8a':onPath?'#9b8cff':(dark?'rgba(106,166,255,0.5)':'rgba(53,109,255,0.5)');
+    prmCtx.beginPath(); prmCtx.arc(n.x,n.y,isS||isG?9:4,0,Math.PI*2); prmCtx.fill();
+  });
+  // Labels
+  prmCtx.fillStyle=dark?'#edf3ff':'#142035'; prmCtx.font='bold 11px Outfit'; prmCtx.textAlign='center';
+  prmCtx.fillText('START',PRM_START.x,PRM_START.y+22);
+  prmCtx.fillText('GOAL',PRM_GOAL.x,PRM_GOAL.y-16);
+}
+
+document.getElementById('prm-build').addEventListener('click',prmBuild);
+document.getElementById('prm-query').addEventListener('click',prmQuery);
+document.getElementById('prm-reset').addEventListener('click',()=>{ prmNodes=[]; prmEdges=[]; prmPath=[]; prmDraw(); document.getElementById('prm-status').innerHTML='<strong>Ready.</strong> Click "Build Roadmap" to sample.'; });
+prmDraw();
+
+// ============================================================
+//  RRT VISUALIZER
+// ============================================================
+const rrtCanvas=document.getElementById('rrt-canvas');
+const rrtCtx=rrtCanvas.getContext('2d');
+const RRT_W=rrtCanvas.width, RRT_H=rrtCanvas.height;
+
+const RRT_START={x:60,y:RRT_H-60};
+const RRT_GOAL={x:RRT_W-60,y:60};
+const RRT_OBSTACLES=[
+  {x:160,y:100,w:25,h:200},{x:300,y:80,w:25,h:180},{x:440,y:120,w:25,h:190},
+  {x:580,y:60,w:25,h:200},{x:200,y:290,w:200,h:25},{x:450,y:260,w:160,h:25}
+];
+
+function rrtInObs(x,y){
+  for(const o of RRT_OBSTACLES) if(x>=o.x-5&&x<=o.x+o.w+5&&y>=o.y-5&&y<=o.y+o.h+5) return true;
+  return x<8||x>RRT_W-8||y<8||y>RRT_H-8;
+}
+function rrtEdgeFree(ax,ay,bx,by){
+  const steps=15;
+  for(let i=0;i<=steps;i++) if(rrtInObs(lerp(ax,bx,i/steps),lerp(ay,by,i/steps))) return false;
+  return true;
+}
+
+let rrtTree=[], rrtPath=[], rrtInterval=null, rrtFound=false;
+
+function rrtReset(){
+  if(rrtInterval){clearInterval(rrtInterval);rrtInterval=null;}
+  rrtTree=[{x:RRT_START.x,y:RRT_START.y,parent:null}];
+  rrtPath=[]; rrtFound=false;
+  rrtDraw();
+  document.getElementById('rrt-status').innerHTML='<strong>Ready.</strong> Click "Grow Tree" to watch RRT expand.';
+}
+
+function rrtNearest(x,y){ let best=rrtTree[0], bd=Infinity; rrtTree.forEach(n=>{const d=dist({x,y},n);if(d<bd){bd=d;best=n;}}); return best; }
+
+function rrtStep(){
+  if(rrtFound) return;
+  const delta=parseInt(document.getElementById('rrt-delta').value);
+  const bias=parseFloat(document.getElementById('rrt-bias').value);
+  let rx,ry;
+  if(Math.random()<bias){ rx=RRT_GOAL.x; ry=RRT_GOAL.y; }
+  else{ rx=15+Math.random()*(RRT_W-30); ry=15+Math.random()*(RRT_H-30); }
+  const near=rrtNearest(rx,ry);
+  const d=Math.sqrt((rx-near.x)**2+(ry-near.y)**2)||1;
+  const newX=near.x+(rx-near.x)/d*Math.min(delta,d);
+  const newY=near.y+(ry-near.y)/d*Math.min(delta,d);
+  if(rrtInObs(newX,newY)||!rrtEdgeFree(near.x,near.y,newX,newY)) return;
+  const node={x:newX,y:newY,parent:near};
+  rrtTree.push(node);
+  if(dist(node,RRT_GOAL)<delta+5){
+    rrtFound=true;
+    rrtPath=[node]; let c=node;
+    while(c.parent){c=c.parent; rrtPath.unshift(c);}
+    clearInterval(rrtInterval); rrtInterval=null;
+    rrtDraw();
+    document.getElementById('rrt-status').innerHTML=`<strong style="color:var(--success)">Goal reached!</strong> Tree nodes: ${rrtTree.length}. Path waypoints: ${rrtPath.length}.`;
+    return;
+  }
+  if(rrtTree.length%15===0) rrtDraw();
+}
+
+function rrtDraw(){
+  rrtCtx.clearRect(0,0,RRT_W,RRT_H);
+  const dark=isDark();
+  rrtCtx.fillStyle=dark?'#0b1525':'#eff3fc'; rrtCtx.fillRect(0,0,RRT_W,RRT_H);
+  rrtCtx.fillStyle=dark?'#1b2438':'#d0d8ee';
+  RRT_OBSTACLES.forEach(o=>{ rrtCtx.beginPath(); rrtCtx.roundRect(o.x,o.y,o.w,o.h,5); rrtCtx.fill(); });
+  // Tree edges
+  rrtCtx.strokeStyle=dark?'rgba(106,166,255,0.25)':'rgba(53,109,255,0.2)'; rrtCtx.lineWidth=1;
+  rrtTree.forEach(n=>{
+    if(n.parent){ rrtCtx.beginPath(); rrtCtx.moveTo(n.parent.x,n.parent.y); rrtCtx.lineTo(n.x,n.y); rrtCtx.stroke(); }
+  });
+  // Tree nodes
+  rrtCtx.fillStyle=dark?'rgba(106,166,255,0.4)':'rgba(53,109,255,0.35)';
+  rrtTree.forEach(n=>{ rrtCtx.beginPath(); rrtCtx.arc(n.x,n.y,2.5,0,Math.PI*2); rrtCtx.fill(); });
+  // Path
+  if(rrtPath.length>1){
+    rrtCtx.strokeStyle=dark?'#9b8cff':'#6a58f8'; rrtCtx.lineWidth=3;
+    rrtCtx.beginPath(); rrtCtx.moveTo(rrtPath[0].x,rrtPath[0].y);
+    rrtPath.forEach(p=>rrtCtx.lineTo(p.x,p.y)); rrtCtx.stroke();
+    rrtCtx.fillStyle=dark?'#9b8cff':'#6a58f8';
+    rrtPath.forEach(p=>{ rrtCtx.beginPath(); rrtCtx.arc(p.x,p.y,4,0,Math.PI*2); rrtCtx.fill(); });
+  }
+  // Start/Goal
+  rrtCtx.fillStyle='#7ff0aa'; rrtCtx.beginPath(); rrtCtx.arc(RRT_START.x,RRT_START.y,10,0,Math.PI*2); rrtCtx.fill();
+  rrtCtx.fillStyle='#ff6b8a'; rrtCtx.beginPath(); rrtCtx.arc(RRT_GOAL.x,RRT_GOAL.y,10,0,Math.PI*2); rrtCtx.fill();
+  rrtCtx.fillStyle=dark?'#edf3ff':'#142035'; rrtCtx.font='bold 11px Outfit'; rrtCtx.textAlign='center';
+  rrtCtx.fillText('S',RRT_START.x,RRT_START.y+4); rrtCtx.fillText('G',RRT_GOAL.x,RRT_GOAL.y+4);
+  rrtCtx.fillStyle=dark?'rgba(255,255,255,0.5)':'rgba(20,32,53,0.5)'; rrtCtx.font='10px Outfit';
+  rrtCtx.fillText('Nodes: '+rrtTree.length, RRT_W-70, 20);
+}
 
   <script>
     /* Theme Toggle */
@@ -234,14 +1870,17 @@
         updateThemeIcon();
       });
     }
+  </script>
 
-    const hamburger = document.getElementById('hamburger');
-    const navLinks = document.querySelector('.nav-links');
-    if (hamburger) {
-      hamburger.addEventListener('click', () => {
-        navLinks.classList.toggle('open');
-      });
-    }
+  <script>
+document.getElementById('rrt-run').addEventListener('click',()=>{
+  if(rrtFound) rrtReset();
+  if(rrtInterval){ clearInterval(rrtInterval); rrtInterval=null; document.getElementById('rrt-status').textContent='Paused.'; return; }
+  rrtInterval=setInterval(()=>{ for(let i=0;i<4;i++) rrtStep(); },40);
+  document.getElementById('rrt-status').innerHTML='<strong>Growing tree...</strong> Watch how the Voronoi bias drives rapid exploration.';
+});
+document.getElementById('rrt-reset').addEventListener('click',rrtReset);
+rrtReset();
   </script>
 </body>
 </html>

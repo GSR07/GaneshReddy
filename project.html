@@ -1,0 +1,907 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+  <title>Surgical Robot Simulation Portfolio — Phase 0 to Phase 2</title>
+  <meta name="description" content="A portfolio blog post documenting the first three stages of a ROS 2 Humble surgical robot simulation project: ROS 2 foundation theory, URDF/Xacro robot modeling, ros2_control, Ignition Gazebo, LiDAR, and differential-drive control." />
+  <link rel="preconnect" href="https://fonts.googleapis.com" />
+  <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin />
+  <link href="https://fonts.googleapis.com/css2?family=Outfit:wght@300;400;500;600;700&family=Syne:wght@400;500;600;700;800&display=swap" rel="stylesheet" />
+  <link rel="stylesheet" href="style.css?v=20" />
+  <script>
+    const savedTheme = localStorage.getItem('theme');
+    if (savedTheme === 'light' || (!savedTheme && window.matchMedia('(prefers-color-scheme: light)').matches)) {
+      document.documentElement.setAttribute('data-theme', 'light');
+    }
+  </script>
+
+  <style>
+    .blog-header {
+      padding: calc(var(--nav-h) + 100px) 40px 60px;
+      text-align: center;
+      position: relative;
+    }
+    .blog-meta {
+      font-size: 0.85rem;
+      color: var(--accent-2);
+      text-transform: uppercase;
+      letter-spacing: 0.1em;
+      font-weight: 600;
+      margin-bottom: 20px;
+      display: block;
+    }
+    .blog-content {
+      max-width: 800px;
+      margin: 0 auto;
+      font-size: 1.1rem;
+      line-height: 1.8;
+      color: var(--text);
+    }
+    .blog-content p {
+      margin-bottom: 24px;
+      color: var(--text-muted);
+    }
+    .blog-content h2 {
+      font-size: 2rem;
+      margin: 60px 0 24px;
+      color: var(--text);
+    }
+    .blog-content h3 {
+      font-size: 1.4rem;
+      margin: 40px 0 16px;
+      color: var(--accent);
+    }
+    .eyebrow {
+      display: inline-block;
+      padding: 8px 12px;
+      border: 1px solid var(--surface-border);
+      border-radius: 999px;
+      color: var(--accent-2);
+      background: rgba(140, 240, 216, 0.06);
+      font-size: 0.9rem;
+      margin-bottom: 18px;
+    }
+    .chip {
+      background: rgba(255, 255, 255, 0.05);
+      border: 1px solid var(--surface-border);
+      color: var(--text);
+      border-radius: 999px;
+      padding: 8px 12px;
+      font-size: 0.92rem;
+      display: inline-block;
+      margin: 4px 8px 4px 0;
+    }
+    .grid {
+      display: grid;
+      grid-template-columns: 1fr 1fr;
+      gap: 24px;
+      margin: 34px 0;
+    }
+    .card {
+      background: var(--surface);
+      border: 1px solid var(--surface-border);
+      border-radius: var(--radius);
+      padding: 24px;
+    }
+    .callout {
+      border-left: 4px solid var(--accent);
+      padding: 16px 18px;
+      background: rgba(106, 166, 255, 0.08);
+      border-radius: 12px;
+      color: var(--text);
+      margin: 18px 0;
+    }
+    .two-col {
+      display: grid;
+      grid-template-columns: repeat(2, minmax(0, 1fr));
+      gap: 20px;
+      margin-top: 18px;
+    }
+    table {
+      width: 100%;
+      border-collapse: collapse;
+      overflow: hidden;
+      border-radius: var(--radius-sm);
+      margin: 18px 0;
+      border: 1px solid var(--surface-border);
+      background: var(--surface);
+    }
+    th,
+    td {
+      padding: 14px 14px;
+      border-bottom: 1px solid var(--surface-border);
+      text-align: left;
+      vertical-align: top;
+      font-size: 0.96rem;
+    }
+    th {
+      color: var(--accent-2);
+      background: rgba(255, 255, 255, 0.03);
+      font-weight: 700;
+    }
+    td {
+      color: var(--text-muted);
+    }
+    .code {
+      background: var(--bg-alt);
+      border: 1px solid var(--surface-border);
+      border-radius: var(--radius-sm);
+      padding: 18px;
+      overflow-x: auto;
+      font-size: 0.95rem;
+      line-height: 1.65;
+      font-family: 'Fira Code', monospace;
+      color: var(--text);
+    }
+    .quote {
+      font-size: 1.08rem;
+      color: var(--text);
+      margin: 16px 0;
+      padding: 18px 20px;
+      border: 1px solid var(--surface-border);
+      border-radius: var(--radius-sm);
+      background: var(--surface);
+    }
+    .small {
+      font-size: 0.94rem;
+      color: var(--text-muted);
+    }
+    @media (max-width: 900px) {
+      .grid,
+      .two-col {
+        grid-template-columns: 1fr;
+      }
+      .blog-header {
+        padding-top: calc(var(--nav-h) + 60px);
+      }
+      .card {
+        padding: 20px;
+      }
+    }
+  </style>
+</head>
+
+  <!-- ─── NAV ──────────────────────────────────────────────── -->
+  <nav id="navbar" class="scrolled">
+    <a href="index.html" class="nav-logo">GR<span class="accent">.</span></a>
+    <ul class="nav-links">
+      <li><a href="index.html">&larr; Back to Portfolio</a></li>
+      <li><a href="blog.html" class="gradient-text">Blog Home</a></li>
+    </ul>
+    <div class="nav-controls" style="display: flex; align-items: center; gap: 16px;">
+      <button id="theme-toggle" class="theme-btn" aria-label="Toggle theme" style="background: transparent; border: none; color: var(--text); cursor: pointer; display: flex; align-items: center;">
+        <svg class="sun-icon" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" style="width: 22px; height: 22px;">
+          <circle cx="12" cy="12" r="5"></circle>
+          <line x1="12" y1="1" x2="12" y2="3"></line>
+          <line x1="12" y1="21" x2="12" y2="23"></line>
+          <line x1="4.22" y1="4.22" x2="5.64" y2="5.64"></line>
+          <line x1="18.36" y1="18.36" x2="19.78" y2="19.78"></line>
+          <line x1="1" y1="12" x2="3" y2="12"></line>
+          <line x1="21" y1="12" x2="23" y2="12"></line>
+          <line x1="4.22" y1="19.78" x2="5.64" y2="18.36"></line>
+          <line x1="18.36" y1="5.64" x2="19.78" y2="4.22"></line>
+        </svg>
+        <svg class="moon-icon" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" style="width: 22px; height: 22px; display: none;">
+          <path d="M21 12.79A9 9 0 1 1 11.21 3 7 7 0 0 0 21 12.79z"></path>
+        </svg>
+      </button>
+      <button id="hamburger" aria-label="Toggle menu">
+        <span></span><span></span><span></span>
+      </button>
+    </div>
+  </nav>
+
+  <!-- ─── HEADER ───────────────────────────────────────────── -->
+  <header class="blog-header">
+    <div class="container">
+      <span class="blog-meta">January 20, 2026 • Robotics & Simulation</span>
+      <h1 class="section-title" style="margin-bottom: 24px;">Building a Surgical Robot Simulation from ROS 2 Theory to Sensors & Control</h1>
+      <p style="color: var(--text-muted); max-width: 600px; margin: 0 auto;">This post documents the first three milestones: building the ROS 2 foundation, modeling the robot in URDF/Xacro, and making the robot move in Ignition Gazebo with ros2_control, differential drive, odometry, and LiDAR data.</p>
+    </div>
+  </header>
+
+  <!-- ─── CONTENT ──────────────────────────────────────────── -->
+  <main class="section" style="padding-top: 20px;">
+    <div class="container blog-content">
+          <p>
+            The goal of this portfolio project is to build a mobile manipulator in a simulated
+            operating-theater environment. The robot is designed as a surgical-assistive mobile
+            platform that can eventually navigate around sterile zones and transfer instruments
+            between tables. The first three phases focus on the core infrastructure needed before
+            navigation, manipulation, and task planning can be added.
+          </p>
+
+          <div class="timeline">
+            <article class="timeline-item">
+              <div class="phase-label">Phase 0</div>
+              <div class="timeline-content">
+                <h3>Foundation Theory</h3>
+                <p>
+                  Learned ROS 2 nodes, topics, services, actions, TF2, message types, and Python
+                  node patterns. This phase answered the question: <em>how do ROS 2 components
+                  communicate and coordinate?</em>
+                </p>
+              </div>
+            </article>
+
+            <article class="timeline-item">
+              <div class="phase-label">Phase 1</div>
+              <div class="timeline-content">
+                <h3>Robot Modeling</h3>
+                <p>
+                  Built a complete URDF/Xacro model with base, wheels, caster, LiDAR link, torso,
+                  arm links, gripper, inertial properties, joint hierarchy, and a verified TF2 tree
+                  in RViz2.
+                </p>
+              </div>
+            </article>
+
+            <article class="timeline-item">
+              <div class="phase-label">Phase 2</div>
+              <div class="timeline-content">
+                <h3>Sensors & Control</h3>
+                <p>
+                  Added Ignition Gazebo simulation, ros2_control, diff_drive_controller,
+                  joint_state_broadcaster, LiDAR data bridging, odometry, wheel contact tuning,
+                  and teleoperation.
+                </p>
+              </div>
+            </article>
+          </div>
+        </div>
+      </div>
+    </section>
+
+    <section id="phase-0">
+      <div class="page">
+        <div class="section-card">
+          <div class="section-kicker">Phase 0 — Foundation Theory</div>
+          <h2>Understanding the ROS 2 communication model</h2>
+          <p>
+            Before writing simulation code, I focused on understanding the ROS 2 system model.
+            ROS 2 is middleware: it sits between application code and hardware, allowing
+            independent processes called nodes to communicate through standardized mechanisms.
+          </p>
+
+          <div class="grid-3">
+            <div class="mini-card">
+              <h3>Topics</h3>
+              <p>
+                Used for continuous one-way streams such as <code>/scan</code>,
+                <code>/joint_states</code>, <code>/cmd_vel</code>, and <code>/odom</code>.
+              </p>
+            </div>
+            <div class="mini-card">
+              <h3>Services</h3>
+              <p>
+                Used for short request-response operations, such as saving a map or checking
+                whether a command succeeded.
+              </p>
+            </div>
+            <div class="mini-card">
+              <h3>Actions</h3>
+              <p>
+                Used for long-running tasks with feedback and cancellation, such as navigation
+                goals or arm motion planning.
+              </p>
+            </div>
+          </div>
+
+          <h3>ROS 2 decision framework</h3>
+          <pre><code>Is the data continuous and one-directional?
+    YES → Topic
+
+Does the caller need a response?
+    YES → Is the task short and fast?
+        YES → Service
+        NO  → Does it need feedback or cancellation?
+            YES → Action</code></pre>
+
+          <h3>TF2: the spatial backbone of the robot</h3>
+          <p>
+            TF2 tracks where every robot part is relative to every other part. Every link has a
+            coordinate frame, and every joint defines a transform between parent and child frames.
+            Navigation, visualization, mapping, and manipulation all depend on this tree.
+          </p>
+
+          <div class="robot-tree">
+            <pre><code>map
+ └── odom
+      └── base_footprint
+           └── base_link
+                ├── left_wheel_link
+                ├── right_wheel_link
+                ├── caster_link
+                ├── lidar_link
+                └── torso_link
+                     └── shoulder_link
+                          └── upper_arm_link
+                               └── forearm_link
+                                    └── wrist_link
+                                         └── gripper_link</code></pre>
+          </div>
+
+          <div class="callout">
+            <strong>Key learning:</strong>
+            <p>
+              <code>robot_state_publisher</code> needs two inputs: the URDF, which defines geometry
+              and joint relationships, and <code>/joint_states</code>, which provides the current
+              joint positions. Together, they generate the dynamic TF2 tree.
+            </p>
+          </div>
+
+          <h3>Core message types learned</h3>
+          <table>
+            <thead>
+              <tr>
+                <th>Message</th>
+                <th>Used For</th>
+                <th>Example Topic</th>
+              </tr>
+            </thead>
+            <tbody>
+              <tr>
+                <td><code>sensor_msgs/msg/LaserScan</code></td>
+                <td>LiDAR distance measurements</td>
+                <td><code>/scan</code></td>
+              </tr>
+              <tr>
+                <td><code>geometry_msgs/msg/Twist</code></td>
+                <td>Velocity commands for mobile base</td>
+                <td><code>/cmd_vel</code></td>
+              </tr>
+              <tr>
+                <td><code>nav_msgs/msg/Odometry</code></td>
+                <td>Robot pose and velocity estimate</td>
+                <td><code>/odom</code></td>
+              </tr>
+              <tr>
+                <td><code>sensor_msgs/msg/JointState</code></td>
+                <td>Joint names, positions, velocities, and efforts</td>
+                <td><code>/joint_states</code></td>
+              </tr>
+            </tbody>
+          </table>
+        </div>
+      </div>
+    </section>
+
+    <section id="phase-1">
+      <div class="page">
+        <div class="section-card">
+          <div class="section-kicker">Phase 1 — Robot Modeling</div>
+          <h2>Building the URDF/Xacro robot model</h2>
+          <p>
+            Phase 1 turned the robot concept into a structured URDF/Xacro model. The model is the
+            single source of truth for RViz2 visualization, TF2, Gazebo physics, MoveIt 2 planning,
+            and future ros2_control mappings.
+          </p>
+
+          <div class="diagram">
+            <p class="diagram-title">Robot architecture</p>
+            <pre><code>[gripper_link]
+      │
+[wrist_link]
+      │
+[forearm_link]
+      │
+[upper_arm_link]
+      │
+[shoulder_link]
+      │
+[torso_link]
+      │
+[left_wheel_link] ── [base_link] ── [right_wheel_link]
+                         │
+              [lidar_link] [caster_link]
+                         │
+                  [base_footprint]</code></pre>
+          </div>
+
+          <h3>Link and joint structure</h3>
+          <table>
+            <thead>
+              <tr>
+                <th>Link</th>
+                <th>Joint</th>
+                <th>Type</th>
+                <th>Parent</th>
+              </tr>
+            </thead>
+            <tbody>
+              <tr>
+                <td><code>base_link</code></td>
+                <td><code>base_footprint_to_base_link</code></td>
+                <td>fixed</td>
+                <td><code>base_footprint</code></td>
+              </tr>
+              <tr>
+                <td><code>left_wheel_link</code></td>
+                <td><code>base_link_to_left_wheel</code></td>
+                <td>continuous</td>
+                <td><code>base_link</code></td>
+              </tr>
+              <tr>
+                <td><code>right_wheel_link</code></td>
+                <td><code>base_link_to_right_wheel</code></td>
+                <td>continuous</td>
+                <td><code>base_link</code></td>
+              </tr>
+              <tr>
+                <td><code>lidar_link</code></td>
+                <td><code>base_link_to_lidar</code></td>
+                <td>fixed</td>
+                <td><code>base_link</code></td>
+              </tr>
+              <tr>
+                <td><code>torso_link</code></td>
+                <td><code>base_link_to_torso</code></td>
+                <td>fixed</td>
+                <td><code>base_link</code></td>
+              </tr>
+              <tr>
+                <td><code>gripper_link</code></td>
+                <td><code>wrist_to_gripper</code></td>
+                <td>prismatic</td>
+                <td><code>wrist_link</code></td>
+              </tr>
+            </tbody>
+          </table>
+
+          <h3>Modeling rules learned</h3>
+          <div class="grid-2">
+            <div class="mini-card">
+              <h3>URDF inertia matters</h3>
+              <p>
+                Incorrect inertia values can cause unstable simulation behavior. The most important
+                rule is that each inertia term excludes its own axis: <code>ixx</code> uses
+                <code>y² + z²</code>, not <code>x²</code>.
+              </p>
+            </div>
+            <div class="mini-card">
+              <h3>Wheel orientation matters</h3>
+              <p>
+                Cylinders are vertical by default in URDF. A wheel must be rotated with
+                <code>rpy="1.5708 0 0"</code> so its axle aligns correctly.
+              </p>
+            </div>
+            <div class="mini-card">
+              <h3>base_footprint is the ground frame</h3>
+              <p>
+                <code>base_footprint</code> is projected onto the ground plane and is used by
+                navigation systems for robot footprint and collision reasoning.
+              </p>
+            </div>
+            <div class="mini-card">
+              <h3>Xacro avoids duplication</h3>
+              <p>
+                Xacro properties define values like wheel radius and separation once, then reuse
+                them everywhere using <code>${name}</code>.
+              </p>
+            </div>
+          </div>
+
+          <div class="success-callout callout">
+            <strong>Phase 1 result:</strong>
+            <p>
+              The robot model was verified in RViz2 with 13 TF frames, correct wheel placement,
+              visible LiDAR and arm structure, and a clean base-to-arm hierarchy.
+            </p>
+          </div>
+        </div>
+      </div>
+    </section>
+
+    <section id="phase-2">
+      <div class="page">
+        <div class="section-card">
+          <div class="section-kicker">Phase 2 — Sensors & Control</div>
+          <h2>Making the robot move in Ignition Gazebo</h2>
+          <p>
+            Phase 2 transformed the robot from a static RViz model into a controlled simulation.
+            The robot can spawn into Ignition Gazebo, accept velocity commands, move using a
+            differential-drive controller, publish odometry, and stream LiDAR data into ROS 2.
+          </p>
+
+          <h3>ros2_control architecture</h3>
+          <pre><code>Controller layer
+    diff_drive_controller
+    joint_state_broadcaster
+          │
+          ▼
+controller_manager
+    loads controllers
+    manages interface access
+    prevents command conflicts
+          │
+          ▼
+hardware interface layer
+    Ignition Gazebo: ign_ros2_control plugin
+    Real robot: motor driver / hardware driver</code></pre>
+
+          <div class="grid-2">
+            <div class="mini-card">
+              <h3>Command interface</h3>
+              <p>
+                A write channel. The controller sends a target value to the joint, such as wheel
+                velocity in rad/s.
+              </p>
+            </div>
+            <div class="mini-card">
+              <h3>State interface</h3>
+              <p>
+                A read channel. The controller or broadcaster reads the current joint position,
+                velocity, or effort.
+              </p>
+            </div>
+          </div>
+
+          <h3>Differential drive math</h3>
+          <p>
+            The <code>diff_drive_controller</code> converts a velocity command into left and right
+            wheel speeds:
+          </p>
+
+          <pre><code>left_wheel_velocity  = (linear.x - angular.z × wheel_separation / 2) / wheel_radius
+right_wheel_velocity = (linear.x + angular.z × wheel_separation / 2) / wheel_radius</code></pre>
+
+          <table>
+            <thead>
+              <tr>
+                <th>linear.x</th>
+                <th>angular.z</th>
+                <th>Robot behavior</th>
+              </tr>
+            </thead>
+            <tbody>
+              <tr>
+                <td><code>0.5</code></td>
+                <td><code>0.0</code></td>
+                <td>Straight forward</td>
+              </tr>
+              <tr>
+                <td><code>0.0</code></td>
+                <td><code>0.8</code></td>
+                <td>Rotate in place to the left</td>
+              </tr>
+              <tr>
+                <td><code>0.5</code></td>
+                <td><code>0.8</code></td>
+                <td>Curve left while moving forward</td>
+              </tr>
+              <tr>
+                <td><code>-0.5</code></td>
+                <td><code>0.0</code></td>
+                <td>Straight backward</td>
+              </tr>
+            </tbody>
+          </table>
+
+          <h3>LiDAR pipeline</h3>
+          <p>
+            Ignition Gazebo publishes sensor data using Ignition message types. To use that data in
+            ROS 2, it must be bridged through <code>ros_gz_bridge</code>.
+          </p>
+
+          <pre><code>Ignition Gazebo LiDAR plugin
+    ↓ publishes as Ignition topic
+/scan [ignition.msgs.LaserScan]
+    ↓ ros_gz_bridge
+/scan [sensor_msgs/msg/LaserScan]
+    ↓
+SLAM Toolbox and Nav2 costmaps</code></pre>
+
+          <h3>Important command topic detail</h3>
+          <p>
+            Because <code>use_stamped_vel: false</code> was used, the controller listens on
+            <code>/diff_drive_controller/cmd_vel_unstamped</code>, not directly on
+            <code>/cmd_vel</code>. Teleoperation therefore needs topic remapping:
+          </p>
+
+          <pre><code>ros2 run teleop_twist_keyboard teleop_twist_keyboard --ros-args \
+  -r /cmd_vel:=/diff_drive_controller/cmd_vel_unstamped</code></pre>
+
+          <div class="callout">
+            <strong>Simulation timing rule:</strong>
+            <p>
+              Every node in the simulation must use <code>use_sim_time: True</code>. Mixing Gazebo
+              simulation time with wall-clock time causes TF2 lookup failures and stale transforms.
+            </p>
+          </div>
+        </div>
+      </div>
+    </section>
+
+    <section id="errors">
+      <div class="page">
+        <div class="section-card">
+          <div class="section-kicker">Debugging log</div>
+          <h2>Errors encountered and how they were fixed</h2>
+          <p>
+            Phase 2 was not only about getting the robot working — it was also about understanding
+            why things fail. These were the key issues found during integration.
+          </p>
+
+          <table>
+            <thead>
+              <tr>
+                <th>Problem</th>
+                <th>Root Cause</th>
+                <th>Fix</th>
+              </tr>
+            </thead>
+            <tbody>
+              <tr>
+                <td>Robot did not move</td>
+                <td>
+                  Commands were published to <code>/cmd_vel</code>, but the controller listened on
+                  <code>/diff_drive_controller/cmd_vel_unstamped</code>.
+                </td>
+                <td>Publish to the correct topic or remap teleop output.</td>
+              </tr>
+              <tr>
+                <td>Gazebo physics did not behave correctly</td>
+                <td>
+                  <code>IGN_GAZEBO_SYSTEM_PLUGIN_PATH</code> was manually overwritten, breaking
+                  Gazebo plugin discovery.
+                </td>
+                <td>Remove manual override and use the standard <code>ros_gz_sim</code> launcher.</td>
+              </tr>
+              <tr>
+                <td>Controller configuration did not load correctly</td>
+                <td>
+                  <code>controllers.yaml</code> was referenced through a hard-coded source path.
+                </td>
+                <td>
+                  Use <code>$(find surgical_robot_description)/config/controllers.yaml</code> so
+                  the installed path resolves at runtime.
+                </td>
+              </tr>
+              <tr>
+                <td>LiDAR did not publish data</td>
+                <td>
+                  <code>ogre2</code> render engine required GPU acceleration, so the sensor system
+                  loaded but generated no data.
+                </td>
+                <td>Use <code>&lt;render_engine&gt;ogre&lt;/render_engine&gt;</code>.</td>
+              </tr>
+              <tr>
+                <td>Robot slipped or moved poorly</td>
+                <td>Default wheel friction/contact settings were too weak.</td>
+                <td>Add <code>mu1</code>, <code>mu2</code>, <code>kp</code>, and <code>kd</code> to wheel Gazebo tags.</td>
+              </tr>
+              <tr>
+                <td>Wheel direction was wrong</td>
+                <td>Wheel joint axis sign did not match the controller's forward-motion convention.</td>
+                <td>Change wheel axis to <code>&lt;axis xyz="0 0 -1"/&gt;</code>.</td>
+              </tr>
+              <tr>
+                <td>Odometry bridge confusion</td>
+                <td>
+                  <code>/diff_drive_controller/odom</code> was bridged from Ignition even though it
+                  is already produced directly by ROS 2.
+                </td>
+                <td>Bridge only Ignition-produced topics such as <code>/clock</code> and <code>/scan</code>.</td>
+              </tr>
+            </tbody>
+          </table>
+        </div>
+      </div>
+    </section>
+
+    <section id="verified-state">
+      <div class="page">
+        <div class="section-card">
+          <div class="section-kicker">Final working state</div>
+          <h2>What is confirmed working now</h2>
+
+          <table>
+            <thead>
+              <tr>
+                <th>Component</th>
+                <th>Status</th>
+              </tr>
+            </thead>
+            <tbody>
+              <tr>
+                <td>Ignition Gazebo</td>
+                <td><span class="status-ok">Running</span></td>
+              </tr>
+              <tr>
+                <td>Robot spawned</td>
+                <td><span class="status-ok">Yes</span></td>
+              </tr>
+              <tr>
+                <td>joint_state_broadcaster</td>
+                <td><span class="status-ok">Active</span></td>
+              </tr>
+              <tr>
+                <td>diff_drive_controller</td>
+                <td><span class="status-ok">Active</span></td>
+              </tr>
+              <tr>
+                <td>Hardware interfaces</td>
+                <td><span class="status-ok">Available + claimed</span></td>
+              </tr>
+              <tr>
+                <td><code>/joint_states</code></td>
+                <td><span class="status-ok">Publishing</span></td>
+              </tr>
+              <tr>
+                <td><code>/scan</code></td>
+                <td><span class="status-ok">Publishing</span></td>
+              </tr>
+              <tr>
+                <td><code>/diff_drive_controller/odom</code></td>
+                <td><span class="status-ok">Publishing</span></td>
+              </tr>
+              <tr>
+                <td><code>/tf</code> and <code>/tf_static</code></td>
+                <td><span class="status-ok">Publishing</span></td>
+              </tr>
+              <tr>
+                <td>Robot movement</td>
+                <td><span class="status-ok">Confirmed with direct topic publishing and teleop</span></td>
+              </tr>
+            </tbody>
+          </table>
+
+          <h3>Verification commands</h3>
+          <pre><code># Check controllers
+ros2 control list_controllers
+
+# Check hardware interfaces
+ros2 control list_hardware_interfaces
+
+# Check available topics
+ros2 topic list
+
+# Check LiDAR data rate
+ros2 topic hz /scan
+
+# Check odometry
+ros2 topic echo /diff_drive_controller/odom --once
+
+# Drive forward directly
+ros2 topic pub -r 10 /diff_drive_controller/cmd_vel_unstamped \
+  geometry_msgs/msg/Twist "{linear: {x: 0.25}, angular: {z: 0.0}}"
+
+# Teleop with correct remapping
+ros2 run teleop_twist_keyboard teleop_twist_keyboard --ros-args \
+  -r /cmd_vel:=/diff_drive_controller/cmd_vel_unstamped</code></pre>
+        </div>
+      </div>
+    </section>
+
+    <section id="next">
+      <div class="page">
+        <div class="section-card">
+          <div class="section-kicker">Roadmap</div>
+          <h2>Where the project goes next</h2>
+          <p>
+            The foundation, robot model, control stack, odometry, and LiDAR pipeline are now
+            complete. The next milestone is to build the operating-theater simulation world in SDF.
+          </p>
+
+          <table>
+            <thead>
+              <tr>
+                <th>Phase</th>
+                <th>Status</th>
+                <th>Goal</th>
+              </tr>
+            </thead>
+            <tbody>
+              <tr>
+                <td>Phase 0 — Foundation Theory</td>
+                <td><span class="status-ok">Complete</span></td>
+                <td>Understand ROS 2 communication, TF2, and message types.</td>
+              </tr>
+              <tr>
+                <td>Phase 1 — Robot Modeling</td>
+                <td><span class="status-ok">Complete</span></td>
+                <td>Create and verify the URDF/Xacro robot model.</td>
+              </tr>
+              <tr>
+                <td>Phase 2 — Sensors & Control</td>
+                <td><span class="status-ok">Complete</span></td>
+                <td>Move robot in Ignition Gazebo with LiDAR, odometry, and ros2_control.</td>
+              </tr>
+              <tr>
+                <td>Phase 3 — Operating Theater World</td>
+                <td><span class="status-next">Next</span></td>
+                <td>Build the hospital simulation world with tables, walls, and sterile zones.</td>
+              </tr>
+              <tr>
+                <td>Phase 4 — Navigation</td>
+                <td>Not started</td>
+                <td>Add SLAM, localization, Nav2, costmaps, and path planning.</td>
+              </tr>
+              <tr>
+                <td>Phase 5 — Robotic Arm</td>
+                <td>Not started</td>
+                <td>Add articulated arm control and motion planning.</td>
+              </tr>
+              <tr>
+                <td>Phase 6 — Pick and Place</td>
+                <td>Not started</td>
+                <td>Implement instrument transfer between tables.</td>
+              </tr>
+              <tr>
+                <td>Phase 7 — Integration</td>
+                <td>Not started</td>
+                <td>Combine mobile navigation, manipulation, safety, and task logic.</td>
+              </tr>
+              <tr>
+                <td>Phase 8 — Portfolio Polish</td>
+                <td>Not started</td>
+                <td>Prepare final documentation, videos, screenshots, and GitHub presentation.</td>
+              </tr>
+            </tbody>
+          </table>
+
+          <div class="success-callout callout">
+            <strong>Current milestone:</strong>
+            <p>
+              The robot is no longer just a model — it is a controlled simulated system with
+              sensors, odometry, TF2, and physical movement working in Gazebo.
+            </p>
+        </section>
+    </div>
+  </main>
+
+  <!-- ─── FOOTER ───────────────────────────────────────────── -->
+  <footer>
+    <div class="container">
+      <p>&copy; 2026 Ganesh Reddy. All rights reserved.</p>
+    </div>
+  </footer>
+
+  <script>
+    /* Theme Toggle */
+    const themeToggle = document.getElementById('theme-toggle');
+    if (themeToggle) {
+      const sunIcon = themeToggle.querySelector('.sun-icon');
+      const moonIcon = themeToggle.querySelector('.moon-icon');
+      function updateThemeIcon() {
+        if (document.documentElement.getAttribute('data-theme') === 'light') {
+          sunIcon.style.display = 'none';
+          moonIcon.style.display = 'block';
+        } else {
+          sunIcon.style.display = 'block';
+          moonIcon.style.display = 'none';
+        }
+      }
+      updateThemeIcon();
+      themeToggle.addEventListener('click', () => {
+        const currentTheme = document.documentElement.getAttribute('data-theme') || 'dark';
+        const newTheme = currentTheme === 'light' ? 'dark' : 'light';
+        if (newTheme === 'light') { document.documentElement.setAttribute('data-theme', 'light'); }
+        else { document.documentElement.removeAttribute('data-theme'); }
+        localStorage.setItem('theme', newTheme);
+        updateThemeIcon();
+      });
+    }
+
+    /* Mobile Menu Toggle */
+    const hamburger = document.getElementById('hamburger');
+    const navLinks = document.querySelector('.nav-links');
+    if (hamburger) {
+      hamburger.addEventListener('click', () => {
+        navLinks.classList.toggle('open');
+      });
+    }
+
+    // Scroll universe logic
+    window.addEventListener('scroll', () => {
+      document.body.style.setProperty('--scrollParam', window.scrollY);
+    });
+
+    // Autonomous Background Timer
+    function updateTimeParam() {
+      document.body.style.setProperty('--timeParam', performance.now() / 1000);
+      requestAnimationFrame(updateTimeParam);
+    }
+    updateTimeParam();
+  </script>

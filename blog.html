@@ -4,11 +4,11 @@
   <meta charset="UTF-8" />
   <meta name="viewport" content="width=device-width, initial-scale=1.0" />
   <title>Blog — Ganesh Reddy</title>
-  <meta name="description" content="Project updates and technical blog posts by Ganesh Reddy on Robotics, Computer Vision, and Embedded Systems." />
+  <meta name="description" content="Technical blog by Ganesh Reddy on Robotics, ROS2, Embedded Systems, and Autonomous Navigation." />
   <link rel="preconnect" href="https://fonts.googleapis.com" />
   <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin />
   <link href="https://fonts.googleapis.com/css2?family=Outfit:wght@300;400;500;600;700&family=Syne:wght@400;500;600;700;800&display=swap" rel="stylesheet" />
-  <link rel="stylesheet" href="style.css?v=20" />
+  <link rel="stylesheet" href="style.css?v=21" />
   <script>
     const savedTheme = localStorage.getItem('theme');
     if (savedTheme === 'light' || (!savedTheme && window.matchMedia('(prefers-color-scheme: light)').matches)) {
@@ -16,7 +16,6 @@
     }
   </script>
   <style>
-    /* Blog specific styles */
     #blog-hero {
       padding: calc(var(--nav-h) + 60px) 40px 40px;
       text-align: center;
@@ -63,6 +62,58 @@
     .blog-read-more:hover {
       color: var(--accent-2);
       transform: translateX(4px);
+    }
+    /* Category badge on blog cards */
+    .blog-category {
+      display: inline-block;
+      padding: 3px 10px;
+      background: rgba(14,165,233,0.1);
+      border: 1px solid rgba(14,165,233,0.25);
+      border-radius: 50px;
+      font-size: 0.7rem;
+      font-weight: 700;
+      color: var(--accent);
+      text-transform: uppercase;
+      letter-spacing: 0.06em;
+    }
+    .blog-category.embedded {
+      background: rgba(251,191,36,0.1);
+      border-color: rgba(251,191,36,0.25);
+      color: #fbbf24;
+    }
+    .blog-category.navigation {
+      background: rgba(99,102,241,0.1);
+      border-color: rgba(99,102,241,0.25);
+      color: #818cf8;
+    }
+    .blog-category.manipulation {
+      background: rgba(52,211,153,0.1);
+      border-color: rgba(52,211,153,0.25);
+      color: #34d399;
+    }
+    .blog-category.simulation {
+      background: rgba(255,107,157,0.1);
+      border-color: rgba(255,107,157,0.25);
+      color: #fb7185;
+    }
+    /* Coming soon badge */
+    .blog-coming-soon {
+      opacity: 0.55;
+      position: relative;
+    }
+    .coming-badge {
+      position: absolute;
+      top: 16px;
+      right: 16px;
+      padding: 4px 10px;
+      background: rgba(100,116,139,0.2);
+      border: 1px solid rgba(100,116,139,0.3);
+      border-radius: 50px;
+      font-size: 0.68rem;
+      font-weight: 700;
+      color: var(--text-muted);
+      text-transform: uppercase;
+      letter-spacing: 0.06em;
     }
   </style>
 </head>
@@ -112,8 +163,8 @@
   <section id="blog-hero" class="section">
     <div class="container">
       <div class="section-label">Journal</div>
-      <h1 class="section-title" style="margin-bottom: 24px; text-align: center;">Technical Updates</h1>
-      <p style="color: var(--text-muted); max-width: 600px; margin: 0 auto;">Insights, progress logs, and deep dives into my ongoing projects in Robotics, Computer Vision, and Embedded Systems.</p>
+      <h1 class="section-title" style="margin-bottom: 24px; text-align: center;">Technical Blog</h1>
+      <p style="color: var(--text-muted); max-width: 640px; margin: 0 auto; text-align: center;">Deep dives into robotics engineering, ROS2, motion planning, embedded systems, and autonomous navigation — from theory to implementation.</p>
     </div>
   </section>
 
@@ -121,47 +172,81 @@
   <section id="blog-posts" class="section section-alt" style="min-height: 60vh;">
     <div class="container">
       <div class="blog-grid">
-        
-        <!-- Post 1 -->
-        
+
+        <!-- Post 1 — Surgical Robot Simulation -->
         <article class="blog-card glass-card">
+          <span class="blog-category simulation">Simulation</span>
           <span class="blog-date">January 20, 2026</span>
-          <h3>Surgical Robot Simulation: ROS 2 Theory to Control</h3>
-          <p>A comprehensive walkthrough of building a surgical robot simulation project from ROS 2 foundations, URDF/Xacro modeling, and ros2_control in Ignition Gazebo with LiDAR and differential drive control.</p>
+          <h3>Surgical Robot Simulation: ROS2 Theory to Control</h3>
+          <p>Building a surgical robot simulation from scratch — ROS2 foundations, URDF/Xacro modelling, ros2_control, Ignition Gazebo, LiDAR integration, and differential drive teleoperation. Full debug log included.</p>
           <a href="project.html" class="blog-read-more">Read Full Post →</a>
         </article>
 
-        <!-- Post 2 -->
-        
+        <!-- Post 2 — Franka Panda -->
         <article class="blog-card glass-card">
+          <span class="blog-category manipulation">Manipulation</span>
           <span class="blog-date">March 30, 2026</span>
-          <h3>Tuning the Franka Panda Grasp Controllers</h3>
-          <p>A deep dive into bypassing physics engine limitations in Ignition Gazebo by creating a custom ROS2 Node that dynamically attaches objects using fixed joints.</p>
-          <a href="franka-pick-and-place-blog.html" class="blog-read-more">Read Full Post &rarr;</a>
+          <h3>The Math Behind Autonomous Pick-and-Place on Franka Panda</h3>
+          <p>Full mathematical and architectural deep dive into ROS2, MoveIt2, OpenCV, and Ignition Gazebo — Jacobian IK, HSV segmentation, TF2 camera-to-base transforms, and solving the Gazebo grasping problem with dynamic fixed joints.</p>
+          <a href="franka-pick-and-place-blog.html" class="blog-read-more">Read Full Post →</a>
         </article>
 
-        <!-- Post 3 -->
+        <!-- Post 3 — BLE -->
         <article class="blog-card glass-card">
+          <span class="blog-category embedded">Embedded</span>
           <span class="blog-date">April 17, 2026</span>
-          <h3>BLE Indoor Localization & Asset Tracking</h3>
-          <p>A systems-level engineering story about building an ESP32-based BLE indoor asset tracking platform with RSSI localization, GSM fallback, and edge IoT design.</p>
+          <h3>BLE Indoor Localisation &amp; Asset Tracking — A Systems Analysis</h3>
+          <p>Engineering analysis of an ESP32-based BLE indoor asset tracking platform — RSSI ranging, filtering strategies, firmware architecture, power integrity, MQTT telemetry, and field reliability design patterns.</p>
           <a href="ble.html" class="blog-read-more">Read Full Post →</a>
         </article>
 
-        <!-- Post 4 -->
+        <!-- Post 4 — Navigation Theory (FIX: retitled, correct framing) -->
         <article class="blog-card glass-card">
+          <span class="blog-category navigation">Navigation</span>
           <span class="blog-date">February 15, 2026</span>
-          <h3>Nav2 EKF Sensor Fusion on Custom AMRs</h3>
-          <p>Integrating wheel odometry, IMU data, and 2D LiDAR into the robot_localization package for a 300kg payload autonomous mobile robot.</p>
-          <a href="nav2-ekf-blog.html" class="blog-read-more">Read Full Post &rarr;</a>
+          <!-- FIX: removed "on Custom AMRs" — content is pure theory, not tied to CASE project -->
+          <h3>Autonomous Navigation: Theory to Algorithm</h3>
+          <p>Complete mathematical derivation of mobile robot navigation — configuration spaces, C-space obstacles, potential fields, Dijkstra, A*, PRM, RRT, unicycle kinematics, and differential flatness. With live interactive visualizers on a real city graph.</p>
+          <a href="nav2-ekf-blog.html" class="blog-read-more">Read Full Post →</a>
         </article>
 
-        <!-- Post 5 -->
+        <!-- Post 5 — YOLOv8 Edge -->
         <article class="blog-card glass-card">
+          <span class="blog-category embedded">Edge AI</span>
           <span class="blog-date">January 10, 2026</span>
           <h3>YOLOv8 Edge Inference on ESP32</h3>
-          <p>Challenges and breakthroughs from porting lighter convolutional architectures to bare-metal embedded devices with tight RAM constraints.</p>
-          <a href="yolov8-esp32-blog.html" class="blog-read-more">Read Full Post &rarr;</a>
+          <p>Challenges and breakthroughs from porting lighter convolutional architectures to bare-metal embedded devices — INT8 quantization, TFLite Micro, tensor arena management, and achieving 1–2 FPS on ESP32-CAM.</p>
+          <a href="yolov8-esp32-blog.html" class="blog-read-more">Read Full Post →</a>
+        </article>
+
+        <!-- Coming Soon 1 — Sim-to-Real -->
+        <article class="blog-card glass-card blog-coming-soon" style="position:relative;">
+          <span class="coming-badge">Coming Soon</span>
+          <span class="blog-category manipulation">Manipulation</span>
+          <span class="blog-date">May 2026</span>
+          <h3>Sim-to-Real Transfer on the Franka Panda: What the Physics Engine Gets Wrong</h3>
+          <p>Why Ignition Gazebo's LCP contact solver fails for parallel grippers, what impedance control does differently, and lessons from 80+ grasp attempts classified by failure mode.</p>
+          <span class="blog-read-more" style="color:var(--text-muted); cursor:default;">In Progress</span>
+        </article>
+
+        <!-- Coming Soon 2 — EKF vs UKF -->
+        <article class="blog-card glass-card blog-coming-soon" style="position:relative;">
+          <span class="coming-badge">Coming Soon</span>
+          <span class="blog-category navigation">Navigation</span>
+          <span class="blog-date">June 2026</span>
+          <h3>EKF vs UKF for Robot Localization: A Comparative Implementation</h3>
+          <p>Implementing both filters on TurtleBot3 data, comparing RMSE on position estimates, and visualizing covariance evolution under varying sensor noise conditions.</p>
+          <span class="blog-read-more" style="color:var(--text-muted); cursor:default;">In Progress</span>
+        </article>
+
+        <!-- Coming Soon 3 — ros2_control Hardware Interface -->
+        <article class="blog-card glass-card blog-coming-soon" style="position:relative;">
+          <span class="coming-badge">Coming Soon</span>
+          <span class="blog-category manipulation">ROS2</span>
+          <span class="blog-date">June 2026</span>
+          <h3>Writing a Custom ros2_control Hardware Interface for Dynamixel Servos</h3>
+          <p>Step-by-step guide from command/state interfaces to real servo feedback — the part most ROS2 tutorials skip. Based on real hardware experience with Dynamixel XM430 on a 5-DOF arm.</p>
+          <span class="blog-read-more" style="color:var(--text-muted); cursor:default;">In Progress</span>
         </article>
 
       </div>
@@ -171,51 +256,35 @@
   <!-- ─── FOOTER ───────────────────────────────────────────── -->
   <footer>
     <div class="container">
-      <p>&copy; 2026 Ganesh Reddy. All rights reserved.</p>
+      <p>© 2026 Ganesh Reddy. All rights reserved.</p>
     </div>
   </footer>
 
   <script>
-    /* Theme Toggle */
     const themeToggle = document.getElementById('theme-toggle');
     if (themeToggle) {
       const sunIcon = themeToggle.querySelector('.sun-icon');
       const moonIcon = themeToggle.querySelector('.moon-icon');
       function updateThemeIcon() {
         if (document.documentElement.getAttribute('data-theme') === 'light') {
-          sunIcon.style.display = 'none';
-          moonIcon.style.display = 'block';
-        } else {
-          sunIcon.style.display = 'block';
-          moonIcon.style.display = 'none';
-        }
+          sunIcon.style.display = 'none'; moonIcon.style.display = 'block';
+        } else { sunIcon.style.display = 'block'; moonIcon.style.display = 'none'; }
       }
       updateThemeIcon();
       themeToggle.addEventListener('click', () => {
-        const currentTheme = document.documentElement.getAttribute('data-theme') || 'dark';
-        const newTheme = currentTheme === 'light' ? 'dark' : 'light';
-        if (newTheme === 'light') { document.documentElement.setAttribute('data-theme', 'light'); }
-        else { document.documentElement.removeAttribute('data-theme'); }
-        localStorage.setItem('theme', newTheme);
+        const isLight = document.documentElement.getAttribute('data-theme') === 'light';
+        if (isLight) document.documentElement.removeAttribute('data-theme');
+        else document.documentElement.setAttribute('data-theme', 'light');
+        localStorage.setItem('theme', isLight ? 'dark' : 'light');
         updateThemeIcon();
       });
     }
-
-    /* Mobile Menu Toggle */
     const hamburger = document.getElementById('hamburger');
     const navLinks = document.querySelector('.nav-links');
-    if (hamburger) {
-      hamburger.addEventListener('click', () => {
-        navLinks.classList.toggle('open');
-      });
-    }
-
-    // Scroll universe logic
+    if (hamburger) hamburger.addEventListener('click', () => navLinks.classList.toggle('open'));
     window.addEventListener('scroll', () => {
       document.body.style.setProperty('--scrollParam', window.scrollY);
     });
-
-    // Autonomous Background Timer
     function updateTimeParam() {
       document.body.style.setProperty('--timeParam', performance.now() / 1000);
       requestAnimationFrame(updateTimeParam);

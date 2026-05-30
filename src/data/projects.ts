@@ -1,0 +1,101 @@
+import type { Project } from '../types'
+
+export const STATIC_PROJECTS: Project[] = [
+  {
+    id: 'franka',
+    title: 'Franka Panda — Vision-Guided Pick & Place Simulation',
+    description:
+      'Full ROS2 + MoveIt2 simulation of the Franka Emika Panda 7-DOF robot arm performing autonomous colour-targeted pick-and-place in Ignition Gazebo (Fortress).',
+    long_description:
+      'A custom <strong>ColorDetector</strong> node processes live camera images using HSV segmentation and TF2 transforms to localise objects in the robot\'s base frame. A <strong>GraspManager</strong> node dynamically creates/removes fixed joints in Gazebo to reliably attach and release objects — solving the physics engine grasping limitation. Achieved <strong>80–85% grasp success rate</strong> and <strong>95–100% colour detection accuracy</strong> across 3+ object classes.',
+    tags: ['ROS2 Humble', 'MoveIt2', 'Ignition Gazebo', 'OpenCV', 'TF2', 'ros2_control', 'Python', 'C++'],
+    badges: ['Key Highlight', 'Robotics', 'Computer Vision', 'Manipulation'],
+    featured: true,
+    sort_order: 1,
+    visual_class: 'pv-franka',
+    video_url: '/franka_video.mp4',
+    blog_url: '/franka-pick-and-place-blog.html',
+    created_at: '',
+    updated_at: '',
+  },
+  {
+    id: 'amr',
+    title: '5-DOF Robotic Arm — Design to Deployment',
+    description:
+      'Designed and fabricated a 5-DOF robotic arm (SolidWorks, Dynamixel XM430) as the manipulation module of a 300 kg warehouse AGV/AMR. Derived D-H kinematic model, configured MoveIt2 for pick-and-place, and achieved ±5 mm end-effector accuracy.',
+    tags: ['ROS2', 'MoveIt2', 'SolidWorks', 'Dynamixel XM430', 'Gazebo', 'URDF/Xacro'],
+    badges: ['Robotics', 'Manipulation'],
+    featured: false,
+    sort_order: 2,
+    visual_class: 'pv-robotics',
+    created_at: '',
+    updated_at: '',
+  },
+  {
+    id: 'turtlebot',
+    title: 'TurtleBot3 SLAM & Autonomous Navigation',
+    description:
+      'Deployed a full ROS2 navigation stack on TurtleBot3 — LiDAR-IMU sensor fusion SLAM achieving 90–95% map coverage, Nav2 with AMCL localisation attaining 80–90% autonomous waypoint success rate, and dynamic obstacle avoidance in both Gazebo and real-world indoor environments.',
+    tags: ['ROS2', 'Nav2', 'AMCL', 'SLAM', 'LiDAR', 'IMU'],
+    badges: ['Mobile Robotics', 'SLAM'],
+    featured: false,
+    sort_order: 3,
+    visual_class: 'pv-cv',
+    blog_url: '/nav2-ekf-blog.html',
+    created_at: '',
+    updated_at: '',
+  },
+  {
+    id: 'sort',
+    title: 'Automated Grading & Sorting System',
+    description:
+      "Bachelor's thesis: real-time OpenCV image recognition pipeline for automated part sorting achieving 90% classification accuracy at 5–10 items/min. Led the CV module within a 4-person team; integrated detection output with SolidWorks-designed mechanical actuators end-to-end.",
+    tags: ['OpenCV', 'Python', 'SolidWorks', 'Automation'],
+    badges: ['Computer Vision', 'Thesis'],
+    featured: false,
+    sort_order: 4,
+    visual_class: 'pv-driver',
+    created_at: '',
+    updated_at: '',
+  },
+  {
+    id: 'xray',
+    title: 'Lung Disease Detection from Chest X-rays',
+    description:
+      'CNN-based classifiers (ResNet, VGG) with transfer learning on 5,000 chest X-ray images, achieving 85% diagnostic accuracy across pneumonia and COVID-19 classes.',
+    tags: ['PyTorch', 'TensorFlow', 'CNNs', 'Transfer Learning'],
+    badges: ['Medical AI', 'Deep Learning'],
+    featured: false,
+    sort_order: 5,
+    visual_class: 'pv-medical',
+    created_at: '',
+    updated_at: '',
+  },
+  {
+    id: 'iot',
+    title: 'BLE Indoor Localisation System',
+    description:
+      'Custom PCB (KiCad) + ESP32 firmware (ESP-IDF) for BLE/RSSI trilateration across 20–30 sensor nodes covering a 50 m indoor area. OTA pipeline reduced deployment time ~25%. MQTT → Azure → Power BI telemetry stack for real-time asset tracking.',
+    tags: ['ESP32', 'BLE / RSSI', 'KiCad', 'ESP-IDF', 'MQTT', 'Azure'],
+    badges: ['IoT', 'Embedded'],
+    featured: false,
+    sort_order: 6,
+    visual_class: 'pv-iot',
+    blog_url: '/ble.html',
+    created_at: '',
+    updated_at: '',
+  },
+  {
+    id: 'dl',
+    title: 'Medical Image Classification Pipeline',
+    description:
+      'End-to-end supervised learning pipeline for medical imaging: dataset curation, quality checks, bias analysis, model training, and failure-case analysis.',
+    tags: ['PyTorch', 'Data Curation', 'Bias Analysis'],
+    badges: ['Medical AI', 'ML Pipeline'],
+    featured: false,
+    sort_order: 7,
+    visual_class: 'pv-dl',
+    created_at: '',
+    updated_at: '',
+  },
+]

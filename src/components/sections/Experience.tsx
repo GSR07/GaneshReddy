@@ -1,4 +1,3 @@
-import SolderingPCB from '../robots/SolderingPCB'
 
 const EXPERIENCE = [
   {
@@ -36,7 +35,6 @@ export default function Experience() {
       <div className="container">
         <div className="section-label">04 / Experience</div>
         <h2 className="section-title">Work &amp; Research</h2>
-        <SolderingPCB />
         <div className="exp-grid">
           {EXPERIENCE.map(exp => (
             <div key={exp.title} className="exp-card glass-card reveal">

@@ -7,8 +7,9 @@
   <meta name="description" content="A detailed engineering analysis of an indoor asset tracking platform built around the ESP32, BLE beacons, RSSI-based ranging, and IoT sensors." />
   <link rel="preconnect" href="https://fonts.googleapis.com" />
   <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin />
-  <link href="https://fonts.googleapis.com/css2?family=Outfit:wght@300;400;500;600;700&family=Syne:wght@400;500;600;700;800&display=swap" rel="stylesheet" />
-  <link rel="stylesheet" href="style.css?v=20" />
+  <link href="https://fonts.googleapis.com/css2?family=Inter:wght@300;400;500;600;700&family=Outfit:wght@300;400;500;600;700&family=Syne:wght@500;600;700;800&display=swap" rel="stylesheet" />
+  <link rel="stylesheet" href="/style.css" />
+  <link rel="stylesheet" href="/blog-common.css" />
   <script>
     const savedTheme = localStorage.getItem('theme');
     if (savedTheme === 'light' || (!savedTheme && window.matchMedia('(prefers-color-scheme: light)').matches)) {
@@ -58,7 +59,7 @@
       border: 1px solid var(--surface-border);
       border-radius: 999px;
       color: var(--accent-2);
-      background: rgba(140, 240, 216, 0.06);
+      background: rgba(99, 102, 241, 0.06);
       font-size: 0.9rem;
       margin-bottom: 18px;
     }
@@ -87,7 +88,7 @@
     .callout {
       border-left: 4px solid var(--accent);
       padding: 16px 18px;
-      background: rgba(106, 166, 255, 0.08);
+      background: rgba(99, 102, 241, 0.08);
       border-radius: 12px;
       color: var(--text);
       margin: 18px 0;
@@ -164,10 +165,10 @@
 <body>
   <!-- ─── NAV ──────────────────────────────────────────────── -->
   <nav id="navbar" class="scrolled">
-    <a href="index.html" class="nav-logo">GR<span class="accent">.</span></a>
+    <a href="/" class="nav-logo">GR<span class="accent">.</span></a>
     <ul class="nav-links">
-      <li><a href="index.html">&larr; Back to Portfolio</a></li>
-      <li><a href="blog.html" class="gradient-text">Blog Home</a></li>
+      <li><a href="/">&larr; Back to Portfolio</a></li>
+      <li><a href="/blog.html" class="gradient-text">Blog Home</a></li>
     </ul>
     <div class="nav-controls" style="display: flex; align-items: center; gap: 16px;">
       <button id="theme-toggle" class="theme-btn" aria-label="Toggle theme" style="background: transparent; border: none; color: var(--text); cursor: pointer; display: flex; align-items: center;">

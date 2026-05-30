@@ -1,4 +1,3 @@
-import EducationGears from '../robots/EducationGears'
 
 const LocSVG = () => (
   <svg className="loc-svg" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth={2}>
@@ -16,14 +15,13 @@ export default function Education() {
   return (
     <section id="education" className="section">
       <div className="container">
-        <EducationGears />
         <div className="section-label">03 / Education</div>
         <h2 className="section-title">Academic Background</h2>
         <div className="timeline">
           <div className="timeline-item reveal">
             <div className="timeline-dot" />
             <div className="timeline-content glass-card">
-              <div className="timeline-period">Apr 2024 – Sep 2026</div>
+              <div className="timeline-period">Apr 2024 – Present</div>
               <h3>M.Sc. Autonomy Technologies</h3>
               <div className="timeline-org">Friedrich-Alexander-Universität Erlangen–Nürnberg (FAU)</div>
               <div className="timeline-loc"><LocSVG /> Erlangen, Germany</div>
@@ -51,7 +49,7 @@ export default function Education() {
               <h3>B.E. Automation &amp; Robotics</h3>
               <div className="timeline-org">KLE Technological University</div>
               <div className="timeline-loc"><LocSVG /> Hubballi, India</div>
-              <div className="timeline-stats"><span><strong>GPA:</strong> 2.3</span></div>
+              <div className="timeline-stats"><span><strong>GPA:</strong> 1.9</span></div>
               <p className="thesis-note">
                 <DocSVG /> Bachelor's Thesis: <em>"Automated Grading and Sorting System using Computer Vision"</em>
               </p>

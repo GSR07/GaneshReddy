@@ -7,8 +7,9 @@
   <meta name="description" content="Technical blog by Ganesh Reddy on Robotics, ROS2, Embedded Systems, and Autonomous Navigation." />
   <link rel="preconnect" href="https://fonts.googleapis.com" />
   <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin />
-  <link href="https://fonts.googleapis.com/css2?family=Outfit:wght@300;400;500;600;700&family=Syne:wght@400;500;600;700;800&display=swap" rel="stylesheet" />
-  <link rel="stylesheet" href="style.css?v=21" />
+  <link href="https://fonts.googleapis.com/css2?family=Inter:wght@300;400;500;600;700&family=Outfit:wght@300;400;500;600;700&family=Syne:wght@500;600;700;800&display=swap" rel="stylesheet" />
+  <link rel="stylesheet" href="/style.css" />
+  <link rel="stylesheet" href="/blog-common.css" />
   <script>
     const savedTheme = localStorage.getItem('theme');
     if (savedTheme === 'light' || (!savedTheme && window.matchMedia('(prefers-color-scheme: light)').matches)) {
@@ -32,6 +33,12 @@
       flex-direction: column;
       padding: 32px;
       gap: 16px;
+      transition: none;
+    }
+    .blog-card.glass-card:hover {
+      transform: none;
+      box-shadow: none;
+      border-color: var(--surface-border);
     }
     .blog-date {
       font-size: 0.8rem;
@@ -57,11 +64,9 @@
       color: var(--accent);
       font-weight: 600;
       font-size: 0.85rem;
-      transition: all var(--transition);
     }
     .blog-read-more:hover {
       color: var(--accent-2);
-      transform: translateX(4px);
     }
     /* Category badge on blog cards */
     .blog-category {
@@ -118,23 +123,12 @@
   </style>
 </head>
 <body>
-  <div class="section-robot blog-swarm" aria-hidden="true" style="position: fixed; z-index: -1;">
-    <div class="swarm-drone d1"><div class="dr-body"></div><div class="dr-prop p1"></div><div class="dr-prop p2"></div><div class="dr-prop p3"></div><div class="dr-prop p4"></div></div>
-    <div class="swarm-drone d2" style="top: 20%; left: 10%;"><div class="dr-body"></div><div class="dr-prop p1"></div><div class="dr-prop p2"></div><div class="dr-prop p3"></div><div class="dr-prop p4"></div></div>
-    <div class="swarm-drone d3" style="top: 80%; left: 5%;"><div class="dr-body"></div><div class="dr-prop p1"></div><div class="dr-prop p2"></div><div class="dr-prop p3"></div><div class="dr-prop p4"></div></div>
-  </div>
-
   <!-- ─── NAV ──────────────────────────────────────────────── -->
   <nav id="navbar" class="scrolled">
-    <a href="index.html" class="nav-logo">GR<span class="accent">.</span></a>
+    <a href="/" class="nav-logo">GR<span class="accent">.</span></a>
     <ul class="nav-links">
-      <li><a href="index.html#about">About</a></li>
-      <li><a href="index.html#skills">Skills</a></li>
-      <li><a href="index.html#education">Education</a></li>
-      <li><a href="index.html#experience">Experience</a></li>
-      <li><a href="index.html#projects">Projects</a></li>
-      <li><a href="blog.html" class="gradient-text">Blog</a></li>
-      <li><a href="index.html#contact" class="btn-nav">Contact</a></li>
+      <li><a href="/">&larr; Back to Portfolio</a></li>
+      <li><a href="/blog.html" class="gradient-text">Blog Home</a></li>
     </ul>
     <div class="nav-controls" style="display: flex; align-items: center; gap: 16px;">
       <button id="theme-toggle" class="theme-btn" aria-label="Toggle theme" style="background: transparent; border: none; color: var(--text); cursor: pointer; display: flex; align-items: center;">

@@ -12,58 +12,58 @@
 }
 
 :root {
-  --bg: #030303;
-  --bg-alt: #0a0a0a;
-  --surface: rgba(255, 255, 255, 0.055);
-  --surface-border: rgba(255, 255, 255, 0.10);
-  --accent: #0ea5e9;
-  --accent-2: #6366f1;
+  /* ── Professional dark palette ── */
+  --bg: #06080f;
+  --bg-alt: #0d1022;
+  --surface: rgba(255, 255, 255, 0.04);
+  --surface-border: rgba(255, 255, 255, 0.08);
+  --accent: #6366f1;          /* indigo — professional, not garish */
+  --accent-2: #818cf8;        /* soft violet */
   --accent-3: #94a3b8;
-  --text: #f0f4f8;
+  --text: #eef2ff;
   --text-muted: #94a3b8;
-  --text-dim: #64748b;
-  --radius: 16px;
-  --radius-sm: 8px;
+  --text-dim: #4a5568;
+  --radius: 14px;
+  --radius-sm: 7px;
   --font-main: 'Outfit', sans-serif;
   --font-head: 'Syne', sans-serif;
-  --shadow: 0 8px 30px rgba(0, 0, 0, 0.65);
-  --glow: 0 0 30px rgba(14, 165, 233, 0.35);
-  --nav-h: 68px;
-  --transition: 0.3s cubic-bezier(0.4, 0, 0.2, 1);
-  /* Glass and opacity variables for theming */
-  --glass-bg: rgba(255, 255, 255, 0.05);
-  --glass-bg-hover: rgba(255, 255, 255, 0.08);
-  --glass-bg-active: rgba(255, 255, 255, 0.12);
-  --glass-border: rgba(255, 255, 255, 0.12);
-  --glass-border-strong: rgba(255, 255, 255, 0.18);
-  --glass-border-light: rgba(255, 255, 255, 0.07);
-  --glass-highlight: rgba(255, 255, 255, 0.8);
-  --glass-overlay: rgba(255, 255, 255, 0.02);
-  --nav-bg: rgba(3, 3, 3, 0.88);
+  --shadow: 0 8px 32px rgba(0, 0, 0, 0.7);
+  --glow: 0 0 24px rgba(99, 102, 241, 0.22);
+  --nav-h: 64px;
+  --transition: 0.25s cubic-bezier(0.4, 0, 0.2, 1);
+  --glass-bg: rgba(255, 255, 255, 0.04);
+  --glass-bg-hover: rgba(255, 255, 255, 0.07);
+  --glass-bg-active: rgba(255, 255, 255, 0.10);
+  --glass-border: rgba(255, 255, 255, 0.09);
+  --glass-border-strong: rgba(255, 255, 255, 0.15);
+  --glass-border-light: rgba(255, 255, 255, 0.05);
+  --glass-highlight: rgba(255, 255, 255, 0.7);
+  --glass-overlay: rgba(255, 255, 255, 0.015);
+  --nav-bg: rgba(6, 8, 15, 0.92);
 }
 
 html[data-theme="light"] {
-  --bg: #ffffff;
-  --bg-alt: #f1f5f9;
-  --surface: rgba(0, 0, 0, 0.03);
-  --surface-border: rgba(0, 0, 0, 0.1);
-  --accent: #0284c7;  
-  --accent-2: #4f46e5;
-  --accent-3: #475569;
-  --text: #0f172a;
+  --bg: #f8f9ff;
+  --bg-alt: #eef0ff;
+  --surface: rgba(99, 102, 241, 0.05);
+  --surface-border: rgba(99, 102, 241, 0.13);
+  --accent: #4f46e5;
+  --accent-2: #7c3aed;
+  --accent-3: #64748b;
+  --text: #0f0c2e;
   --text-muted: #475569;
   --text-dim: #94a3b8;
-  --shadow: 0 8px 30px rgba(0, 0, 0, 0.1);
-  --glow: 0 0 30px rgba(14, 165, 233, 0.15);
-  --glass-bg: rgba(0, 0, 0, 0.03);
-  --glass-bg-hover: rgba(0, 0, 0, 0.06);
-  --glass-bg-active: rgba(0, 0, 0, 0.1);
-  --glass-border: rgba(0, 0, 0, 0.12);
-  --glass-border-strong: rgba(0, 0, 0, 0.18);
-  --glass-border-light: rgba(0, 0, 0, 0.07);
-  --glass-highlight: rgba(0, 0, 0, 0.8);
-  --glass-overlay: rgba(0, 0, 0, 0.02);
-  --nav-bg: rgba(255, 255, 255, 0.88);
+  --shadow: 0 4px 24px rgba(99, 102, 241, 0.12);
+  --glow: 0 0 20px rgba(99, 102, 241, 0.15);
+  --glass-bg: rgba(99, 102, 241, 0.04);
+  --glass-bg-hover: rgba(99, 102, 241, 0.07);
+  --glass-bg-active: rgba(99, 102, 241, 0.11);
+  --glass-border: rgba(99, 102, 241, 0.12);
+  --glass-border-strong: rgba(99, 102, 241, 0.2);
+  --glass-border-light: rgba(99, 102, 241, 0.06);
+  --glass-highlight: rgba(79, 70, 229, 0.8);
+  --glass-overlay: rgba(99, 102, 241, 0.02);
+  --nav-bg: rgba(248, 249, 255, 0.94);
 }
 
 html {
@@ -164,7 +164,7 @@ ul {
 }
 .section-alt .contact-link:hover {
   border-color: var(--accent);
-  background: rgba(14, 165, 233, 0.1);
+  background: rgba(99, 102, 241, 0.1);
   color: var(--text);
 }
 .section-alt .clink-label { color: var(--text-muted); }
@@ -210,9 +210,19 @@ ul {
 }
 
 .glass-card:hover {
-  transform: translateY(-4px);
+  transform: translateY(-3px);
   box-shadow: var(--shadow), var(--glow);
-  border-color: rgba(108, 99, 255, 0.3);
+  border-color: rgba(99, 102, 241, 0.28);
+}
+
+.blog-list-card.glass-card {
+  transition: none;
+}
+
+.blog-list-card.glass-card:hover {
+  transform: none;
+  box-shadow: none;
+  border-color: var(--surface-border);
 }
 
 /* ── Buttons ──────────────────────────────────────── */
@@ -220,44 +230,45 @@ ul {
   display: inline-flex;
   align-items: center;
   gap: 8px;
-  padding: 14px 32px;
-  background: linear-gradient(135deg, var(--accent) 0%, #8b5cf6 100%);
+  padding: 12px 28px;
+  background: linear-gradient(135deg, var(--accent) 0%, var(--accent-2) 100%);
   color: #fff;
-  border-radius: 50px;
+  border-radius: 10px;
   font-weight: 600;
-  font-size: 0.95rem;
+  font-size: 0.9rem;
+  letter-spacing: 0.01em;
   transition: all var(--transition);
-  box-shadow: 0 4px 20px rgba(108, 99, 255, 0.35);
+  box-shadow: 0 2px 16px rgba(99, 102, 241, 0.3);
 }
 
 .btn-primary:hover {
   transform: translateY(-2px);
-  box-shadow: 0 8px 30px rgba(108, 99, 255, 0.5);
-  background: linear-gradient(135deg, #7c73ff 0%, #9b6cf6 100%);
+  box-shadow: 0 6px 24px rgba(99, 102, 241, 0.45);
+  filter: brightness(1.08);
 }
 
 .btn-primary svg {
-  width: 18px;
-  height: 18px;
+  width: 16px;
+  height: 16px;
 }
 
 .btn-ghost {
   display: inline-flex;
   align-items: center;
   gap: 8px;
-  padding: 13px 30px;
+  padding: 11px 28px;
   border: 1.5px solid var(--glass-border-strong);
   color: var(--text);
-  border-radius: 50px;
+  border-radius: 10px;
   font-weight: 500;
-  font-size: 0.95rem;
+  font-size: 0.9rem;
   transition: all var(--transition);
 }
 
 .btn-ghost:hover {
   border-color: var(--accent);
   color: var(--accent);
-  background: rgba(108, 99, 255, 0.06);
+  background: rgba(99, 102, 241, 0.07);
   transform: translateY(-2px);
 }
 
@@ -2096,11 +2107,13 @@ ul {
   display: grid;
   grid-template-columns: repeat(3, 1fr);
   gap: 24px;
-  align-items: start;
+  align-items: stretch;
 }
 
 .exp-card {
   padding: 28px;
+  display: flex;
+  flex-direction: column;
 }
 
 .exp-header {
@@ -2158,6 +2171,7 @@ ul {
   display: flex;
   flex-direction: column;
   gap: 8px;
+  flex: 1;
 }
 
 .exp-bullets li {
@@ -2219,13 +2233,12 @@ ul {
 
 /* ── Featured (Franka) Card ─── */
 .project-featured {
-  display: grid;
-  grid-template-columns: 320px 1fr;
+  display: flex;
+  flex-direction: column;
   margin-bottom: 32px;
-  border-color: rgba(108, 99, 255, 0.35);
-  background: rgba(108, 99, 255, 0.06) !important;
+  border-color: rgba(99, 102, 241, 0.35);
+  background: rgba(99, 102, 241, 0.05) !important;
   overflow: hidden;
-  min-height: 320px;
 }
 
 .project-featured:hover {
@@ -2243,54 +2256,13 @@ ul {
   margin-top: 4px;
 }
 
-/* Franka visual panel */
+/* Franka visual panel — video fills the column */
 .pv-franka {
-  height: auto;
-  width: 100%;
-  display: flex;
-  align-items: center;
-  justify-content: center;
-  background: linear-gradient(135deg, rgba(108, 99, 255, 0.25), rgba(0, 212, 255, 0.15), rgba(255, 107, 157, 0.1));
-  padding: 32px 24px;
-  position: relative;
-  overflow: hidden;
+  padding: 0;
+  background: #07071a;
 }
 
-.pv-franka::before {
-  content: '';
-  position: absolute;
-  inset: 0;
-  background-image:
-    linear-gradient(var(--glass-overlay) 1px, transparent 1px),
-    linear-gradient(90deg, var(--glass-overlay) 1px, transparent 1px);
-  background-size: 30px 30px;
-}
-
-.pv-franka-content {
-  display: flex;
-  flex-direction: column;
-  align-items: center;
-  gap: 20px;
-  position: relative;
-  z-index: 1;
-}
-
-.pv-franka-video {
-  width: 100%;
-  max-width: 260px;
-  height: auto;
-  border-radius: var(--radius-sm);
-  border: 1px solid rgba(108, 99, 255, 0.4);
-  box-shadow: 0 4px 20px rgba(108, 99, 255, 0.3);
-  display: block;
-}
-
-.pv-franka-labels {
-  display: flex;
-  flex-wrap: wrap;
-  gap: 8px;
-  justify-content: center;
-}
+.pv-franka::before { display: none; }
 
 .pv-label {
   display: inline-block;
@@ -2365,6 +2337,44 @@ ul {
   justify-content: center;
   position: relative;
   overflow: hidden;
+}
+
+/* Franka featured panel — video fills the left column at a fixed height */
+.project-featured .project-visual.pv-franka {
+  height: 240px;
+  display: block;
+  position: relative;
+  overflow: hidden;
+}
+
+.pv-franka-arm {
+  width: 100%;
+  height: 240px;
+}
+
+.pv-franka-video {
+  width: 100%;
+  height: 240px;
+  object-fit: cover;
+  max-width: none;
+  border-radius: 0;
+  border: none;
+  box-shadow: none;
+  display: block;
+}
+
+/* Tech labels overlaid at the bottom of the video */
+.pv-franka-labels {
+  position: absolute;
+  bottom: 0;
+  left: 0;
+  right: 0;
+  padding: 10px 14px;
+  background: linear-gradient(to top, rgba(0,0,0,0.72) 0%, transparent 100%);
+  display: flex;
+  flex-wrap: wrap;
+  gap: 6px;
+  pointer-events: none;
 }
 
 .pv-icon {
@@ -2455,13 +2465,25 @@ ul {
    ───────────────────────────────────────────────────── */
 .contact-wrap {
   display: grid;
-  grid-template-columns: 1fr auto;
-  gap: 48px;
-  align-items: center;
+  grid-template-columns: minmax(0, 1fr) minmax(0, 1fr);
+  gap: 28px;
+  align-items: start;
+  width: 100%;
+  margin: 0 auto;
+}
+
+#contact .section-label,
+#contact .section-title {
+  text-align: center;
+}
+
+#contact .section-title::after {
+  margin-left: auto;
+  margin-right: auto;
 }
 
 .contact-info {
-  padding: 40px;
+  padding: 32px;
 }
 
 .contact-lead {
@@ -2546,9 +2568,58 @@ ul {
 .contact-cta {
   display: flex;
   flex-direction: column;
-  align-items: center;
-  gap: 16px;
+  gap: 14px;
+}
+
+.contact-form {
+  padding: 28px;
+  display: flex;
+  flex-direction: column;
+  gap: 14px;
+}
+
+.contact-form h3 {
+  font-family: var(--font-head);
+  font-size: 1.1rem;
+  font-weight: 700;
+  margin-bottom: 4px;
   text-align: center;
+}
+
+.contact-field {
+  display: flex;
+  flex-direction: column;
+  gap: 5px;
+}
+
+.contact-field label {
+  font-size: 0.78rem;
+  font-weight: 500;
+  color: var(--text-muted);
+}
+
+.contact-field input,
+.contact-field textarea {
+  width: 100%;
+  background: var(--surface);
+  border: 1px solid var(--surface-border);
+  border-radius: 8px;
+  padding: 0.6rem 0.75rem;
+  color: var(--text);
+  font-size: 0.875rem;
+  font-family: var(--font-main);
+  outline: none;
+  transition: border-color var(--transition);
+}
+
+.contact-field input:focus,
+.contact-field textarea:focus {
+  border-color: var(--accent);
+}
+
+.contact-field textarea {
+  resize: vertical;
+  min-height: 100px;
 }
 
 .cta-note {
@@ -2704,8 +2775,9 @@ footer {
    ───────────────────────────────────────────────────── */
 .reveal {
   opacity: 0;
-  transform: translateY(30px);
-  transition: opacity 0.7s ease, transform 0.7s ease;
+  transform: translateY(22px);
+  transition: opacity 0.55s cubic-bezier(0.4, 0, 0.2, 1),
+              transform 0.55s cubic-bezier(0.4, 0, 0.2, 1);
 }
 
 .reveal.visible {

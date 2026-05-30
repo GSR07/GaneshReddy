@@ -1,5 +1,4 @@
 import { useEffect, useRef } from 'react'
-import RobotArm from '../robots/RobotArm'
 
 function animateCounter(el: HTMLElement, target: number, duration = 1200) {
   const isFloat = target % 1 !== 0
@@ -38,7 +37,6 @@ export default function About() {
   return (
     <section id="about" className="section">
       <div className="container">
-        <RobotArm />
         <div className="section-label">01 / About</div>
         <h2 className="section-title">Who Am I<span className="arm-q-target" aria-hidden="true">?</span></h2>
         <div className="about-grid">

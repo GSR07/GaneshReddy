@@ -1,6 +1,4 @@
 import { useEffect, useRef } from 'react'
-import { Link } from 'react-router-dom'
-import DroneSwarm from '../robots/DroneSwarm'
 
 const PHRASES = ['Robotics Engineer', 'Computer Vision Engineer', 'Embedded Systems Engineer']
 
@@ -41,7 +39,6 @@ export default function Hero() {
     <section id="hero">
       <div className="hero-bg" style={{ backgroundColor: 'var(--bg)' }}>
         <div className="grid-overlay" />
-        <DroneSwarm />
       </div>
 
       <div className="hero-content">

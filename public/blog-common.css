@@ -1,0 +1,292 @@
+/* ─────────────────────────────────────────────────────
+   BLOG COMMON  — shared styles for all static blog posts
+   Loaded AFTER style.css so overrides are intentional
+   ───────────────────────────────────────────────────── */
+
+/* ── Missing variables (not in main style.css) ───── */
+:root {
+  --mono: 'Fira Code', 'JetBrains Mono', 'Consolas', monospace;
+  --surface-soft: rgba(255, 255, 255, 0.06);
+  --blog-max-w: 820px;
+}
+
+html[data-theme="light"] {
+  --surface-soft: rgba(99, 102, 241, 0.06);
+  --mono: 'Fira Code', 'JetBrains Mono', 'Consolas', monospace;
+}
+
+/* ── Base ─────────────────────────────────────────── */
+body {
+  font-family: var(--font-main);
+  background: var(--bg);
+  color: var(--text);
+  min-height: 100vh;
+  -webkit-font-smoothing: antialiased;
+}
+
+/* ── Blog header ─────────────────────────────────── */
+.blog-header {
+  padding: calc(var(--nav-h) + 80px) 40px 56px;
+  text-align: center;
+  position: relative;
+  background: linear-gradient(180deg, var(--bg-alt) 0%, var(--bg) 100%);
+}
+
+.blog-meta {
+  font-size: 0.78rem;
+  color: var(--accent-2);
+  text-transform: uppercase;
+  letter-spacing: 0.12em;
+  font-weight: 600;
+  margin-bottom: 18px;
+  display: block;
+  font-family: var(--font-main);
+}
+
+.blog-header h1 {
+  font-family: var(--font-head);
+  font-size: clamp(1.8rem, 4.5vw, 3rem);
+  font-weight: 800;
+  line-height: 1.15;
+  color: var(--text);
+  max-width: 800px;
+  margin: 0 auto 1rem;
+}
+
+.blog-header p {
+  color: var(--text-muted);
+  max-width: 620px;
+  margin: 0 auto;
+  font-size: 1.05rem;
+  line-height: 1.7;
+}
+
+/* ── Blog content ────────────────────────────────── */
+.blog-content {
+  max-width: var(--blog-max-w);
+  margin: 0 auto;
+  padding: 0 24px 80px;
+  font-size: 1.05rem;
+  line-height: 1.85;
+  color: var(--text);
+}
+
+.blog-content p { margin-bottom: 1.4rem; color: var(--text-muted); }
+.blog-content p strong { color: var(--text); }
+
+.blog-content h2 {
+  font-family: var(--font-head);
+  font-size: 1.65rem;
+  font-weight: 700;
+  margin: 3rem 0 1rem;
+  color: var(--text);
+  padding-bottom: 0.5rem;
+  border-bottom: 1px solid var(--surface-border);
+}
+
+.blog-content h3 {
+  font-family: var(--font-head);
+  font-size: 1.2rem;
+  font-weight: 700;
+  margin: 2rem 0 0.75rem;
+  color: var(--accent);
+}
+
+.blog-content h4 {
+  font-size: 1rem;
+  font-weight: 600;
+  margin: 1.5rem 0 0.5rem;
+  color: var(--text-muted);
+}
+
+.blog-content ul,
+.blog-content ol {
+  padding-left: 1.5rem;
+  margin-bottom: 1.4rem;
+  color: var(--text-muted);
+}
+
+.blog-content li { margin-bottom: 0.4rem; }
+.blog-content li strong { color: var(--text); }
+
+/* ── Code ────────────────────────────────────────── */
+.blog-content pre,
+pre {
+  background: var(--bg-alt);
+  padding: 1.4rem 1.6rem;
+  border-radius: var(--radius-sm);
+  overflow-x: auto;
+  border: 1px solid var(--surface-border);
+  margin-bottom: 1.4rem;
+  font-size: 0.875rem;
+  color: var(--text);
+  font-family: var(--mono);
+  line-height: 1.7;
+}
+
+.blog-content code,
+code {
+  font-family: var(--mono);
+  background: rgba(99, 102, 241, 0.1);
+  border: 1px solid rgba(99, 102, 241, 0.18);
+  border-radius: 4px;
+  padding: 0.1em 0.4em;
+  font-size: 0.875em;
+  color: #a5b4fc;
+}
+
+pre code { background: none; border: none; padding: 0; color: inherit; font-size: inherit; }
+
+/* ── Inline code class used by nav2-ekf ─────────── */
+.code {
+  background: var(--bg-alt);
+  border: 1px solid var(--surface-border);
+  border-radius: var(--radius-sm);
+  padding: 1.1rem 1.3rem;
+  overflow-x: auto;
+  font-size: 0.875rem;
+  line-height: 1.7;
+  font-family: var(--mono);
+  color: var(--text);
+  white-space: pre;
+  margin-bottom: 1.2rem;
+}
+
+/* ── formula / diagram boxes ─────────────────────── */
+.formula-box {
+  background: var(--surface);
+  padding: 1.4rem 1.6rem;
+  border-left: 3px solid var(--accent-2);
+  border-radius: 0 var(--radius-sm) var(--radius-sm) 0;
+  margin: 1.8rem 0;
+  overflow-x: auto;
+}
+
+.diagram-box {
+  margin: 2.5rem 0;
+  padding: 1.8rem;
+  background: var(--surface);
+  border: 1px solid var(--surface-border);
+  border-radius: var(--radius);
+  text-align: center;
+}
+
+/* ── Video embed ─────────────────────────────────── */
+.blog-video-wrap {
+  margin: 2rem auto;
+  border-radius: var(--radius);
+  overflow: hidden;
+  border: 1px solid var(--surface-border);
+  box-shadow: var(--shadow);
+  max-width: 960px;
+}
+.blog-video-wrap video { width: 100%; display: block; }
+
+/* ── Callout / info box ──────────────────────────── */
+.callout,
+.info-box {
+  background: var(--surface-soft);
+  border: 1px solid var(--surface-border);
+  border-radius: var(--radius-sm);
+  padding: 1rem 1.3rem;
+  margin: 1.4rem 0;
+  color: var(--text-muted);
+  font-size: 0.95rem;
+}
+.callout strong,
+.info-box strong { color: var(--text); }
+
+/* ── Buttons used in interactive blog posts ──────── */
+.btn {
+  border: 1px solid var(--surface-border);
+  background: var(--surface-soft);
+  color: var(--text);
+  padding: 9px 18px;
+  border-radius: var(--radius-sm);
+  cursor: pointer;
+  font-weight: 600;
+  font-size: 0.875rem;
+  transition: transform .18s, border-color .18s, background .18s;
+  font-family: var(--font-main);
+}
+.btn:hover { border-color: var(--accent); background: rgba(99,102,241,.08); transform: translateY(-1px); }
+
+.speed-select {
+  background: var(--bg-alt);
+  border: 1px solid var(--surface-border);
+  color: var(--text);
+  padding: 7px 14px;
+  border-radius: var(--radius-sm);
+  font-family: var(--font-main);
+  font-size: 0.85rem;
+  cursor: pointer;
+}
+
+.algo-status {
+  margin-top: 12px;
+  padding: 12px 16px;
+  border: 1px solid var(--surface-border);
+  border-radius: var(--radius-sm);
+  background: var(--surface-soft);
+  color: var(--text-muted);
+  font-size: 0.9rem;
+}
+
+/* ── Tags in blog posts ──────────────────────────── */
+.blog-tags {
+  display: flex;
+  flex-wrap: wrap;
+  gap: 0.5rem;
+  justify-content: center;
+  margin: 1rem 0;
+}
+.blog-tag {
+  background: rgba(99,102,241,.1);
+  border: 1px solid rgba(99,102,241,.2);
+  color: var(--accent-2);
+  font-size: 0.75rem;
+  font-weight: 600;
+  padding: 0.2rem 0.7rem;
+  border-radius: 4px;
+  letter-spacing: 0.04em;
+  text-transform: uppercase;
+}
+
+/* ── Section divider ─────────────────────────────── */
+.blog-divider {
+  border: none;
+  border-top: 1px solid var(--surface-border);
+  margin: 3rem 0;
+}
+
+/* ── Mermaid override: always transparent bg ─────── */
+.mermaid { background: transparent !important; }
+svg[id^="mermaid"] { background: transparent !important; }
+
+/* ── Table ───────────────────────────────────────── */
+.blog-content table {
+  width: 100%;
+  border-collapse: collapse;
+  margin: 1.4rem 0;
+  font-size: 0.9rem;
+}
+.blog-content th,
+.blog-content td {
+  padding: 0.6rem 1rem;
+  border: 1px solid var(--surface-border);
+  text-align: left;
+}
+.blog-content th { background: var(--surface); font-weight: 600; color: var(--text); }
+.blog-content td { color: var(--text-muted); }
+
+/* ── Nav tweaks for blog pages ───────────────────── */
+#navbar { position: fixed; }
+
+/* ── Responsive ──────────────────────────────────── */
+@media (max-width: 768px) {
+  .blog-header { padding: calc(var(--nav-h) + 50px) 20px 40px; }
+  .blog-content { padding: 0 16px 60px; font-size: 0.97rem; }
+  .blog-content h2 { font-size: 1.3rem; }
+  .blog-content h3 { font-size: 1.05rem; }
+  pre, .code { font-size: 0.8rem; }
+}

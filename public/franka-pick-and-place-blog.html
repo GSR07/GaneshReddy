@@ -7,8 +7,9 @@
   <meta name="description" content="A technical deep dive into solving autonomous object grasping with ROS2, MoveIt2, and Ignition Gazebo." />
   <link rel="preconnect" href="https://fonts.googleapis.com" />
   <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin />
-  <link href="https://fonts.googleapis.com/css2?family=Outfit:wght@300;400;500;600;700&family=Syne:wght@400;500;600;700;800&display=swap" rel="stylesheet" />
-  <link rel="stylesheet" href="style.css?v=20" />
+  <link href="https://fonts.googleapis.com/css2?family=Inter:wght@300;400;500;600;700&family=Outfit:wght@300;400;500;600;700&family=Syne:wght@500;600;700;800&display=swap" rel="stylesheet" />
+  <link rel="stylesheet" href="/style.css" />
+  <link rel="stylesheet" href="/blog-common.css" />
   <script>
     const savedTheme = localStorage.getItem('theme');
     if (savedTheme === 'light' || (!savedTheme && window.matchMedia('(prefers-color-scheme: light)').matches)) {
@@ -23,7 +24,8 @@
   <!-- Mermaid for generating architecture diagrams -->
   <script type="module">
     import mermaid from 'https://cdn.jsdelivr.net/npm/mermaid@10/dist/mermaid.esm.min.mjs';
-    mermaid.initialize({ startOnLoad: true, theme: 'dark', fontFamily: 'Inter' });
+    const _isDark = document.documentElement.getAttribute('data-theme') !== 'light';
+    mermaid.initialize({ startOnLoad: true, theme: _isDark ? 'dark' : 'neutral', fontFamily: 'Outfit' });
   </script>
 
   <style>
@@ -109,27 +111,12 @@
   </style>
 </head>
 <body>
-  <div class="section-robot franka-sim" aria-hidden="true" style="position: fixed; z-index: -1;">
-    <div class="omni-arm pnp-mode" style="bottom: 5%; right: 5%; transform: rotateX(60deg) rotateZ(20deg) scale(0.8);">
-      <div class="omni-base"></div>
-      <div class="omni-shoulder">
-        <div class="omni-link1">
-          <div class="omni-elbow">
-            <div class="omni-link2">
-              <div class="omni-wrist"><div class="omni-gripper"></div><div class="pnp-cube"></div></div>
-            </div>
-          </div>
-        </div>
-      </div>
-    </div>
-  </div>
-
   <!-- ─── NAV ──────────────────────────────────────────────── -->
   <nav id="navbar" class="scrolled">
-    <a href="index.html" class="nav-logo">GR<span class="accent">.</span></a>
+    <a href="/" class="nav-logo">GR<span class="accent">.</span></a>
     <ul class="nav-links">
-      <li><a href="index.html">&larr; Back to Portfolio</a></li>
-      <li><a href="blog.html" class="gradient-text">Blog Home</a></li>
+      <li><a href="/">&larr; Back to Portfolio</a></li>
+      <li><a href="/blog.html" class="gradient-text">Blog Home</a></li>
     </ul>
     <div class="nav-controls" style="display: flex; align-items: center; gap: 16px;">
       <button id="theme-toggle" class="theme-btn" aria-label="Toggle theme" style="background: transparent; border: none; color: var(--text); cursor: pointer; display: flex; align-items: center;">

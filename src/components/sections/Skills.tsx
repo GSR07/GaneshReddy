@@ -1,4 +1,3 @@
-import TurtlebotScanner from '../robots/TurtlebotScanner'
 
 const SKILL_GROUPS = [
   {
@@ -87,7 +86,6 @@ export default function Skills() {
   return (
     <section id="skills" className="section section-alt">
       <div className="container">
-        <TurtlebotScanner />
         <div className="section-label">02 / Skills</div>
         <h2 className="section-title">Technical Stack</h2>
         <div className="skills-grid">

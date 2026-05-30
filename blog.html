@@ -32,6 +32,12 @@
       flex-direction: column;
       padding: 32px;
       gap: 16px;
+      transition: none;
+    }
+    .blog-card.glass-card:hover {
+      transform: none;
+      box-shadow: none;
+      border-color: var(--surface-border);
     }
     .blog-date {
       font-size: 0.8rem;
@@ -57,11 +63,9 @@
       color: var(--accent);
       font-weight: 600;
       font-size: 0.85rem;
-      transition: all var(--transition);
     }
     .blog-read-more:hover {
       color: var(--accent-2);
-      transform: translateX(4px);
     }
     /* Category badge on blog cards */
     .blog-category {
@@ -118,12 +122,6 @@
   </style>
 </head>
 <body>
-  <div class="section-robot blog-swarm" aria-hidden="true" style="position: fixed; z-index: -1;">
-    <div class="swarm-drone d1"><div class="dr-body"></div><div class="dr-prop p1"></div><div class="dr-prop p2"></div><div class="dr-prop p3"></div><div class="dr-prop p4"></div></div>
-    <div class="swarm-drone d2" style="top: 20%; left: 10%;"><div class="dr-body"></div><div class="dr-prop p1"></div><div class="dr-prop p2"></div><div class="dr-prop p3"></div><div class="dr-prop p4"></div></div>
-    <div class="swarm-drone d3" style="top: 80%; left: 5%;"><div class="dr-body"></div><div class="dr-prop p1"></div><div class="dr-prop p2"></div><div class="dr-prop p3"></div><div class="dr-prop p4"></div></div>
-  </div>
-
   <!-- ─── NAV ──────────────────────────────────────────────── -->
   <nav id="navbar" class="scrolled">
     <a href="index.html" class="nav-logo">GR<span class="accent">.</span></a>

@@ -1,0 +1,1180 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+  <title>BLE Indoor Localization & Asset Tracking — Embedded Engineering Analysis</title>
+  <meta name="description" content="A detailed engineering analysis of an indoor asset tracking platform built around the ESP32, BLE beacons, RSSI-based ranging, and IoT sensors." />
+  <link rel="preconnect" href="https://fonts.googleapis.com" />
+  <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin />
+  <link href="https://fonts.googleapis.com/css2?family=Outfit:wght@300;400;500;600;700&family=Syne:wght@400;500;600;700;800&display=swap" rel="stylesheet" />
+  <link rel="stylesheet" href="style.css?v=20" />
+  <script>
+    const savedTheme = localStorage.getItem('theme');
+    if (savedTheme === 'light' || (!savedTheme && window.matchMedia('(prefers-color-scheme: light)').matches)) {
+      document.documentElement.setAttribute('data-theme', 'light');
+    }
+  </script>
+
+  <style>
+    .blog-header {
+      padding: calc(var(--nav-h) + 100px) 40px 60px;
+      text-align: center;
+      position: relative;
+    }
+    .blog-meta {
+      font-size: 0.85rem;
+      color: var(--accent-2);
+      text-transform: uppercase;
+      letter-spacing: 0.1em;
+      font-weight: 600;
+      margin-bottom: 20px;
+      display: block;
+    }
+    .blog-content {
+      max-width: 800px;
+      margin: 0 auto;
+      font-size: 1.1rem;
+      line-height: 1.8;
+      color: var(--text);
+    }
+    .blog-content p {
+      margin-bottom: 24px;
+      color: var(--text-muted);
+    }
+    .blog-content h2 {
+      font-size: 2rem;
+      margin: 60px 0 24px;
+      color: var(--text);
+    }
+    .blog-content h3 {
+      font-size: 1.4rem;
+      margin: 40px 0 16px;
+      color: var(--accent);
+    }
+    .eyebrow {
+      display: inline-block;
+      padding: 8px 12px;
+      border: 1px solid var(--surface-border);
+      border-radius: 999px;
+      color: var(--accent-2);
+      background: rgba(140, 240, 216, 0.06);
+      font-size: 0.9rem;
+      margin-bottom: 18px;
+    }
+    .chip {
+      background: rgba(255, 255, 255, 0.05);
+      border: 1px solid var(--surface-border);
+      color: var(--text);
+      border-radius: 999px;
+      padding: 8px 12px;
+      font-size: 0.92rem;
+      display: inline-block;
+      margin: 4px 8px 4px 0;
+    }
+    .grid {
+      display: grid;
+      grid-template-columns: 1fr 1fr;
+      gap: 24px;
+      margin: 34px 0;
+    }
+    .card {
+      background: var(--surface);
+      border: 1px solid var(--surface-border);
+      border-radius: var(--radius);
+      padding: 24px;
+    }
+    .callout {
+      border-left: 4px solid var(--accent);
+      padding: 16px 18px;
+      background: rgba(106, 166, 255, 0.08);
+      border-radius: 12px;
+      color: var(--text);
+      margin: 18px 0;
+    }
+    .two-col {
+      display: grid;
+      grid-template-columns: repeat(2, minmax(0, 1fr));
+      gap: 20px;
+      margin-top: 18px;
+    }
+    table {
+      width: 100%;
+      border-collapse: collapse;
+      overflow: hidden;
+      border-radius: var(--radius-sm);
+      margin: 18px 0;
+      border: 1px solid var(--surface-border);
+      background: var(--surface);
+    }
+    th,
+    td {
+      padding: 14px 14px;
+      border-bottom: 1px solid var(--surface-border);
+      text-align: left;
+      vertical-align: top;
+      font-size: 0.96rem;
+    }
+    th {
+      color: var(--accent-2);
+      background: rgba(255, 255, 255, 0.03);
+      font-weight: 700;
+    }
+    td {
+      color: var(--text-muted);
+    }
+    .code {
+      background: var(--bg-alt);
+      border: 1px solid var(--surface-border);
+      border-radius: var(--radius-sm);
+      padding: 18px;
+      overflow-x: auto;
+      font-size: 0.95rem;
+      line-height: 1.65;
+      font-family: 'Fira Code', monospace;
+      color: var(--text);
+    }
+    .quote {
+      font-size: 1.08rem;
+      color: var(--text);
+      margin: 16px 0;
+      padding: 18px 20px;
+      border: 1px solid var(--surface-border);
+      border-radius: var(--radius-sm);
+      background: var(--surface);
+    }
+    .small {
+      font-size: 0.94rem;
+      color: var(--text-muted);
+    }
+    @media (max-width: 900px) {
+      .grid,
+      .two-col {
+        grid-template-columns: 1fr;
+      }
+      .blog-header {
+        padding-top: calc(var(--nav-h) + 60px);
+      }
+      .card {
+        padding: 20px;
+      }
+    }
+  </style>
+</head>
+<body>
+  <!-- ─── NAV ──────────────────────────────────────────────── -->
+  <nav id="navbar" class="scrolled">
+    <a href="index.html" class="nav-logo">GR<span class="accent">.</span></a>
+    <ul class="nav-links">
+      <li><a href="index.html">&larr; Back to Portfolio</a></li>
+      <li><a href="blog.html" class="gradient-text">Blog Home</a></li>
+    </ul>
+    <div class="nav-controls" style="display: flex; align-items: center; gap: 16px;">
+      <button id="theme-toggle" class="theme-btn" aria-label="Toggle theme" style="background: transparent; border: none; color: var(--text); cursor: pointer; display: flex; align-items: center;">
+        <svg class="sun-icon" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" style="width: 22px; height: 22px;">
+          <circle cx="12" cy="12" r="5"></circle>
+          <line x1="12" y1="1" x2="12" y2="3"></line>
+          <line x1="12" y1="21" x2="12" y2="23"></line>
+          <line x1="4.22" y1="4.22" x2="5.64" y2="5.64"></line>
+          <line x1="18.36" y1="18.36" x2="19.78" y2="19.78"></line>
+          <line x1="1" y1="12" x2="3" y2="12"></line>
+          <line x1="21" y1="12" x2="23" y2="12"></line>
+          <line x1="4.22" y1="19.78" x2="5.64" y2="18.36"></line>
+          <line x1="18.36" y1="5.64" x2="19.78" y2="4.22"></line>
+        </svg>
+        <svg class="moon-icon" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" style="width: 22px; height: 22px; display: none;">
+          <path d="M21 12.79A9 9 0 1 1 11.21 3 7 7 0 0 0 21 12.79z"></path>
+        </svg>
+      </button>
+      <button id="hamburger" aria-label="Toggle menu">
+        <span></span><span></span><span></span>
+      </button>
+    </div>
+  </nav>
+
+  <!-- ─── HEADER ───────────────────────────────────────────── -->
+  <header class="blog-header">
+    <div class="container">
+      <span class="blog-meta">April 17, 2026 • Embedded Systems & IoT</span>
+      <h1 class="section-title" style="margin-bottom: 24px;">BLE Indoor Localization & Asset Tracking</h1>
+      <p style="color: var(--text-muted); max-width: 600px; margin: 0 auto;">A detailed engineering analysis of an indoor asset tracking platform built around the ESP32, BLE beacons, RSSI-based ranging, and IoT sensors.</p>
+    </div>
+  </header>
+
+  <!-- ─── CONTENT ──────────────────────────────────────────── -->
+  <main class="section" style="padding-top: 20px;">
+    <div class="container blog-content">
+        <section id="overview">
+            <h2>Project Overview</h2>
+            <p>
+                The system was designed to track indoor assets such as airport trolleys and smart trolley units
+                using <strong>Bluetooth Low Energy</strong> as the primary localization mechanism. GPS was
+                included for outdoor positioning, while Wi-Fi and a SIM800L modem enabled uplink to a cloud
+                dashboard and mobile application. A buzzer, camera, and actuator interfaces allowed the node to
+                move beyond passive tracking and into active monitoring and response.
+            </p>
+            <p>
+                From an embedded engineering standpoint, the interesting part is the layered architecture:
+                <strong>BLE for sensing location context, ESP32 for decision-making, camera and sensors for
+                    event enrichment, and cloud transport for visibility and control</strong>. This makes the
+                design more than a demo beacon scanner; it becomes an edge IoT node with event intelligence.
+            </p>
+            <div class="callout">
+                The strongest engineering value in this design is system integration: the ESP32 is not used as a
+                single-purpose scanner, but as a real-time orchestrator bridging radio telemetry, sensor
+                acquisition, local actuation, and remote reporting.
+            </div>
+            <h3>Core System Stack</h3>
+            <ul>
+                <li><strong>Controller:</strong> ESP32-WROOM-32</li>
+                <li><strong>Localization:</strong> BLE scan + RSSI + triangulation / proximity heuristics</li>
+                <li><strong>Communications:</strong> BLE, Wi-Fi, GSM/GPRS</li>
+                <li><strong>Event sensors:</strong> Battery status, ultrasonic ranging, temperature/humidity,
+                    GPS</li>
+                <li><strong>Verification:</strong> ArduCam OV5642 image capture on event trigger</li>
+                <li><strong>Actuation:</strong> Buzzer, servo, relay path</li>
+                <li><strong>Backend:</strong> MQTT / custom server + app dashboard</li>
+            </ul>
+        </section>
+
+        <section id="ble-device">
+            <h2>BLE Device Analysis</h2>
+            <p>
+                In this architecture, the BLE device plays two distinct roles depending on deployment:
+                <strong>beacon/tag</strong> on the tracked asset and <strong>scanner/gateway</strong> on the ESP32 side.
+                That separation is fundamental. A professional implementation avoids overloading the asset tag with
+                unnecessary application logic and instead treats it as a deterministic radio source whose identity and
+                signal behavior can be characterized.
+            </p>
+
+            <h3>Why BLE Fits Indoor Asset Tracking</h3>
+            <p>
+                BLE is well suited for room-scale or zone-scale localization because it offers low power advertisement
+                broadcasting, wide hardware availability, and a radio profile that is easy to process on the ESP32. In
+                contrast to GPS, which becomes unreliable indoors, BLE advertisements survive in enclosed environments
+                and provide a measurable parameter: <strong>RSSI</strong>.
+            </p>
+
+            <h3>BLE Tag Characteristics</h3>
+            <ul>
+                <li>Broadcast-centric operation with minimal power draw</li>
+                <li>Can expose identity through MAC, UUID, Major, Minor</li>
+                <li>Can embed battery or status data in manufacturer payload</li>
+                <li>Ideal for geofencing and proximity-based alerts</li>
+            </ul>
+            <h3>Gateway Responsibilities</h3>
+            <ul>
+                <li>Continuous scan scheduling without starving other tasks</li>
+                <li>Filtering target advertisements from RF clutter</li>
+                <li>Tracking state across multiple assets</li>
+                <li>Converting noisy radio observations into event-grade decisions</li>
+            </ul>
+
+            <h3>Advertisement Identity Strategy</h3>
+            <p>
+                A robust BLE tracking deployment should never depend on a single identifier alone. MAC addresses can be
+                useful in prototypes, but production systems benefit from a composite identity model including
+                <strong>service UUID, manufacturer payload, asset ID, and device class metadata</strong>. This reduces
+                false association and simplifies fleet administration when multiple tags coexist in the same site.
+            </p>
+
+            <table>
+                <thead>
+                    <tr>
+                        <th>Field</th>
+                        <th>Why It Matters</th>
+                        <th>Engineering Note</th>
+                    </tr>
+                </thead>
+                <tbody>
+                    <tr>
+                        <td>MAC Address</td>
+                        <td>Fast filtering of known tags</td>
+                        <td>Useful in prototype deployments; may be fragile for large fleets</td>
+                    </tr>
+                    <tr>
+                        <td>Service UUID</td>
+                        <td>Defines device role or custom beacon service</td>
+                        <td>Helps segment fleets and avoid false matches</td>
+                    </tr>
+                    <tr>
+                        <td>Major / Minor</td>
+                        <td>Group and node-level identity</td>
+                        <td>Effective when tracking many assets in one site</td>
+                    </tr>
+                    <tr>
+                        <td>Battery Status</td>
+                        <td>Operational health of the tag</td>
+                        <td>Critical for preventive maintenance and avoiding silent failures</td>
+                    </tr>
+                </tbody>
+            </table>
+
+            <p>
+                From a professional embedded perspective, the BLE device should be treated as a <strong>measurable radio
+                    instrument</strong>, not just a connectivity endpoint. That means validating transmit interval,
+                reference TX power, antenna orientation, enclosure effects, and battery decay behavior during
+                characterization.
+            </p>
+        </section>
+
+        <section id="rssi">
+            <h2>RSSI Transmission and Distance Estimation</h2>
+            <p>
+                RSSI is the most convenient and also the most misunderstood parameter in BLE localization. It is not a
+                direct measurement of distance. It is a <strong>received power estimate</strong> influenced by path
+                loss, reflections, antenna gain, body shadowing, furniture, walls, and channel occupancy. A mature
+                implementation treats RSSI as a probabilistic signal requiring calibration and filtering.
+            </p>
+
+            <h3>What RSSI Really Represents</h3>
+            <p>
+                When a BLE tag advertises, the ESP32 scanner measures the received signal power in dBm. If the beacon
+                transmit power at 1 meter is known, the firmware can estimate relative distance using a log-distance
+                path loss model. This is useful for <strong>geofencing</strong> and <strong>proximity
+                    classification</strong>, but it does not guarantee exact coordinate accuracy.
+            </p>
+
+            <div class="code">RSSI = RSSI₀ - 10 · n · log10(d / d₀)
+
+                d = 10 ^ ((RSSI₀ - RSSI) / (10 · n))</div>
+
+            <p>
+                In practice, three variables dominate accuracy:
+            </p>
+            <ul>
+                <li><strong>RSSI₀</strong>: reference power at 1 meter, which must be measured per beacon class.</li>
+                <li><strong>n</strong>: path loss exponent, which changes across corridors, open offices, aisles, and
+                    metal-heavy environments.</li>
+                <li><strong>RSSI variance</strong>: short-term fluctuations caused by the indoor RF environment.</li>
+            </ul>
+
+            <h3>Why RSSI Filtering Is Mandatory</h3>
+            <p>
+                Raw RSSI is noisy. A single sample can be misleading enough to trigger a false geofence breach. For that
+                reason, the report architecture uses a moving average filter and consecutive-sample hysteresis before
+                producing an event. That is exactly the right embedded decision. In field systems, false alarms are
+                usually more damaging than slightly delayed alarms.
+            </p>
+
+            <table>
+                <thead>
+                    <tr>
+                        <th>Technique</th>
+                        <th>Benefit</th>
+                        <th>Tradeoff</th>
+                    </tr>
+                </thead>
+                <tbody>
+                    <tr>
+                        <td>Moving Average</td>
+                        <td>Reduces jitter and stabilizes thresholding</td>
+                        <td>Can add lag during fast motion</td>
+                    </tr>
+                    <tr>
+                        <td>Median Filter</td>
+                        <td>Strong rejection of outliers</td>
+                        <td>Less responsive to legitimate transitions</td>
+                    </tr>
+                    <tr>
+                        <td>Kalman Filter</td>
+                        <td>Best for continuous estimation and prediction</td>
+                        <td>Higher tuning complexity</td>
+                    </tr>
+                    <tr>
+                        <td>Hysteresis / Consecutive Breach Count</td>
+                        <td>Prevents chatter at threshold boundary</td>
+                        <td>Slightly increases detection latency</td>
+                    </tr>
+                </tbody>
+            </table>
+
+            <h3>Professional Interpretation of RSSI</h3>
+            <div class="quote">
+                A strong BLE engineer does not ask, “What is the distance from this RSSI?” but rather, “Given this
+                calibrated environment and filtered observation history, is this asset still inside the allowed zone?”
+            </div>
+
+            <p>
+                That distinction matters. For indoor asset tracking, <strong>decision quality</strong> is more valuable
+                than mathematically perfect distance estimation. If the system correctly detects that a trolley has left
+                a permitted zone and reports it with low false positives, it is delivering operational value even if the
+                absolute distance estimate has ±0.5 to ±1.0 meter uncertainty.
+            </p>
+
+            <h3>RSSI Transmission Workflow</h3>
+            <ol>
+                <li>BLE tag emits periodic advertisement frames.</li>
+                <li>ESP32 scan callback extracts RSSI, identifier, and optional battery data.</li>
+                <li>Samples are filtered and mapped into estimated distance or zone score.</li>
+                <li>Geofence logic checks threshold crossing with hysteresis.</li>
+                <li>On breach, the node triggers buzzer, logs context, optionally captures an image, and reports to
+                    backend.</li>
+            </ol>
+        </section>
+
+        <section id="hardware">
+            <h2>Hardware Design Review</h2>
+            <p>
+                The hardware stack is ambitious for an ESP32-class node. It combines radio scanning, camera interfacing,
+                GSM connectivity, GPS, ultrasonic sensing, and actuation. The engineering challenge is therefore not
+                component selection alone, but <strong>resource contention, power integrity, and interface
+                    discipline</strong>.
+            </p>
+
+            <table>
+                <thead>
+                    <tr>
+                        <th>Subsystem</th>
+                        <th>Role</th>
+                        <th>Embedded Design Consideration</th>
+                    </tr>
+                </thead>
+                <tbody>
+                    <tr>
+                        <td>ESP32-WROOM-32</td>
+                        <td>Main compute, BLE, Wi-Fi</td>
+                        <td>Task partitioning, UART/SPI/I2C coordination, memory budgeting</td>
+                    </tr>
+                    <tr>
+                        <td>SIM800L</td>
+                        <td>GPRS uplink for alerts and telemetry</td>
+                        <td>High current burst demand, retry logic, network variability</td>
+                    </tr>
+                    <tr>
+                        <td>ArduCam OV5642</td>
+                        <td>Visual verification of breach events</td>
+                        <td>SPI throughput, frame buffering, event sequencing</td>
+                    </tr>
+                    <tr>
+                        <td>GPS</td>
+                        <td>Outdoor localization extension</td>
+                        <td>Cold start latency, UART parsing, optional operation mode</td>
+                    </tr>
+                    <tr>
+                        <td>GY-US42V / DHT11</td>
+                        <td>Environmental and local distance context</td>
+                        <td>Low-rate sampling, secondary diagnostic value</td>
+                    </tr>
+                    <tr>
+                        <td>Buzzer / Servo / Relay Path</td>
+                        <td>Alerting and actuation</td>
+                        <td>Transistor drive, flyback protection, power rail isolation</td>
+                    </tr>
+                </tbody>
+            </table>
+
+            <h3>Power Integrity Matters More Than It First Appears</h3>
+            <p>
+                One of the biggest risks in mixed-peripheral IoT designs is assuming the logic diagram is enough. It is
+                not. The SIM800L can pull large transient currents during GSM bursts, the servo can inject noise, and
+                the camera can create memory and SPI load spikes. A reliable node therefore needs careful regulator
+                planning, bulk capacitance near modem rails, clean grounding, and protection paths for inductive loads.
+            </p>
+
+            <div class="callout">
+                In professional embedded products, many “software bugs” are actually power integrity problems. GSM
+                resets, UART corruption, false sensor readings, and unexpected reboots often trace back to transient
+                supply collapse or shared ground noise.
+            </div>
+
+            <h3>Why the ESP32 Is a Good Fit</h3>
+            <p>
+                The ESP32 is particularly strong in this application because it combines BLE and Wi-Fi in one device,
+                offers multiple UARTs, and supports a FreeRTOS-based concurrency model. That lets the design isolate
+                scanning, communications, sensor logging, and alert handling into different tasks instead of building a
+                fragile monolithic loop.
+            </p>
+        </section>
+
+        <section id="firmware">
+            <h2>Firmware Strategy from an Embedded Engineer’s View</h2>
+            <p>
+                A professional firmware architecture for this system should be event-driven and state-oriented. It
+                should separate <strong>radio acquisition</strong>, <strong>decision logic</strong>, <strong>peripheral
+                    control</strong>, and <strong>transport</strong>. This reduces coupling and makes the node
+                debuggable when multiple faults occur together.
+            </p>
+
+            <h3>Recommended Runtime State Machine</h3>
+            <div class="code">BOOT → SELF TEST → CONFIG LOAD → BLE SCAN → FILTER / LOCALIZE →
+                ZONE DECISION → ALERT / CAPTURE / REPORT → RECOVER / RETRY → IDLE / CONTINUE</div>
+
+            <h3>Task Decomposition</h3>
+            <ul>
+                <li><strong>BLE Scan Task:</strong> collects advertisement data and updates tag state.</li>
+                <li><strong>Localization Task:</strong> runs RSSI filtering and zone decisions.</li>
+                <li><strong>Alert Task:</strong> handles buzzer and immediate local signaling.</li>
+                <li><strong>Camera Task:</strong> executes image capture without blocking scan timing.</li>
+                <li><strong>Cloud Task:</strong> publishes telemetry and retries safely on failure.</li>
+                <li><strong>Diagnostics Task:</strong> records health counters, modem status, and uptime.</li>
+            </ul>
+
+            <p>
+                This separation is critical because BLE scanning is timing sensitive, while GSM and camera operations
+                are bursty and potentially blocking. Without disciplined task boundaries, the system becomes vulnerable
+                to missed advertisements and unstable event latency.
+            </p>
+
+            <h3>What Good Firmware Should Log</h3>
+            <table>
+                <thead>
+                    <tr>
+                        <th>Metric</th>
+                        <th>Why It Should Be Logged</th>
+                    </tr>
+                </thead>
+                <tbody>
+                    <tr>
+                        <td>Last-seen time per tag</td>
+                        <td>Helps distinguish movement from radio silence or battery death</td>
+                    </tr>
+                    <tr>
+                        <td>Filtered RSSI and raw RSSI</td>
+                        <td>Supports calibration and interference analysis</td>
+                    </tr>
+                    <tr>
+                        <td>Breach count and suppression count</td>
+                        <td>Shows how often hysteresis prevents false alerts</td>
+                    </tr>
+                    <tr>
+                        <td>Modem attach / publish failures</td>
+                        <td>Separates RF localization faults from backhaul faults</td>
+                    </tr>
+                    <tr>
+                        <td>Brownout and reset cause</td>
+                        <td>Essential for field reliability debugging</td>
+                    </tr>
+                </tbody>
+            </table>
+        </section>
+
+        <section id="connectivity">
+            <h2>Connectivity, MQTT, and Cloud Integration</h2>
+            <p>
+                The inclusion of both Wi-Fi and SIM800L is a smart architectural choice because it introduces
+                <strong>communication redundancy</strong>. Wi-Fi is ideal for higher throughput and lower latency in
+                buildings with managed infrastructure. SIM800L offers fallback or standalone deployment where Wi-Fi is
+                unavailable or politically difficult to provision.
+            </p>
+
+            <h3>Recommended Backend Payload Model</h3>
+            <div class="code">{
+                "gateway_id": "ESP32_GW_01",
+                "asset_id": "TROLLY_042",
+                "timestamp": "2025-04-17T10:21:14Z",
+                "rssi_raw": -71,
+                "rssi_filtered": -68,
+                "distance_est_m": 2.1,
+                "zone": "EXIT_BOUNDARY",
+                "battery_pct": 82,
+                "gps": {"lat": 17.385, "lon": 78.4867},
+                "image_event": true,
+                "alert": "GEOFENCE_BREACH"
+                }</div>
+
+            <h3>MQTT vs HTTP in This Use Case</h3>
+            <table>
+                <thead>
+                    <tr>
+                        <th>Protocol</th>
+                        <th>Strength</th>
+                        <th>When to Prefer It</th>
+                    </tr>
+                </thead>
+                <tbody>
+                    <tr>
+                        <td>MQTT</td>
+                        <td>Lightweight, low overhead, topic-based telemetry</td>
+                        <td>Continuous state reporting and command/control</td>
+                    </tr>
+                    <tr>
+                        <td>HTTP</td>
+                        <td>Simple integration with REST services</td>
+                        <td>Event-driven uploads and quick prototype dashboards</td>
+                    </tr>
+                </tbody>
+            </table>
+
+            <p>
+                For a production-oriented asset tracking fleet, MQTT is usually the cleaner choice for ongoing
+                telemetry, while HTTP remains useful for image uploads or administrative APIs. A hybrid approach is
+                entirely reasonable.
+            </p>
+        </section>
+
+        <section id="security">
+            <h2>Professional Security Considerations</h2>
+            <p>
+                Since the project targets an industry-level security posture, it should move beyond simple connectivity
+                and address identity, transport protection, firmware trust, and operational abuse cases.
+            </p>
+
+            <ul>
+                <li><strong>Unique device IDs:</strong> never rely on a shared firmware image with hardcoded generic
+                    identity.</li>
+                <li><strong>Secret storage:</strong> credentials should be stored in protected NVS regions, not
+                    plain-text source code.</li>
+                <li><strong>TLS where feasible:</strong> especially on Wi-Fi paths; GSM links should avoid plaintext
+                    when possible.</li>
+                <li><strong>OTA authentication:</strong> firmware updates must be signed or at minimum integrity-checked
+                    and authenticated.</li>
+                <li><strong>Provisioning control:</strong> prevent unauthorized tag enrollment or rogue backend
+                    reconfiguration.</li>
+            </ul>
+
+            <p>
+                BLE itself should not be treated as a secure source of truth for location. Advertisement traffic can be
+                replayed, cloned, or interfered with. The safer approach is to treat BLE as one signal in a layered
+                event model, then correlate it with gateway identity, recent activity, optional camera evidence, and
+                backend policy.
+            </p>
+        </section>
+
+        <section id="reliability">
+            <h2>Reliability and Field Readiness</h2>
+            <p>
+                This is where prototypes usually fail. A successful demo can still be an unreliable product. Field
+                readiness depends on watchdogs, backoff logic, brownout handling, offline buffering, and graceful
+                degradation when one subsystem becomes unavailable.
+            </p>
+
+            <h3>Failure Modes That Must Be Designed For</h3>
+            <h4>Radio / Localization</h4>
+            <ul>
+                <li>BLE congestion from nearby phones and wearables</li>
+                <li>RSSI shadowing from people or metal structures</li>
+                <li>Beacon battery decay reducing apparent range</li>
+                <li>Edge-of-threshold oscillation causing alert chatter</li>
+            </ul>
+            <h4>Embedded / Power / Transport</h4>
+            <ul>
+                <li>SIM800L current burst resetting the node</li>
+                <li>Camera capture blocking time-sensitive scan windows</li>
+                <li>Network failure leaving events unreported</li>
+                <li>Actuator or relay noise coupling into logic rails</li>
+            </ul>
+
+            <h3>Engineering Countermeasures</h3>
+            <ul>
+                <li><strong>Watchdog supervision</strong> for scan task, modem task, and main control loop.</li>
+                <li><strong>Brownout-aware restart logging</strong> to separate software crashes from supply issues.
+                </li>
+                <li><strong>Offline queueing</strong> in flash or ring buffer when backhaul is unavailable.</li>
+                <li><strong>Exponential retry with jitter</strong> for modem attach and publish operations.</li>
+                <li><strong>Task time budgeting</strong> so image capture cannot starve scan processing.</li>
+            </ul>
+        </section>
+
+        <section id="results">
+            <h2>Performance Interpretation</h2>
+            <p>
+                The report indicates that the system performs best in the 0.5 to 3 meter region, which is exactly what a
+                seasoned engineer would expect from BLE RSSI in indoor spaces. That makes the platform suitable for
+                <strong>zone enforcement, departure detection, doorway monitoring, and last-seen proximity
+                    classification</strong>.
+            </p>
+
+            <table>
+                <thead>
+                    <tr>
+                        <th>Metric</th>
+                        <th>Engineering Interpretation</th>
+                    </tr>
+                </thead>
+                <tbody>
+                    <tr>
+                        <td>Sub-500 ms alert latency</td>
+                        <td>Good for breach indication, assuming the event pipeline stays non-blocking</td>
+                    </tr>
+                    <tr>
+                        <td>Better performance in low-density BLE spaces</td>
+                        <td>Confirms RF crowding is a major variable and deployment-specific calibration is required
+                        </td>
+                    </tr>
+                    <tr>
+                        <td>Useful 2 m geofence behavior</td>
+                        <td>Shows the system is well aligned with proximity-based policy rather than precise x-y mapping
+                        </td>
+                    </tr>
+                    <tr>
+                        <td>Image upload over GPRS is slow</td>
+                        <td>Acceptable for evidence capture, not appropriate for real-time visual streaming</td>
+                    </tr>
+                </tbody>
+            </table>
+
+            <p>
+                The correct way to present these results in a portfolio is to highlight that the system is
+                <strong>engineered for operational decision-making</strong>. It answers practical questions such as
+                whether an asset is still inside an allowed indoor zone, when it left, what gateway detected it, and
+                whether corroborating event evidence exists.
+            </p>
+        </section>
+
+        <section id="lessons">
+            <h2>Professional Embedded Engineering Lessons</h2>
+            <p>
+                This project demonstrates several patterns that matter in real embedded product work.
+            </p>
+
+            <ol>
+                <li><strong>Localization accuracy is never just an algorithm problem.</strong> It is a combined RF,
+                    mechanical, deployment, and firmware problem.</li>
+                <li><strong>System-level design beats component-level excitement.</strong> BLE, camera, GSM, and sensors
+                    only become valuable when timing and interfaces are managed correctly.</li>
+                <li><strong>Reliable event generation matters more than raw sensor volume.</strong> Clean decisions are
+                    more valuable than excessive telemetry.</li>
+                <li><strong>Power design is part of firmware success.</strong> Brownouts and transient rail collapse
+                    destroy perceived software reliability.</li>
+                <li><strong>Industrial IoT requires graceful degradation.</strong> When cloud, modem, or a sensor fails,
+                    the node should remain observable and locally useful.</li>
+            </ol>
+
+            <div class="callout">
+                If I were shipping a next revision, I would keep the ESP32 + BLE foundation, tighten power architecture,
+                move to stronger RSSI filtering, introduce multi-anchor localization for better spatial confidence, and
+                separate image evidence transport from core breach telemetry.
+            </div>
+
+            <h3>Portfolio Positioning Statement</h3>
+            <p>
+                This project can be presented not merely as a student BLE tracker, but as an <strong>edge IoT asset
+                    monitoring platform</strong> that combines embedded sensing, radio-based localization, event-driven
+                firmware, and cloud-connected telemetry. That framing is much stronger for an engineering portfolio
+                because it shows architectural thinking, cross-domain integration, and awareness of real deployment
+                constraints.
+            </p>
+        </section>
+
+        <!-- ─── FUTURE IMPROVEMENTS ────────────────────────────── -->
+        <section id="future">
+            <h2>Future Improvements</h2>
+            <p>
+                The current platform establishes a solid foundation, but several engineering upgrades would take it from
+                a field-tested prototype toward a genuinely production-grade indoor tracking system. The improvements
+                below are grounded in what the existing hardware architecture exposes as its current ceiling.
+            </p>
+
+            <h3>1 — Multi-Anchor Triangulation</h3>
+            <p>
+                The current design relies on a single gateway performing proximity-based zone decisions from one vantage
+                point. A significant accuracy improvement comes from deploying <strong>multiple fixed ESP32 scanner
+                nodes</strong> across the monitored space and fusing their individual RSSI observations into a
+                weighted triangulation or trilateration estimate. Each anchor reports its filtered RSSI for every visible
+                tag, and a central coordinator solves for the most probable asset position.
+            </p>
+            <div class="callout">
+                Even with three anchors, triangulation can shrink zone uncertainty from ±3–4 m to ±1–1.5 m in typical
+                indoor environments — a meaningful gain for corridor-level tracking without touching any hardware on the
+                asset tag side.
+            </div>
+
+            <h3>2 — UWB Integration for Sub-Metre Precision</h3>
+            <p>
+                BLE RSSI is fundamentally limited by multipath and environment variability. For applications demanding
+                sub-metre accuracy — such as precise dock assignment, robotic handoff zones, or surgical suite asset
+                tracing — <strong>Ultra-Wideband (UWB)</strong> ranging via chips like the DW1000 or DW3000 offers
+                time-of-flight distance measurements accurate to 10–30 cm. A hybrid architecture could use BLE for wide
+                area fleet scanning and UWB for high-confidence confirmation when an asset enters a critical zone. The
+                ESP32 can co-exist with a UWB module over SPI, making this an incremental hardware addition.
+            </p>
+
+            <h3>3 — Kalman-Based Sensor Fusion for Position Estimation</h3>
+            <p>
+                The existing moving average and hysteresis approach is effective for zone-level decisions but does not
+                maintain a continuous state estimate across time. Replacing or augmenting this with an
+                <strong>Extended Kalman Filter (EKF)</strong> that fuses RSSI-derived distance estimates with
+                accelerometer or IMU motion cues would significantly improve tracking continuity. When a tag briefly
+                disappears from scan windows (e.g., body shadowing), the filter maintains a predicted position rather
+                than simply marking the asset as "last seen."
+            </p>
+
+            <h3>4 — OTA Firmware Update Infrastructure</h3>
+            <p>
+                Currently, any firmware change requires physical access or a manual USB flash. For a multi-node
+                deployment, this does not scale. Implementing <strong>secure OTA over Wi-Fi</strong> using the ESP-IDF
+                OTA partition scheme allows firmware rollouts to be pushed remotely, validated against a hash,
+                and rolled back on boot failure. This is essential for maintaining a fleet without field engineer visits
+                for routine firmware iteration.
+            </p>
+
+            <h3>5 — Edge Machine Learning for Anomaly Detection</h3>
+            <p>
+                The current firmware applies fixed thresholds for geofence breach decisions. A next-generation
+                approach would run a lightweight <strong>on-device ML model</strong> (e.g., a small decision tree or
+                1D convolutional classifier trained offline) that learns the normal movement pattern of each asset class.
+                This would allow the node to flag statistically anomalous dwell times, unusual movement velocities
+                (inferred from RSSI rate-of-change), or unexpected tag associations without increasing false alarm
+                rates. TensorFlow Lite Micro is feasible on the ESP32 for small models with limited feature sets.
+            </p>
+
+            <h3>6 — Improved Camera Trigger and Image Storage</h3>
+            <p>
+                The current architecture captures an image on breach events and transmits over GPRS, which is slow.
+                Future improvements include <strong>local SD card buffering</strong> of event images with timestamped
+                filenames, a dedicated Wi-Fi upload queue that runs independently of the core scan task, and optional
+                JPEG compression tuning to reduce bandwidth while maintaining forensic quality. An RTSP preview stream
+                during commissioning would also significantly reduce site installation time.
+            </p>
+
+            <h3>Summary of Future Roadmap</h3>
+            <table>
+                <thead>
+                    <tr>
+                        <th>Improvement</th>
+                        <th>Estimated Impact</th>
+                        <th>Complexity</th>
+                    </tr>
+                </thead>
+                <tbody>
+                    <tr>
+                        <td>Multi-anchor triangulation</td>
+                        <td>2–3× position accuracy improvement</td>
+                        <td>Medium — requires gateway mesh and coordinator logic</td>
+                    </tr>
+                    <tr>
+                        <td>UWB ranging module</td>
+                        <td>Sub-metre accuracy in critical zones</td>
+                        <td>High — additional hardware, SPI driver, and calibration</td>
+                    </tr>
+                    <tr>
+                        <td>EKF sensor fusion</td>
+                        <td>Continuous position estimate, fewer lost-tag events</td>
+                        <td>Medium — requires IMU addition and filter tuning</td>
+                    </tr>
+                    <tr>
+                        <td>Secure OTA update</td>
+                        <td>Scalable fleet management without physical access</td>
+                        <td>Medium — well-supported in ESP-IDF</td>
+                    </tr>
+                    <tr>
+                        <td>Edge ML anomaly detection</td>
+                        <td>Smarter alerts, fewer false positives</td>
+                        <td>High — requires training data and TFLite Micro integration</td>
+                    </tr>
+                    <tr>
+                        <td>SD card + Wi-Fi image buffering</td>
+                        <td>Faster uploads, offline resilience</td>
+                        <td>Low–Medium — straightforward ESP-IDF addition</td>
+                    </tr>
+                </tbody>
+            </table>
+        </section>
+
+        <!-- ─── ALTERNATIVE BOARDS ────────────────────────────── -->
+        <section id="alt-boards">
+            <h2>Which Other Boards Could Be Used?</h2>
+            <p>
+                The ESP32-WROOM-32 was a strong choice for this project due to its integrated BLE + Wi-Fi, dual-core
+                processor, and broad library support. However, it is not the only viable platform. Depending on
+                deployment constraints — power budget, range requirements, certification needs, or cost at scale —
+                several other boards would be worth evaluating as direct or partial replacements.
+            </p>
+
+            <h3>Nordic nRF52840 (e.g., Adafruit Feather nRF52840 / Seeed Xiao nRF52840)</h3>
+            <p>
+                The nRF52840 is arguably the best-in-class chip for BLE-centric embedded applications. It features
+                Bluetooth 5.0 with Long Range support (Coded PHY), USB, and a 64 MHz ARM Cortex-M4F core. Key
+                advantages over the ESP32 in this context:
+            </p>
+            <ul>
+                <li><strong>Superior BLE stack</strong> — the SoftDevice architecture is production-hardened and
+                    Bluetooth SIG certified.</li>
+                <li><strong>Lower power consumption</strong> — idle and scan currents are significantly lower, extending
+                    battery life on tag-side deployments.</li>
+                <li><strong>BLE Long Range (Coded PHY)</strong> — enables RSSI-based tracking across larger floor areas
+                    or through thicker walls without additional infrastructure.</li>
+                <li>Limitation: no integrated Wi-Fi, so a separate modem (e.g., ESP8266, SIM800L) would still be needed
+                    for cloud uplink.</li>
+            </ul>
+
+            <h3>STM32WB55 (e.g., Nucleo-WB55RG)</h3>
+            <p>
+                ST's STM32WB series integrates an ARM Cortex-M4 application core with a dedicated Cortex-M0+ radio
+                co-processor, making BLE completely isolated from application firmware — a major reliability advantage
+                in safety-relevant deployments. It supports BLE 5.0 and Zigbee simultaneously. This board would be
+                ideal if the project required:
+            </p>
+            <ul>
+                <li>IEC 62443 or industrial certification pathways</li>
+                <li>Guaranteed BLE timing isolation from application tasks (common weakness on ESP32)</li>
+                <li>Dual-protocol operation (BLE + Zigbee mesh for gateway-to-gateway communication)</li>
+            </ul>
+            <div class="callout">
+                The STM32WB's radio co-processor architecture means a long image capture or GSM retry will never
+                degrade BLE scan continuity — a structural advantage over the ESP32's shared-radio design.
+            </div>
+
+            <h3>Raspberry Pi Pico W</h3>
+            <p>
+                The Pico W (RP2040 + CYW43439 radio) provides Wi-Fi and Bluetooth LE at a very low unit cost
+                (~$6). It would work well as a gateway node in cost-sensitive deployments where many access
+                points need to be seeded across a building. Its dual-core architecture and PIO state machines offer
+                flexible peripheral control, though the BLE stack (via btstack) is less mature than Nordic's SoftDevice.
+                Trade-offs:
+            </p>
+            <ul>
+                <li>No hardware floating-point advantage over ESP32 for RSSI filtering</li>
+                <li>No GSM path without significant external hardware</li>
+                <li>Excellent for pure Wi-Fi gateway roles or low-cost anchor nodes</li>
+            </ul>
+
+            <h3>Nordic Thingy:53</h3>
+            <p>
+                The Thingy:53 (nRF5340-based) is a ready-made IoT prototyping platform with BLE, sensors, and a rechargeable
+                battery already integrated. For rapid prototyping of multi-anchor setups, it eliminates most hardware
+                integration effort and allows immediate focus on firmware and localization algorithms. The nRF5340 also
+                adds a security domain and supports Matter protocol, opening paths toward future smart-building
+                interoperability.
+            </p>
+
+            <h3>Arduino Nano 33 BLE Sense</h3>
+            <p>
+                The Nano 33 BLE Sense (nRF52840-based) includes an onboard IMU, temperature/humidity sensor, and
+                microphone — making it particularly attractive for edge ML integration. If the future improvement
+                roadmap includes on-device anomaly detection using motion cues, this board provides the sensor
+                richness needed without external wiring. It is, however, limited to BLE-only uplink (no Wi-Fi or GSM),
+                so it fits better as an enhanced asset tag than as a gateway replacement.
+            </p>
+
+            <table>
+                <thead>
+                    <tr>
+                        <th>Board</th>
+                        <th>BLE Version</th>
+                        <th>Wi-Fi</th>
+                        <th>Best Fit Role</th>
+                        <th>Key Trade-off vs ESP32</th>
+                    </tr>
+                </thead>
+                <tbody>
+                    <tr>
+                        <td>ESP32-WROOM-32</td>
+                        <td>BLE 4.2</td>
+                        <td>✓</td>
+                        <td>All-in-one gateway</td>
+                        <td>Baseline — used in this project</td>
+                    </tr>
+                    <tr>
+                        <td>nRF52840</td>
+                        <td>BLE 5.0 + LR</td>
+                        <td>✗</td>
+                        <td>Tag or BLE-only scanner</td>
+                        <td>Better BLE, lower power, no integrated Wi-Fi</td>
+                    </tr>
+                    <tr>
+                        <td>STM32WB55</td>
+                        <td>BLE 5.0 + Zigbee</td>
+                        <td>✗</td>
+                        <td>Industrial gateway</td>
+                        <td>Isolated radio co-processor, certification-ready</td>
+                    </tr>
+                    <tr>
+                        <td>Raspberry Pi Pico W</td>
+                        <td>BLE 5.2</td>
+                        <td>✓</td>
+                        <td>Low-cost anchor node</td>
+                        <td>Cheaper, mature PIO, less mature BLE stack</td>
+                    </tr>
+                    <tr>
+                        <td>Nordic Thingy:53</td>
+                        <td>BLE 5.4</td>
+                        <td>✗</td>
+                        <td>Rapid prototype / multi-anchor</td>
+                        <td>All sensors integrated, nRF5340 dual-core</td>
+                    </tr>
+                    <tr>
+                        <td>Arduino Nano 33 BLE Sense</td>
+                        <td>BLE 5.0</td>
+                        <td>✗</td>
+                        <td>Smart tag with edge ML</td>
+                        <td>Rich onboard sensors, ideal for ML-augmented tags</td>
+                    </tr>
+                </tbody>
+            </table>
+        </section>
+
+        <!-- ─── OPTIMIZATION STRATEGIES ──────────────────────── -->
+        <section id="optimization">
+            <h2>How the System Can Be Optimized</h2>
+            <p>
+                Optimization in an embedded IoT system is multi-dimensional. It is not only about faster code — it
+                encompasses <strong>RF decision quality, firmware efficiency, power management, and fleet-level
+                reliability</strong>. The improvements below directly address the known constraints of the current
+                design.
+            </p>
+
+            <h3>RSSI Pipeline Optimization</h3>
+            <p>
+                The single biggest accuracy lever available without hardware changes is the RSSI signal chain. The
+                following optimizations can be applied entirely in firmware:
+            </p>
+            <ul>
+                <li>
+                    <strong>Per-environment path loss calibration:</strong> The path loss exponent <em>n</em> is
+                    currently assumed fixed. Running a short calibration routine at deployment time — placing a tag at
+                    known distances and recording RSSI — allows the firmware to store an environment-specific <em>n</em>
+                    value in NVS, immediately improving distance estimate accuracy.
+                </li>
+                <li>
+                    <strong>Exponential Moving Average (EMA) instead of simple moving average:</strong> EMA weights
+                    recent samples more heavily, giving a faster response to genuine proximity changes while still
+                    suppressing short-duration spikes. The smoothing factor α can be tuned per deployment density.
+                </li>
+                <li>
+                    <strong>Adaptive hysteresis based on RSSI variance:</strong> Instead of a fixed breach count
+                    threshold, calculate the rolling standard deviation of RSSI and dynamically tighten or relax the
+                    hysteresis window. In noisy RF environments, the threshold automatically becomes more conservative,
+                    reducing false alerts without manual re-tuning.
+                </li>
+            </ul>
+
+            <div class="code">// Adaptive EMA in firmware
+alpha = 0.3f; // tune based on scan interval vs motion speed
+rssi_filtered = alpha * rssi_raw + (1.0f - alpha) * rssi_filtered_prev;
+
+// Adaptive hysteresis
+rssi_variance = compute_rolling_variance(rssi_history, WINDOW_SIZE);
+breach_threshold = (rssi_variance > HIGH_NOISE_LEVEL) ? 5 : 3;</div>
+
+            <h3>Firmware and Task Optimization</h3>
+            <ul>
+                <li>
+                    <strong>Pinning BLE scan task to Core 0:</strong> The ESP32 dual-core architecture allows the
+                    BLE scan callback and RSSI filter to run exclusively on Core 0, while all blocking operations
+                    (GSM, camera, sensor reads) execute on Core 1. This eliminates the most common source of
+                    advertisement miss-rate spikes in busy firmware.
+                </li>
+                <li>
+                    <strong>DMA-backed SPI for ArduCam:</strong> Camera data transfer currently competes for CPU time.
+                    Using DMA transactions for SPI frame reads frees Core 1 to handle modem retry logic during image
+                    capture.
+                </li>
+                <li>
+                    <strong>Event-driven UART parsing for SIM800L:</strong> Rather than polling the modem UART in a
+                    tight loop, register a UART event queue interrupt handler. This reduces CPU load during idle network
+                    periods and makes the response parsing deterministic.
+                </li>
+                <li>
+                    <strong>Flash-backed circular buffer for offline events:</strong> Use a pre-allocated NVS or
+                    SPIFFS region as a ring buffer. When MQTT publish fails, the event is written to flash rather than
+                    dropped. On reconnect, the buffer drains in order, ensuring zero event loss without RAM overflow.
+                </li>
+            </ul>
+
+            <h3>Power Optimization</h3>
+            <p>
+                For battery-operated or solar-assisted gateway deployments, power consumption directly impacts autonomy.
+                Several strategies apply without compromising scanning reliability:
+            </p>
+            <ul>
+                <li>
+                    <strong>Duty-cycled BLE scanning:</strong> Instead of continuous scanning, schedule BLE scan windows
+                    (e.g., 300 ms scan / 200 ms off). Most BLE beacons advertise every 100–300 ms, so a 300 ms scan
+                    window captures almost all packets while cutting radio idle power significantly.
+                </li>
+                <li>
+                    <strong>Modem power gating:</strong> The SIM800L draws significant idle current even when not
+                    transmitting. A transistor-controlled power rail allows the ESP32 to power-cycle the modem between
+                    report intervals, reducing average current by 30–50 mA in quiet periods.
+                </li>
+                <li>
+                    <strong>Light sleep between scan cycles:</strong> ESP32 light sleep mode (with BLE wakeup source)
+                    reduces CPU and radio idle power to ~0.8 mA from the active ~80–160 mA draw. This is compatible
+                    with FreeRTOS task-based architectures if the scan task uses tickless idle correctly.
+                </li>
+                <li>
+                    <strong>Sensor polling on demand:</strong> Environmental sensors (DHT11, GY-US42V) should only be
+                    sampled when an event is already in progress, not on a constant timer. This reduces I2C/one-wire
+                    transactions and associated power draw during quiet periods.
+                </li>
+            </ul>
+
+            <table>
+                <thead>
+                    <tr>
+                        <th>Optimization</th>
+                        <th>Target Metric</th>
+                        <th>Expected Gain</th>
+                    </tr>
+                </thead>
+                <tbody>
+                    <tr>
+                        <td>EMA + adaptive hysteresis</td>
+                        <td>False alert rate</td>
+                        <td>30–50% reduction in false geofence triggers</td>
+                    </tr>
+                    <tr>
+                        <td>Core pinning (BLE → Core 0)</td>
+                        <td>Advertisement miss rate</td>
+                        <td>Near-zero misses during camera/modem bursts</td>
+                    </tr>
+                    <tr>
+                        <td>DMA SPI for camera</td>
+                        <td>CPU load during image capture</td>
+                        <td>~40% reduction in Core 1 utilization</td>
+                    </tr>
+                    <tr>
+                        <td>Duty-cycled BLE scan</td>
+                        <td>Radio idle power</td>
+                        <td>~25–35% reduction in average draw</td>
+                    </tr>
+                    <tr>
+                        <td>Modem power gating</td>
+                        <td>SIM800L idle current</td>
+                        <td>30–50 mA savings between report intervals</td>
+                    </tr>
+                    <tr>
+                        <td>Flash event ring buffer</td>
+                        <td>Event loss on connectivity failure</td>
+                        <td>Zero event drop for outages up to buffer capacity</td>
+                    </tr>
+                </tbody>
+            </table>
+
+            <h3>Fleet-Scale Optimization</h3>
+            <p>
+                When the system expands from a single gateway to a multi-node deployment covering an entire floor
+                or building, the following architectural optimizations become critical:
+            </p>
+            <ul>
+                <li>
+                    <strong>MQTT topic hierarchy:</strong> Adopt a structured topic schema like
+                    <code>ble/site/&lt;gateway_id&gt;/&lt;asset_id&gt;</code> with retained messages for last-known
+                    state. This allows a central subscriber to reconstruct complete asset state from any reconnect
+                    without querying a database.
+                </li>
+                <li>
+                    <strong>Gateway clock synchronization (NTP):</strong> Multi-gateway time correlation is critical
+                    for triangulation and event ordering. Ensure every node syncs to NTP on Wi-Fi connect and stamps
+                    events with UTC milliseconds.
+                </li>
+                <li>
+                    <strong>Centralized RSSI fusion service:</strong> A lightweight Python or Node.js service subscribing
+                    to all gateway MQTT feeds can aggregate simultaneous RSSI observations for the same tag and solve a
+                    weighted least-squares position estimate in real time — the backbone of any serious multi-anchor
+                    localization system.
+                </li>
+                <li>
+                    <strong>Commissioning mode:</strong> Add a hardware-triggered or MQTT-triggered scan mode that
+                    sweeps all channels at maximum sensitivity, logs beacon UUIDs and RSSI distributions to flash or
+                    serial, and streams the data to a commissioning laptop. This dramatically reduces site setup time
+                    versus manually configuring each node.
+                </li>
+            </ul>
+        </section>
+
+        <!-- ─── FOOTER ───────────────────────────────────────────── -->
+        <footer>
+          <div class="container">
+            <p><strong>Author's Note:</strong> This article is written in the style of an embedded systems engineering portfolio entry, emphasizing architecture, signal behavior, reliability, and field deployment thinking.</p>
+            <p class="small">Built as a standalone HTML page for personal portfolio/blog presentation.</p>
+          </div>
+        </footer>
+    </div>
+  </main>
+
+  <script src="script.js"></script>
+</body>
+</html>

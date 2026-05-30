@@ -1,6 +1,12 @@
 # Personal documents - keep private
 cv/
 
+# Node / build
+node_modules/
+dist/
+dist-ssr/
+*.local
+
 # Agent/internal files - not part of the website
 directives/
 execution/

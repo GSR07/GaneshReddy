@@ -1,0 +1,352 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+  <title>Tuning the Franka Panda Grasp Controllers — Ganesh Reddy</title>
+  <meta name="description" content="A technical deep dive into solving autonomous object grasping with ROS2, MoveIt2, and Ignition Gazebo." />
+  <link rel="preconnect" href="https://fonts.googleapis.com" />
+  <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin />
+  <link href="https://fonts.googleapis.com/css2?family=Outfit:wght@300;400;500;600;700&family=Syne:wght@400;500;600;700;800&display=swap" rel="stylesheet" />
+  <link rel="stylesheet" href="style.css?v=20" />
+  <script>
+    const savedTheme = localStorage.getItem('theme');
+    if (savedTheme === 'light' || (!savedTheme && window.matchMedia('(prefers-color-scheme: light)').matches)) {
+      document.documentElement.setAttribute('data-theme', 'light');
+    }
+  </script>
+  
+  <!-- MathJax for rendering equations -->
+  <script src="https://polyfill.io/v3/polyfill.min.js?features=es6"></script>
+  <script id="MathJax-script" async src="https://cdn.jsdelivr.net/npm/mathjax@3/es5/tex-mml-chtml.js"></script>
+  
+  <!-- Mermaid for generating architecture diagrams -->
+  <script type="module">
+    import mermaid from 'https://cdn.jsdelivr.net/npm/mermaid@10/dist/mermaid.esm.min.mjs';
+    mermaid.initialize({ startOnLoad: true, theme: 'dark', fontFamily: 'Inter' });
+  </script>
+
+  <style>
+    .blog-header {
+      padding: calc(var(--nav-h) + 100px) 40px 60px;
+      text-align: center;
+      position: relative;
+    }
+    .blog-meta {
+      font-size: 0.85rem;
+      color: var(--accent-2);
+      text-transform: uppercase;
+      letter-spacing: 0.1em;
+      font-weight: 600;
+      margin-bottom: 20px;
+      display: block;
+    }
+    .blog-content {
+      max-width: 800px;
+      margin: 0 auto;
+      font-size: 1.1rem;
+      line-height: 1.8;
+      color: var(--text);
+    }
+    .blog-content p {
+      margin-bottom: 24px;
+      color: var(--text-muted);
+    }
+    .blog-content h2 {
+      font-size: 2rem;
+      margin: 60px 0 24px;
+      color: var(--text);
+    }
+    .blog-content h3 {
+      font-size: 1.4rem;
+      margin: 40px 0 16px;
+      color: var(--accent);
+    }
+    .blog-video-wrap {
+      margin: 40px auto;
+      border-radius: var(--radius);
+      overflow: hidden;
+      border: 1px solid var(--surface-border);
+      box-shadow: var(--shadow);
+      max-width: 1000px;
+    }
+    .blog-video-wrap video {
+      width: 100%;
+      display: block;
+    }
+    .formula-box {
+      background: var(--surface);
+      padding: 24px;
+      border-left: 4px solid var(--accent-2);
+      border-radius: 0 var(--radius-sm) var(--radius-sm) 0;
+      margin: 32px 0;
+      overflow-x: auto;
+    }
+    .diagram-box {
+      margin: 48px 0;
+      padding: 32px;
+      background: var(--surface);
+      border: 1px solid var(--surface-border);
+      border-radius: var(--radius);
+      text-align: center;
+    }
+    pre {
+      background: var(--bg-alt);
+      padding: 24px;
+      border-radius: var(--radius-sm);
+      overflow-x: auto;
+      border: 1px solid var(--surface-border);
+      margin-bottom: 24px;
+      font-size: 0.9rem;
+      color: var(--text);
+    }
+    code {
+      font-family: 'Fira Code', monospace;
+    }
+    .mermaid {
+      background: transparent !important;
+    }
+  </style>
+</head>
+<body>
+  <div class="section-robot franka-sim" aria-hidden="true" style="position: fixed; z-index: -1;">
+    <div class="omni-arm pnp-mode" style="bottom: 5%; right: 5%; transform: rotateX(60deg) rotateZ(20deg) scale(0.8);">
+      <div class="omni-base"></div>
+      <div class="omni-shoulder">
+        <div class="omni-link1">
+          <div class="omni-elbow">
+            <div class="omni-link2">
+              <div class="omni-wrist"><div class="omni-gripper"></div><div class="pnp-cube"></div></div>
+            </div>
+          </div>
+        </div>
+      </div>
+    </div>
+  </div>
+
+  <!-- ─── NAV ──────────────────────────────────────────────── -->
+  <nav id="navbar" class="scrolled">
+    <a href="index.html" class="nav-logo">GR<span class="accent">.</span></a>
+    <ul class="nav-links">
+      <li><a href="index.html">&larr; Back to Portfolio</a></li>
+      <li><a href="blog.html" class="gradient-text">Blog Home</a></li>
+    </ul>
+    <div class="nav-controls" style="display: flex; align-items: center; gap: 16px;">
+      <button id="theme-toggle" class="theme-btn" aria-label="Toggle theme" style="background: transparent; border: none; color: var(--text); cursor: pointer; display: flex; align-items: center;">
+        <svg class="sun-icon" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" style="width: 22px; height: 22px;">
+          <circle cx="12" cy="12" r="5"></circle>
+          <line x1="12" y1="1" x2="12" y2="3"></line>
+          <line x1="12" y1="21" x2="12" y2="23"></line>
+          <line x1="4.22" y1="4.22" x2="5.64" y2="5.64"></line>
+          <line x1="18.36" y1="18.36" x2="19.78" y2="19.78"></line>
+          <line x1="1" y1="12" x2="3" y2="12"></line>
+          <line x1="21" y1="12" x2="23" y2="12"></line>
+          <line x1="4.22" y1="19.78" x2="5.64" y2="18.36"></line>
+          <line x1="18.36" y1="5.64" x2="19.78" y2="4.22"></line>
+        </svg>
+        <svg class="moon-icon" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" style="width: 22px; height: 22px; display: none;">
+          <path d="M21 12.79A9 9 0 1 1 11.21 3 7 7 0 0 0 21 12.79z"></path>
+        </svg>
+      </button>
+      <button id="hamburger" aria-label="Toggle menu">
+        <span></span><span></span><span></span>
+      </button>
+    </div>
+  </nav>
+
+  <!-- ─── HEADER ───────────────────────────────────────────── -->
+  <header class="blog-header">
+    <div class="container">
+      <span class="blog-meta">March 30, 2026 • Robotics & Manipulation</span>
+      <h1 class="section-title" style="margin-bottom: 24px;">The Math and Logic Behind Autonomous Pick-and-Place</h1>
+      <p style="color: var(--text-muted); max-width: 600px; margin: 0 auto;">A beginner-friendly architectural deep dive into ROS2, MoveIt2, Open CV, and Ignition Gazebo physics with the Franka Emika Panda 7-DOF arm.</p>
+    </div>
+  </header>
+
+  <!-- ─── VIDEO ────────────────────────────────────────────── -->
+  <div class="container">
+    <div class="blog-video-wrap">
+      <video src="franka_video.mp4" autoplay loop muted playsinline aria-label="Franka Panda pick and place simulation video"></video>
+    </div>
+  </div>
+
+  <!-- ─── CONTENT ──────────────────────────────────────────── -->
+  <main class="section" style="padding-top: 20px;">
+    <div class="container blog-content">
+
+      <h2>1. The Goal: From Pixels to Physical Actuation</h2>
+      <p>Building a reliable pick-and-place pipeline sounds straightforward: see object, move hand, grab object. But when simulating complex 7-Degree-Of-Freedom (DOF) robotic arms like the Franka Panda in a physics engine, things get vastly more complicated.</p>
+      <p>In this post, I will break down the exact mathematics and logic used to build a robust, end-to-end ROS2 pipeline that autonomously locates coloured blocks using Computer Vision, resolves inverse kinematics to move the arm, and effectively solves the notorious "Gazebo slipping" problem.</p>
+
+      <div class="diagram-box">
+        <div class="mermaid">
+        flowchart TD
+            Cam[Camera Sensor] -->|RGB Image| CV[OpenCV HSV Masking]
+            CV -->|Pixel Coordinates \(u,v\)| Trans[TF2 Transform]
+            Trans -->|3D Pose in Base Frame \(x,y,z\)| Plan[MoveIt2 Motion Planner]
+            Plan -->|Target Joint States \(q\)| Act[ros2_control Framework]
+            Act --> |Torque Commands \(τ\)| Gazebo[Ignition Gazebo Physics]
+            Gazebo --> Grasp[Custom Grasp Manager Node]
+        </div>
+      </div>
+
+      <h2>2. Tech Stack: The Core Mathematical Foundations</h2>
+      <p>Before writing purely structural code, we must define the mathematical constraints of our four core technologies:</p>
+      
+      <h3>A. ROS2 (Robot Operating System 2)</h3>
+      <p>The messaging backbone. It relies on the Data Distribution Service (DDS) protocol for scalable, UDP-based real-time node publishing/subscribing. We represent system states largely in <strong>Quaternions</strong> \( q = [w, x, y, z] \) to avoid gimbal lock when rotating frames.</p>
+
+      <h3>B. MoveIt2 (Kinematics & Motion Planning)</h3>
+      <p>MoveIt2 primarily works by computing <strong>Inverse Kinematics (IK)</strong>. We know where we want the end-effector to be in 3D Cartesian space \( X_e \), but we need to compute the 7 joint angles \( q \) to achieve it.</p>
+      <div class="formula-box">
+        \[ \dot{q} = J^{\dagger}(q) \dot{x} + (I - J^{\dagger}(q)J(q))\dot{q}_0 \]
+        <p style="font-size: 0.9rem; margin-top: 10px; margin-bottom: 0;"><strong>Where:</strong><br>
+        \( \dot{x} \) = desired end-effector velocity<br>
+        \( J(q) \) = The Jacobian matrix relating joint velocities to Cartesian velocities.<br>
+        \( J^{\dagger}(q) \) = The pseudo-inverse of the Jacobian (vital for 7-DOF redundant robots).<br>
+        The second term \((I - J^{\dagger}J)\dot{q}_0\) is the <em>null-space projection</em> utilized for obstacle avoidance without changing end-effector pose.</p>
+      </div>
+
+      <h3>C. Ignition Gazebo (Physics engine)</h3>
+      <p>Simulates the rigid-body dynamics using the Newton-Euler equations. Gazebo solves the Linear Complementarity Problem (LCP) to simulate contacts.</p>
+
+      <h2>3. The Brains: Computer Vision & TF2 Transforms</h2>
+      <p>How does the robot "see" a red block? The <code>color_detector.py</code> node subscribes to the camera's raw RGB image stream and applies an HSV (Hue, Saturation, Value) threshold mask. We convert RGB to HSV because it separates chromaticity (colour) from luminosity (lighting), making detection robust to shadows.</p>
+      
+      <p>Once we have a masked binary image, we find spatial <em>Moments</em> to compute the exact center pixel \((u, v)\) of the block:</p>
+      <div class="formula-box">
+        \[ C_u = \frac{M_{10}}{M_{00}} \quad , \quad C_v = \frac{M_{01}}{M_{00}} \]
+        <p style="font-size: 0.9rem; margin-top: 10px; margin-bottom: 0;">Here, \( M_{00} \) acts as the total area (mass) of the detected contour, while \( M_{10} \) and \( M_{01} \) are the sum of the x and y coordinates weighted by pixel intensity.</p>
+      </div>
+
+      <p>However, \((C_u, C_v)\) are just 2D pixels in the camera frame. The arm's base operates in a separate 3D <code>panda_link0</code> frame. We use <strong>TF2</strong> to construct a Homogeneous Transformation Matrix \( T \) to map a point from the camera frame to the robot base frame:</p>
+      <div class="formula-box">
+        \[
+        P_{base} = T_{base}^{camera} \cdot P_{camera} 
+        = \begin{bmatrix}
+          R_{3\times3} & t_{3\times1} \\
+          0 & 1
+        \end{bmatrix}
+        \begin{bmatrix}
+          x_{cam} \\ y_{cam} \\ z_{cam} \\ 1
+        \end{bmatrix}
+        \]
+      </div>
+      <p>The output \( P_{base} \) dictates exactly where MoveIt2 must send the gripper.</p>
+
+
+      <h2>4. The Muscle: Motion Planning Logic</h2>
+      <p>The MoveIt2 planning logic (often executed via a C++ or Python <code>MoveGroupInterface</code>) is structured sequentially to prevent unpredictable collisions. The logic flow is rigidly defined:</p>
+      <ol>
+        <li><strong>Hover:</strong> Compute \( P_{hover} = P_{base} + \begin{bmatrix} 0 \\ 0 \\ Z_{offset} \end{bmatrix} \). Move the arm smoothly above the object.</li>
+        <li><strong>Approach:</strong> Execute a linear Cartesian path straight down (resolving IK waypoints iteratively to prevent joint space jumping).</li>
+        <li><strong>Grasp:</strong> Close the parallel gripper fingers until collision checks report a positive contact threshold.</li>
+        <li><strong>Retreat:</strong> Lift the object straight up safely out of the workspace.</li>
+      </ol>
+
+
+      <h2>5. The Magic Trick: Solving the Gazebo Grasping Dilemma</h2>
+      <p>One of the most frustrating aspects of simulating parallel grippers in Gazebo is that objects frequently slide out. Because physics engines solve contact forces using LCPs over discrete time-steps \( \Delta t \), the friction cone often fails to calculate sufficient normal force \( F_{n} \) on the slick geometric meshes, resulting in object slippage.</p>
+
+      <p>To fix this cleanly, I developed a custom <code>grasp_manager.py</code> node. Instead of relying solely on simulated friction \( F_f \le \mu_s F_n \), this node actively monitors the joint state topic of the gripper fingers. When they close onto an object with a specified threshold, we intervene in the physics engine logic directly:</p>
+
+      <div class="diagram-box">
+        <div class="mermaid">
+        stateDiagram-v2
+            [*] --> Monitoring
+            Monitoring --> FingersClosing: Joint Error > Target
+            FingersClosing --> Grasping: Collision Detected
+            Grasping --> SendIgnitionService: Call /world/empty/create
+            SendIgnitionService --> FixedJointCreated: Inject `<joint type="fixed">`
+            FixedJointCreated --> Holding
+            Holding --> Opening: Gripper Command "Open"
+            Opening --> SendIgnitionServiceRemove: Call /world/empty/remove
+            SendIgnitionServiceRemove --> Monitoring: Joint Destroyed
+        </div>
+      </div>
+
+      <p>By injecting a <code>&lt;joint type="fixed"&gt;</code> dynamically via the Ignition transport CLI, we mathematically bind the object \( \mathcal{O} \) and the gripper link \( \mathcal{L} \) into a single kinematic chain constraint \( C(q) = 0 \). This forces their relative velocity to be zero \( J \dot{q} = 0 \), ensuring 100% reliable lifting performance in simulation without modifying physical friction coefficients unproductively.</p>
+
+      <h2>6. Putting It All Together: Launch Sequence</h2>
+      <p>Orchestrating all these nodes requires a complex Python launch file sequence (<code>pick_and_place.launch.py</code>) to adhere to strict timing dependencies:</p>
+      
+<pre><code># 1. Start Ignition Gazebo Engine with Fortress
+ignition_spawn = IncludeLaunchDescription(
+    PythonLaunchDescriptionSource([gazebo_ros_dir, '/launch/gazebo.launch.py'])
+)
+
+# 2. Load the Robot description (URDF) & start ros2_control
+robot_state_publisher = Node(
+    package='robot_state_publisher',
+    executable='robot_state_publisher',
+    parameters=[{'robot_description': urdf}]
+)
+
+# 3. Fire up MoveIt2 APIs
+move_group_node = Node(
+    package='moveit_ros_move_group',
+    executable='move_group'
+)
+
+# 4. Our Custom Nodes
+vision_node = Node(package='panda_vision', executable='color_detector')
+grasp_node  = Node(package='panda_controller', executable='grasp_manager')
+</code></pre>
+
+      <p>When you spin up this single command, the entire system connects seamlessly. The camera begins streaming, the controller translates pixels into 3D transforms via TF2, MoveIt computes the safe IK joint trajectory, and the Grasp Manager mathematically locks the payload in place for a flawless simulated pick-and-place operation.</p>
+    </div>
+  </main>
+
+  <!-- ─── FOOTER ───────────────────────────────────────────── -->
+  <footer>
+    <div class="container">
+      <p>&copy; 2026 Ganesh Reddy. All rights reserved.</p>
+    </div>
+  </footer>
+
+  <script>
+    /* Theme Toggle */
+    const themeToggle = document.getElementById('theme-toggle');
+    if (themeToggle) {
+      const sunIcon = themeToggle.querySelector('.sun-icon');
+      const moonIcon = themeToggle.querySelector('.moon-icon');
+      function updateThemeIcon() {
+        if (document.documentElement.getAttribute('data-theme') === 'light') {
+          sunIcon.style.display = 'none';
+          moonIcon.style.display = 'block';
+        } else {
+          sunIcon.style.display = 'block';
+          moonIcon.style.display = 'none';
+        }
+      }
+      updateThemeIcon();
+      themeToggle.addEventListener('click', () => {
+        const currentTheme = document.documentElement.getAttribute('data-theme') || 'dark';
+        const newTheme = currentTheme === 'light' ? 'dark' : 'light';
+        if (newTheme === 'light') { document.documentElement.setAttribute('data-theme', 'light'); }
+        else { document.documentElement.removeAttribute('data-theme'); }
+        localStorage.setItem('theme', newTheme);
+        updateThemeIcon();
+      });
+    }
+
+    const hamburger = document.getElementById('hamburger');
+    const navLinks = document.querySelector('.nav-links');
+    if (hamburger) {
+      hamburger.addEventListener('click', () => {
+        navLinks.classList.toggle('open');
+      });
+    }
+    window.addEventListener('scroll', () => {
+      document.body.style.setProperty('--scrollParam', window.scrollY);
+    });
+
+    // Autonomous Background Timer
+    function updateTimeParam() {
+      document.body.style.setProperty('--timeParam', performance.now() / 1000);
+      requestAnimationFrame(updateTimeParam);
+    }
+    updateTimeParam();
+  </script>
+</body>
+</html>

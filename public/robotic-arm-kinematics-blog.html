@@ -1,0 +1,433 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+  <title>5 Actuators, 4 DoF — Open Manipulator Kinematics — Ganesh Reddy</title>
+  <meta name="description" content="Full kinematic model of a 4-DoF ROS-controlled articulated arm on an AMR: DH parameters, closed-form forward kinematics, and geometric inverse kinematics." />
+  <link rel="preconnect" href="https://fonts.googleapis.com" />
+  <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin />
+  <link href="https://fonts.googleapis.com/css2?family=Outfit:wght@300;400;500;600;700&family=Syne:wght@500;600;700;800&display=swap" rel="stylesheet" />
+  <link rel="stylesheet" href="style.css" />
+  <link rel="stylesheet" href="blog-common.css" />
+  <script>
+    const savedTheme = localStorage.getItem('theme');
+    if (savedTheme === 'light' || (!savedTheme && window.matchMedia('(prefers-color-scheme: light)').matches)) {
+      document.documentElement.setAttribute('data-theme', 'light');
+    }
+  </script>
+  
+  <!-- MathJax for rendering equations -->
+  <script id="MathJax-script" async src="https://cdn.jsdelivr.net/npm/mathjax@3/es5/tex-mml-chtml.js"></script>
+  
+
+  <style>
+    .blog-header {
+      padding: calc(var(--nav-h) + 100px) 40px 60px;
+      text-align: center;
+      position: relative;
+    }
+    .blog-meta {
+      font-size: 0.85rem;
+      color: var(--accent-2);
+      text-transform: uppercase;
+      letter-spacing: 0.1em;
+      font-weight: 600;
+      margin-bottom: 20px;
+      display: block;
+    }
+    .blog-content {
+      max-width: 800px;
+      margin: 0 auto;
+      font-size: 1.1rem;
+      line-height: 1.8;
+      color: var(--text);
+    }
+    .blog-content p {
+      margin-bottom: 24px;
+      color: var(--text-muted);
+    }
+    .blog-content h2 {
+      font-size: 2rem;
+      margin: 60px 0 24px;
+      color: var(--text);
+    }
+    .blog-content h3 {
+      font-size: 1.4rem;
+      margin: 40px 0 16px;
+      color: var(--accent);
+    }
+    .blog-video-wrap {
+      margin: 40px auto;
+      border-radius: var(--radius);
+      overflow: hidden;
+      border: 1px solid var(--surface-border);
+      box-shadow: var(--shadow);
+      max-width: 1000px;
+    }
+    .blog-video-wrap video {
+      width: 100%;
+      display: block;
+    }
+    .formula-box {
+      background: var(--surface);
+      padding: 24px;
+      border-left: 4px solid var(--accent-2);
+      border-radius: 0 var(--radius-sm) var(--radius-sm) 0;
+      margin: 32px 0;
+      overflow-x: auto;
+    }
+    .diagram-box {
+      margin: 48px 0;
+      padding: 32px;
+      background: var(--surface);
+      border: 1px solid var(--surface-border);
+      border-radius: var(--radius);
+      text-align: center;
+    }
+    pre {
+      background: var(--bg-alt);
+      padding: 24px;
+      border-radius: var(--radius-sm);
+      overflow-x: auto;
+      border: 1px solid var(--surface-border);
+      margin-bottom: 24px;
+      font-size: 0.9rem;
+      color: var(--text);
+    }
+    code {
+      font-family: 'Fira Code', monospace;
+    }
+    .mermaid {
+      background: transparent !important;
+    }
+  </style>
+</head>
+<body>
+  <!-- ─── NAV ──────────────────────────────────────────────── -->
+  <nav id="navbar" class="scrolled">
+    <a href="./" class="nav-logo">GR<span class="accent">.</span></a>
+    <ul class="nav-links">
+      <li><a href="./">&larr; Back to Portfolio</a></li>
+      <li><a href="blog.html" class="gradient-text">Blog Home</a></li>
+    </ul>
+    <div class="nav-controls" style="display: flex; align-items: center; gap: 16px;">
+      <button id="theme-toggle" class="theme-btn" aria-label="Toggle theme" style="background: transparent; border: none; color: var(--text); cursor: pointer; display: flex; align-items: center;">
+        <svg class="sun-icon" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" style="width: 22px; height: 22px;">
+          <circle cx="12" cy="12" r="5"></circle>
+          <line x1="12" y1="1" x2="12" y2="3"></line>
+          <line x1="12" y1="21" x2="12" y2="23"></line>
+          <line x1="4.22" y1="4.22" x2="5.64" y2="5.64"></line>
+          <line x1="18.36" y1="18.36" x2="19.78" y2="19.78"></line>
+          <line x1="1" y1="12" x2="3" y2="12"></line>
+          <line x1="21" y1="12" x2="23" y2="12"></line>
+          <line x1="4.22" y1="19.78" x2="5.64" y2="18.36"></line>
+          <line x1="18.36" y1="5.64" x2="19.78" y2="4.22"></line>
+        </svg>
+        <svg class="moon-icon" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" style="width: 22px; height: 22px; display: none;">
+          <path d="M21 12.79A9 9 0 1 1 11.21 3 7 7 0 0 0 21 12.79z"></path>
+        </svg>
+      </button>
+      <button id="hamburger" aria-label="Toggle menu">
+        <span></span><span></span><span></span>
+      </button>
+    </div>
+  </nav>
+
+    <!-- ─── HEADER ───────────────────────────────────────────── -->
+  <header class="blog-header">
+    <div class="container">
+      <span class="blog-meta">July 5, 2026 • Robotics &amp; Manipulation</span>
+      <h1 class="section-title" style="margin-bottom: 24px;">5-Actuator Open Manipulator — Forward &amp; Inverse Kinematics</h1>
+      <p style="color: var(--text-muted); max-width: 640px; margin: 0 auto;">A ROS-controlled articulated arm mounted on an AMR for warehouse pick-and-place. DH parameters, closed-form FK, and a geometric closed-form IK solution — and why 5 actuators only make 4 degrees of freedom.</p>
+    </div>
+  </header>
+
+
+  <!-- ─── CONTENT ──────────────────────────────────────────── -->
+  <main class="section" style="padding-top: 20px;">
+    <div class="container blog-content">
+
+      <h2>1. Hardware &amp; Configuration</h2>
+      <p>This arm rides on an Autonomous Mobile Robot (AMR) and does pick-and-place in a warehouse/logistics setting. It uses <strong>5 Dynamixel XM430 actuators</strong> — but kinematically it is a <strong>4-DoF articulated positioning arm</strong> (base yaw + three coplanar revolute joints) plus a <strong>1-DoF parallel-jaw gripper</strong>. The gripper opens and closes the end-effector; it does not add a positioning degree of freedom. Everything below is derived for the 4-DoF positioning chain.</p>
+
+      <table>
+        <thead><tr><th>Property</th><th>Value</th></tr></thead>
+        <tbody>
+          <tr><td>Actuators</td><td>5 × Dynamixel XM430 (4.1 N·m @ 12 V, 2.3 A; no-load 46 rev/min)</td></tr>
+          <tr><td>Interface</td><td>U2D2 USB converter, daisy-chained; external 12 V supply</td></tr>
+          <tr><td>Structure</td><td>Serial open-loop chain, all revolute joints</td></tr>
+          <tr><td>Links</td><td>Carbon-fiber rod; GI-sheet flanges; 3D-printed gripper</td></tr>
+          <tr><td>Reach</td><td>620 mm (base → end-effector, fully extended)</td></tr>
+          <tr><td>Gripper</td><td>Parallel-jaw, 3-gear train (1:3 drive + 1:1 sync), module 1.75</td></tr>
+        </tbody>
+      </table>
+
+      <p>The arm is a <strong>serial anthropomorphic (articulated) manipulator</strong>: the first joint sits on the fixed base and the chain terminates in a free end-effector. Joint 1 yaws the whole arm about the vertical; joints 2–4 then act as a planar linkage in a single plane.</p>
+
+      <h2>2. Denavit–Hartenberg (DH) Parameters</h2>
+      <div class="diagram-box"><svg viewBox="0 0 640 300" xmlns="http://www.w3.org/2000/svg" role="img" aria-label="DH frame assignment side view" style="max-width:640px;width:100%">
+  <g stroke="var(--text-muted)" stroke-width="1">
+    <line x1="40" y1="256" x2="600" y2="256"/>
+    <g stroke-width="1" opacity=".5">
+      <line x1="60" y1="256" x2="50" y2="266"/><line x1="90" y1="256" x2="80" y2="266"/><line x1="120" y1="256" x2="110" y2="266"/><line x1="150" y1="256" x2="140" y2="266"/><line x1="180" y1="256" x2="170" y2="266"/>
+    </g>
+  </g>
+  <!-- links -->
+  <g stroke="var(--text)" stroke-width="4" stroke-linecap="round">
+    <line x1="120" y1="250" x2="120" y2="186"/>
+    <line x1="120" y1="186" x2="268" y2="112"/>
+    <line x1="268" y1="112" x2="436" y2="150"/>
+    <line x1="436" y1="150" x2="548" y2="106"/>
+  </g>
+  <!-- joints -->
+  <g fill="var(--accent)" stroke="var(--bg-alt)" stroke-width="2">
+    <circle cx="120" cy="250" r="9"/><circle cx="120" cy="186" r="9"/><circle cx="268" cy="112" r="9"/><circle cx="436" cy="150" r="9"/>
+  </g>
+  <circle cx="548" cy="106" r="6" fill="var(--accent-2)"/>
+  <!-- z0 axis -->
+  <g stroke="var(--accent-2)" stroke-width="1.5">
+    <line x1="120" y1="250" x2="120" y2="150"/>
+  </g>
+  <path d="M116 154 L120 144 L124 154 Z" fill="var(--accent-2)"/>
+  <!-- out-of-plane z markers for joints 2-4 -->
+  <g fill="none" stroke="var(--accent-2)" stroke-width="1.5">
+    <circle cx="150" cy="176" r="7"/><circle cx="296" cy="100" r="7"/><circle cx="462" cy="136" r="7"/>
+  </g>
+  <g fill="var(--accent-2)">
+    <circle cx="150" cy="176" r="1.8"/><circle cx="296" cy="100" r="1.8"/><circle cx="462" cy="136" r="1.8"/>
+  </g>
+  <g font-family="Outfit, sans-serif" font-size="14" fill="var(--text)">
+    <text x="90" y="222">d₁</text>
+    <text x="180" y="136">a₂</text>
+    <text x="342" y="118">a₃</text>
+    <text x="484" y="140">a₄</text>
+    <text x="128" y="148" fill="var(--accent-2)">z₀</text>
+    <text x="162" y="172" fill="var(--accent-2)" font-size="12">z₁</text>
+    <text x="308" y="96" fill="var(--accent-2)" font-size="12">z₂</text>
+    <text x="474" y="132" fill="var(--accent-2)" font-size="12">z₃</text>
+    <text x="98" y="280">joint 1 (yaw)</text>
+    <text x="60" y="180">joint 2</text>
+    <text x="252" y="90">joint 3</text>
+    <text x="420" y="180">joint 4</text>
+    <text x="536" y="86" fill="var(--accent-2)">EE</text>
+  </g>
+</svg>
+        <p style="font-size:.85rem;color:var(--text-muted);margin:12px 0 0;">DH frame assignment. After the α₁ = 90° twist, the z-axes of joints 2–4 point out of the page (⊙) — the arm becomes a planar linkage.</p>
+      </div>
+      <p>Frames follow the standard DH convention. A geometric offset angle \(\theta_0\) exists between joints 2 and 3 because the physical link is bent; it is measured from the flange geometry and folded into the joint variables:</p>
+      <div class="formula-box">\[ \theta_0 = \tan^{-1}\!\left(\frac{a}{b}\right) \]</div>
+
+      <table>
+        <thead><tr><th>Joint \(i\)</th><th>\(\theta_i\)</th><th>\(\alpha_i\) (°)</th><th>\(a_i\) (m)</th><th>\(d_i\) (m)</th></tr></thead>
+        <tbody>
+          <tr><td>1</td><td>\(\theta_1\)</td><td>90</td><td>0</td><td>0.080</td></tr>
+          <tr><td>2</td><td>\(\theta_2 - \theta_0\)</td><td>0</td><td>0.175</td><td>0</td></tr>
+          <tr><td>3</td><td>\(\theta_3 + \theta_0\)</td><td>0</td><td>0.200</td><td>0</td></tr>
+          <tr><td>4</td><td>\(\theta_4\)</td><td>0</td><td>0.135</td><td>0</td></tr>
+        </tbody>
+      </table>
+      <p><strong>Symbols:</strong> \(\theta_i\) = joint angle (variable), \(\alpha_i\) = link twist, \(a_i\) = link length, \(d_i\) = joint offset.</p>
+      <p><strong>Key structural insight:</strong> the \(\alpha_1 = 90°\) twist tips the arm into a vertical plane after the base yaw. Since joints 2–4 all have \(\alpha = 0\), the arm reduces to a <strong>planar 3-link problem</strong> in that plane — which is exactly what makes the inverse kinematics solvable in closed form.</p>
+
+      <h2>3. Forward Kinematics</h2>
+      <p>Each link's homogeneous transform from frame \(i{-}1\) to frame \(i\):</p>
+      <div class="formula-box">
+        \[ T_i^{\,i-1} = \begin{bmatrix} c\theta_i &amp; -s\theta_i c\alpha_i &amp; s\theta_i s\alpha_i &amp; a_i c\theta_i \\ s\theta_i &amp; c\theta_i c\alpha_i &amp; -c\theta_i s\alpha_i &amp; a_i s\theta_i \\ 0 &amp; s\alpha_i &amp; c\alpha_i &amp; d_i \\ 0 &amp; 0 &amp; 0 &amp; 1 \end{bmatrix} \]
+        <p style="font-size: 0.9rem; margin: 10px 0 0;">where \(c = \cos\), \(s = \sin\).</p>
+      </div>
+      <p>The end-effector pose is the ordered product of all four link transforms:</p>
+      <div class="formula-box">
+        \[ T_4^{\,0} = T_1^{\,0}\, T_2^{\,1}\, T_3^{\,2}\, T_4^{\,3} = \begin{bmatrix} n_x &amp; o_x &amp; a_x &amp; p_x \\ n_y &amp; o_y &amp; a_y &amp; p_y \\ n_z &amp; o_z &amp; a_z &amp; p_z \\ 0 &amp; 0 &amp; 0 &amp; 1 \end{bmatrix} \]
+      </div>
+      <ul>
+        <li>\(p = (p_x, p_y, p_z)\) — end-effector <strong>position</strong>.</li>
+        <li>\(n\), \(o\), \(a\) — orthonormal columns defining end-effector <strong>orientation</strong> (normal, orientation, approach axes).</li>
+      </ul>
+      <p><strong>FK in one line:</strong> given \((\theta_1, \theta_2, \theta_3, \theta_4)\), evaluate the product to obtain the full \(4\times 4\) pose.</p>
+
+      <h2>4. Inverse Kinematics (Closed-Form, Geometric)</h2>
+      <p>The IK is solved in two stages: the base yaw is decoupled from the planar sub-problem, and the remaining three joints are solved geometrically in the \(r\)–\(z\) plane.</p>
+
+      <h3>Step 1 — Base yaw \(\theta_1\)</h3>
+      <div class="diagram-box"><svg viewBox="0 0 420 270" xmlns="http://www.w3.org/2000/svg" role="img" aria-label="Base yaw top view" style="max-width:420px;width:100%">
+  <g stroke="var(--text-muted)" stroke-width="1.5">
+    <line x1="60" y1="210" x2="380" y2="210"/>
+    <line x1="60" y1="210" x2="60" y2="30"/>
+  </g>
+  <path d="M374 206 L384 210 L374 214 Z" fill="var(--text-muted)"/>
+  <path d="M56 36 L60 26 L64 36 Z" fill="var(--text-muted)"/>
+  <!-- arm projection -->
+  <line x1="60" y1="210" x2="300" y2="80" stroke="var(--text)" stroke-width="4" stroke-linecap="round"/>
+  <circle cx="60" cy="210" r="9" fill="var(--accent)" stroke="var(--bg-alt)" stroke-width="2"/>
+  <circle cx="300" cy="80" r="6" fill="var(--accent-2)"/>
+  <!-- projections -->
+  <g stroke="var(--text-muted)" stroke-width="1" stroke-dasharray="5 4">
+    <line x1="300" y1="80" x2="300" y2="210"/>
+    <line x1="300" y1="80" x2="60" y2="80"/>
+  </g>
+  <!-- theta1 arc -->
+  <path d="M 120 210 A 60 60 0 0 0 112 182" fill="none" stroke="var(--accent-2)" stroke-width="1.5"/>
+  <g font-family="Outfit, sans-serif" font-size="14" fill="var(--text)">
+    <text x="386" y="214">x</text>
+    <text x="52" y="20">y</text>
+    <text x="128" y="200" fill="var(--accent-2)">θ₁</text>
+    <text x="160" y="130">p_r</text>
+    <text x="290" y="228">p_x</text>
+    <text x="34" y="86">p_y</text>
+    <text x="308" y="70" fill="var(--accent-2)">P (target)</text>
+  </g>
+</svg></div>
+      <p>Motion of the arm across the \(x\)–\(y\) plane depends only on joint 1:</p>
+      <div class="formula-box">\[ \theta_1 = \operatorname{atan2}(p_y,\, p_x), \qquad p_r = \sqrt{p_x^2 + p_y^2} \]</div>
+      <p>\(\theta_1\) is the base rotation, ranging \(-180° \dots 180°\). The \(x\) and \(y\) coordinates are merged into a single radial axis \(r\).</p>
+
+      <h3>Steps 2–5 — Planar sub-problem in the \(r\)–\(z\) plane</h3>
+      <div class="diagram-box"><svg viewBox="0 0 640 330" xmlns="http://www.w3.org/2000/svg" role="img" aria-label="Planar r-z projection" style="max-width:640px;width:100%">
+  <g stroke="var(--text-muted)" stroke-width="1.5">
+    <line x1="80" y1="270" x2="600" y2="270"/>
+    <line x1="80" y1="270" x2="80" y2="40"/>
+  </g>
+  <path d="M594 266 L604 270 L594 274 Z" fill="var(--text-muted)"/>
+  <path d="M76 46 L80 36 L84 46 Z" fill="var(--text-muted)"/>
+  <!-- links -->
+  <g stroke="var(--text)" stroke-width="4" stroke-linecap="round">
+    <line x1="80" y1="270" x2="250" y2="140"/>
+    <line x1="250" y1="140" x2="430" y2="185"/>
+    <line x1="430" y1="185" x2="545" y2="120"/>
+  </g>
+  <g fill="var(--accent)" stroke="var(--bg-alt)" stroke-width="2">
+    <circle cx="80" cy="270" r="9"/><circle cx="250" cy="140" r="9"/><circle cx="430" cy="185" r="9"/>
+  </g>
+  <circle cx="545" cy="120" r="6" fill="var(--accent-2)"/>
+  <!-- wrist backoff -->
+  <g stroke="var(--text-muted)" stroke-width="1" stroke-dasharray="5 4">
+    <line x1="430" y1="185" x2="430" y2="270"/>
+    <line x1="545" y1="120" x2="545" y2="270"/>
+    <line x1="430" y1="185" x2="510" y2="185"/>
+  </g>
+  <!-- phi angle -->
+  <path d="M 480 185 A 50 50 0 0 0 472 161" fill="none" stroke="var(--accent-2)" stroke-width="1.5"/>
+  <g font-family="Outfit, sans-serif" font-size="14" fill="var(--text)">
+    <text x="606" y="274">r</text>
+    <text x="70" y="30">z</text>
+    <text x="130" y="188">a₂</text>
+    <text x="330" y="152">a₃</text>
+    <text x="480" y="140">a₄</text>
+    <text x="486" y="178" fill="var(--accent-2)">φ</text>
+    <text x="404" y="292">r₂</text>
+    <text x="530" y="292">r₃</text>
+    <text x="398" y="164">wrist (r₂, z₂)</text>
+    <text x="552" y="110" fill="var(--accent-2)">target (r₃, z₃)</text>
+    <text x="36" y="274">θ₂</text>
+    <text x="240" y="118">θ₃</text>
+    <text x="418" y="216">θ₄</text>
+  </g>
+</svg></div>
+      <p>Project the target into the vertical plane and subtract the base offset:</p>
+      <div class="formula-box">\[ r_3 = p_r, \qquad z_3 = p_z - d_1 \]</div>
+      <p>Using the desired approach angle \(\phi = \theta_2 + \theta_3 + \theta_4\), back off the last link to find the wrist point:</p>
+      <div class="formula-box">\[ r_2 = r_3 - a_4\cos\phi, \qquad z_2 = z_3 - a_4\sin\phi \]</div>
+      <p><strong>Elbow angle</strong> \(\theta_3\) via the law of cosines (the \(\pm\) selects elbow-up or elbow-down):</p>
+      <div class="formula-box">\[ \cos\theta_3 = \frac{r_2^2 + z_2^2 - (a_2^2 + a_3^2)}{2\,a_2\,a_3}, \qquad \theta_3 = \pm\cos^{-1}(\cdot) \]</div>
+      <p><strong>Shoulder angle</strong> \(\theta_2\):</p>
+      <div class="formula-box">
+        \[ \cos\theta_2 = \frac{(a_2 + a_3\cos\theta_3)\,r_2 + (a_3\sin\theta_3)\,z_2}{r_2^2 + z_2^2} \]
+        \[ \sin\theta_2 = \frac{(a_2 + a_3\cos\theta_3)\,z_2 - (a_3\sin\theta_3)\,r_2}{r_2^2 + z_2^2} \]
+        \[ \theta_2 = \operatorname{atan2}(\sin\theta_2,\, \cos\theta_2) \]
+      </div>
+      <p><strong>Wrist angle</strong> \(\theta_4\):</p>
+      <div class="formula-box">\[ \theta_4 = \phi - (\theta_2 + \theta_3) \]</div>
+      <p><strong>Link constants:</strong> \(a_2 = 0.175\), \(a_3 = 0.200\), \(a_4 = 0.135\), \(d_1 = 0.080\) (metres).<br>
+      <strong>Joint limits:</strong> \(\theta_2, \theta_3, \theta_4 \in [-90°,\, 90°]\).</p>
+
+      <h3>Elbow-up vs elbow-down</h3>
+      <div class="diagram-box"><svg viewBox="0 0 480 290" xmlns="http://www.w3.org/2000/svg" role="img" aria-label="Elbow-up and elbow-down solutions" style="max-width:480px;width:100%">
+  <line x1="30" y1="250" x2="450" y2="250" stroke="var(--text-muted)" stroke-width="1"/>
+  <!-- elbow up (solid) -->
+  <g stroke="var(--text)" stroke-width="4" stroke-linecap="round">
+    <line x1="90" y1="240" x2="212" y2="82"/>
+    <line x1="212" y1="82" x2="380" y2="140"/>
+  </g>
+  <!-- elbow down (dashed) -->
+  <g stroke="var(--text-muted)" stroke-width="3" stroke-linecap="round" stroke-dasharray="8 6">
+    <line x1="90" y1="240" x2="286" y2="238"/>
+    <line x1="286" y1="238" x2="380" y2="140"/>
+  </g>
+  <g fill="var(--accent)" stroke="var(--bg-alt)" stroke-width="2">
+    <circle cx="90" cy="240" r="9"/><circle cx="212" cy="82" r="8"/><circle cx="286" cy="238" r="8"/>
+  </g>
+  <circle cx="380" cy="140" r="7" fill="var(--accent-2)"/>
+  <g font-family="Outfit, sans-serif" font-size="14" fill="var(--text)">
+    <text x="150" y="66">elbow-up (θ₃ &lt; 0)</text>
+    <text x="236" y="272">elbow-down (θ₃ &gt; 0)</text>
+    <text x="390" y="130" fill="var(--accent-2)">same EE pose</text>
+    <text x="60" y="272">base</text>
+  </g>
+</svg></div>
+      <p>The \(\pm\) in the \(\cos^{-1}\) yields two valid joint sets that reach the same end-effector pose. The correct branch is chosen by joint limits and self-collision avoidance.</p>
+
+      <h2>5. Implementation Notes</h2>
+      <ul>
+        <li><strong><code>atan2</code>, not <code>atan</code>:</strong> every angle uses the two-argument arctangent to keep the correct quadrant — a single-argument \(\tan^{-1}\) silently collapses \(\theta\) into \(\pm 90°\) and breaks reachability across quadrants.</li>
+        <li><strong>Reachability check:</strong> before solving, verify \(\lvert r_2^2 + z_2^2 - a_2^2 - a_3^2 \rvert \le 2 a_2 a_3\); if \(\lvert\cos\theta_3\rvert &gt; 1\) the target is outside the workspace.</li>
+        <li><strong>Stack:</strong> kinematics run in the ROS control loop; the arm is commanded through the Dynamixel SDK over U2D2, with the AMR handling navigation to the pick/place pose.</li>
+      </ul>
+
+      <p><em>Part of an Autonomous Mobile Robot (AMR) project for warehouse logistics — differential-drive base with LiDAR SLAM, A* path planning, EKF sensor fusion, and this articulated arm for pick-and-place.</em></p>
+    </div>
+  </main>
+
+  <!-- ─── FOOTER ───────────────────────────────────────────── -->
+  <footer>
+    <div class="container">
+      <p>&copy; 2026 Ganesh Reddy. All rights reserved.</p>
+    </div>
+  </footer>
+
+  <script>
+    /* Theme Toggle */
+    const themeToggle = document.getElementById('theme-toggle');
+    if (themeToggle) {
+      const sunIcon = themeToggle.querySelector('.sun-icon');
+      const moonIcon = themeToggle.querySelector('.moon-icon');
+      function updateThemeIcon() {
+        if (document.documentElement.getAttribute('data-theme') === 'light') {
+          sunIcon.style.display = 'none';
+          moonIcon.style.display = 'block';
+        } else {
+          sunIcon.style.display = 'block';
+          moonIcon.style.display = 'none';
+        }
+      }
+      updateThemeIcon();
+      themeToggle.addEventListener('click', () => {
+        const currentTheme = document.documentElement.getAttribute('data-theme') || 'dark';
+        const newTheme = currentTheme === 'light' ? 'dark' : 'light';
+        if (newTheme === 'light') { document.documentElement.setAttribute('data-theme', 'light'); }
+        else { document.documentElement.removeAttribute('data-theme'); }
+        localStorage.setItem('theme', newTheme);
+        updateThemeIcon();
+      });
+    }
+
+    const hamburger = document.getElementById('hamburger');
+    const navLinks = document.querySelector('.nav-links');
+    if (hamburger) {
+      hamburger.addEventListener('click', () => {
+        navLinks.classList.toggle('open');
+      });
+    }
+    window.addEventListener('scroll', () => {
+      document.body.style.setProperty('--scrollParam', window.scrollY);
+    });
+
+    // Autonomous Background Timer
+    function updateTimeParam() {
+      document.body.style.setProperty('--timeParam', performance.now() / 1000);
+      requestAnimationFrame(updateTimeParam);
+    }
+    updateTimeParam();
+  </script>
+</body>
+</html>

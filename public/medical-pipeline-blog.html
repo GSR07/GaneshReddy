@@ -3,8 +3,8 @@
 <head>
   <meta charset="UTF-8" />
   <meta name="viewport" content="width=device-width, initial-scale=1.0" />
-  <title>YOLOv8 Edge Inference on ESP32 — Ganesh Reddy</title>
-  <meta name="description" content="Challenges and breakthroughs from porting lighter convolutional architectures to bare-metal embedded devices with tight RAM constraints." />
+  <title>A Medical Imaging ML Pipeline Done Right — Ganesh Reddy</title>
+  <meta name="description" content="End-to-end supervised learning pipeline for medical imaging — dataset curation, leakage prevention, bias analysis, and systematic failure-case review." />
   <link rel="preconnect" href="https://fonts.googleapis.com" />
   <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin />
   <link href="https://fonts.googleapis.com/css2?family=Outfit:wght@300;400;500;600;700&family=Syne:wght@500;600;700;800&display=swap" rel="stylesheet" />
@@ -17,13 +17,7 @@
     }
   </script>
   
-  <script id="MathJax-script" async src="https://cdn.jsdelivr.net/npm/mathjax@3/es5/tex-mml-chtml.js"></script>
   
-  <script type="module">
-    import mermaid from 'https://cdn.jsdelivr.net/npm/mermaid@10/dist/mermaid.esm.min.mjs';
-    const _isDark = document.documentElement.getAttribute('data-theme') !== 'light';
-    mermaid.initialize({ startOnLoad: true, theme: _isDark ? 'dark' : 'neutral', fontFamily: 'Outfit' });
-  </script>
 
   <style>
     .blog-header {
@@ -60,6 +54,18 @@
       font-size: 1.4rem;
       margin: 40px 0 16px;
       color: var(--accent);
+    }
+    .blog-video-wrap {
+      margin: 40px auto;
+      border-radius: var(--radius);
+      overflow: hidden;
+      border: 1px solid var(--surface-border);
+      box-shadow: var(--shadow);
+      max-width: 1000px;
+    }
+    .blog-video-wrap video {
+      width: 100%;
+      display: block;
     }
     .formula-box {
       background: var(--surface);
@@ -126,67 +132,45 @@
     </div>
   </nav>
 
-  <!-- ─── HEADER ───────────────────────────────────────────── -->
+    <!-- ─── HEADER ───────────────────────────────────────────── -->
   <header class="blog-header">
     <div class="container">
-      <span class="blog-meta">January 10, 2026 • Edge AI & Embedded Systems</span>
-      <h1 class="section-title" style="margin-bottom: 24px;">YOLOv8 Edge Inference on ESP32</h1>
-      <p style="color: var(--text-muted); max-width: 600px; margin: 0 auto;">Challenges and breakthroughs from porting lighter convolutional architectures to bare-metal embedded devices with tight RAM constraints.</p>
+      <span class="blog-meta">June 20, 2026 • Machine Learning</span>
+      <h1 class="section-title" style="margin-bottom: 24px;">The Pipeline Is the Product: ML for Medical Imaging</h1>
+      <p style="color: var(--text-muted); max-width: 640px; margin: 0 auto;">Dataset curation, quality checks, bias analysis, and failure-case review — the unglamorous machinery around the model that decides whether medical ML is real or fiction.</p>
     </div>
   </header>
+
 
   <!-- ─── CONTENT ──────────────────────────────────────────── -->
   <main class="section" style="padding-top: 20px;">
     <div class="container blog-content">
 
-      <h2>1. The Challenge of Bare-Metal Edge AI</h2>
-      <p>Running a state-of-the-art object detection model like YOLOv8 on a standard PC is trivial. Running it on an ESP32 microcontroller with a few megabytes of PSRAM and barely any flash storage? That's an engineering battle. The constraint isn't just compute speed, it's extreme memory limitation.</p>
-      
-      <p>In this post, I explore how to strip down, quantize, and optimize YOLO architectures into TensorFlow Lite Micro (.tflite) payloads suitable for bare-metal C++ execution.</p>
+      <h2>1. The Unglamorous 80%</h2>
+      <p>After building an X-ray classifier, I rebuilt the surrounding machinery properly: a supervised learning pipeline for medical imaging where the model is one component among many — and rarely the one that fails. This post is about the other components: curation, quality checks, bias analysis, and failure-case review.</p>
 
-      <div class="diagram-box">
-        <div class="mermaid">
-        flowchart TD
-            A[YOLOv8 Nano Model] -->|Export to ONNX| B[ONNX Graph]
-            B -->|Convert & Quantize INT8| C[TensorFlow Lite Model]
-            C -->|xxd Hex Dump| D[C Byte Array Header]
-            D -->|ESP-IDF Framework| E[ESP32 Execution]
-            E -->|OV2640 Camera| F[Bounding Box Output]
-        </div>
-      </div>
+      <h2>2. Dataset Curation</h2>
+      <p>Public medical datasets are stitched together from multiple hospitals, scanners, and labelling processes. Before any training:</p>
+      <ul>
+        <li><strong>Deduplication</strong> — near-duplicate images (same study, re-exported) silently leak between train and test splits.</li>
+        <li><strong>Label provenance</strong> — some labels come from radiologist reads, others from NLP over reports. These are not the same quality, and mixing them unweighted degrades both.</li>
+        <li><strong>Patient-level splitting</strong> — the single most common invalidating mistake in published medical ML; all images of a patient go to exactly one split.</li>
+      </ul>
 
-      <h2>2. Model Reduction & INT8 Quantization</h2>
-      <p>The standard YOLOv8n (Nano) is still too large. We have to prune the network, reduce input resolutions to 96x96 or 160x160, and perform Post-Training Quantization (PTQ) to convert all 32-bit floating-point weights into 8-bit integers.</p>
+      <h2>3. Quality Checks and Bias Analysis</h2>
+      <p>Two questions, asked before training: <em>can the model cheat?</em> and <em>who is missing?</em></p>
+      <p><strong>Cheating:</strong> scanner metadata burned into image corners, hospital-specific positioning markers, and even text tokens correlate with the label when one hospital contributed most of the positive cases. A model that reads the corner annotation gets a great test score and zero clinical value. Cropping and per-source score audits catch this.</p>
+      <p><strong>Coverage:</strong> stratifying performance by source, sex, and age bands exposes cohorts where the model quietly underperforms — a per-cohort recall table communicates more than any single ROC curve.</p>
 
-      <div class="formula-box">
-        \[ r = S (q - Z) \]
-        <p style="font-size: 0.9rem; margin-top: 10px; margin-bottom: 0;"><strong>Quantization Math:</strong> We map the real value \(r\) to the quantized integer \(q\) using a Scale \(S\) and a Zero-point \(Z\). This drastically reduces the memory footprint by 4x and speeds up inference on integer-only ALUs.</p>
-      </div>
+      <h2>4. Failure-Case Analysis</h2>
+      <p>Every evaluation run ends with the same ritual: pull the highest-confidence <em>wrong</em> predictions and look at them, one by one. The categories that emerge — mislabelled ground truth, genuinely ambiguous cases, image-quality failures, and true model errors — each demand a different fix, and none of them is "train longer". Aggregate metrics tell you <em>that</em> the model is imperfect; failure review tells you <em>why</em>, and whether the fix belongs in the data, the labels, or the model.</p>
 
-      <h2>3. TensorFlow Lite Micro Implementation</h2>
-      <p>Once converted to a C-style array using <code>xxd -i model.tflite > model_data.cc</code>, we use the TensorFlow Lite Micro library in ESP-IDF to allocate a tensor arena and invoke the interpreter.</p>
-
-<pre><code>// 1. Define memory arena
-constexpr int kTensorArenaSize = 1024 * 500; // 500 KB limit!
-uint8_t tensor_arena[kTensorArenaSize];
-
-// 2. Setup the MicroInterpreter
-tflite::MicroInterpreter interpreter(
-    model, resolver, tensor_arena, kTensorArenaSize, error_reporter);
-
-// 3. Allocate and map image data to input tensor
-TfLiteTensor* input = interpreter.input(0);
-memcpy(input->data.int8, camera_fb->buf, camera_fb->len);
-
-// 4. Run Inference!
-if (interpreter.Invoke() != kTfLiteOk) {
-    ESP_LOGE("TF", "Invoke failed");
-}
-</code></pre>
-
-      <h2>4. Memory Management & Heap Limitations</h2>
-      <p>The ESP32 typically features 520KB of internal SRAM. A large model will immediately fail on <code>AllocateTensors()</code>. The trick is to utilize external PSRAM (e.g., the 4MB module on ESP32-CAM boards). However, PSRAM is connected via SPI and is vastly slower than internal SRAM.</p>
-      <p>By carefully pinning the TFLite operations to internal memory and storing only the static weights in PSRAM/Flash via the <code>EXT_RAM_ATTR</code> directive, we strike a working balance between capacity and latency, achieving ~1-2 FPS for basic real-time object detection directly on the sensor node.</p>
+      <h2>5. Takeaways</h2>
+      <ul>
+        <li>The pipeline is the product; the model is a replaceable part inside it.</li>
+        <li>Most "model" failures are data failures wearing a disguise.</li>
+        <li>Bias analysis is not a compliance step — it is where the real generalisation problems show up first.</li>
+      </ul>
     </div>
   </main>
 
@@ -230,6 +214,16 @@ if (interpreter.Invoke() != kTfLiteOk) {
         navLinks.classList.toggle('open');
       });
     }
+    window.addEventListener('scroll', () => {
+      document.body.style.setProperty('--scrollParam', window.scrollY);
+    });
+
+    // Autonomous Background Timer
+    function updateTimeParam() {
+      document.body.style.setProperty('--timeParam', performance.now() / 1000);
+      requestAnimationFrame(updateTimeParam);
+    }
+    updateTimeParam();
   </script>
 </body>
 </html>

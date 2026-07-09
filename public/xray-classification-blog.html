@@ -3,8 +3,8 @@
 <head>
   <meta charset="UTF-8" />
   <meta name="viewport" content="width=device-width, initial-scale=1.0" />
-  <title>YOLOv8 Edge Inference on ESP32 — Ganesh Reddy</title>
-  <meta name="description" content="Challenges and breakthroughs from porting lighter convolutional architectures to bare-metal embedded devices with tight RAM constraints." />
+  <title>Lung Disease Detection from Chest X-rays — Ganesh Reddy</title>
+  <meta name="description" content="Transfer learning with ResNet and VGG on 5,000 chest X-rays — fine-tuning strategy, class imbalance, augmentation policy, and honest medical evaluation." />
   <link rel="preconnect" href="https://fonts.googleapis.com" />
   <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin />
   <link href="https://fonts.googleapis.com/css2?family=Outfit:wght@300;400;500;600;700&family=Syne:wght@500;600;700;800&display=swap" rel="stylesheet" />
@@ -17,13 +17,9 @@
     }
   </script>
   
+  <!-- MathJax for rendering equations -->
   <script id="MathJax-script" async src="https://cdn.jsdelivr.net/npm/mathjax@3/es5/tex-mml-chtml.js"></script>
   
-  <script type="module">
-    import mermaid from 'https://cdn.jsdelivr.net/npm/mermaid@10/dist/mermaid.esm.min.mjs';
-    const _isDark = document.documentElement.getAttribute('data-theme') !== 'light';
-    mermaid.initialize({ startOnLoad: true, theme: _isDark ? 'dark' : 'neutral', fontFamily: 'Outfit' });
-  </script>
 
   <style>
     .blog-header {
@@ -60,6 +56,18 @@
       font-size: 1.4rem;
       margin: 40px 0 16px;
       color: var(--accent);
+    }
+    .blog-video-wrap {
+      margin: 40px auto;
+      border-radius: var(--radius);
+      overflow: hidden;
+      border: 1px solid var(--surface-border);
+      box-shadow: var(--shadow);
+      max-width: 1000px;
+    }
+    .blog-video-wrap video {
+      width: 100%;
+      display: block;
     }
     .formula-box {
       background: var(--surface);
@@ -126,67 +134,53 @@
     </div>
   </nav>
 
-  <!-- ─── HEADER ───────────────────────────────────────────── -->
+    <!-- ─── HEADER ───────────────────────────────────────────── -->
   <header class="blog-header">
     <div class="container">
-      <span class="blog-meta">January 10, 2026 • Edge AI & Embedded Systems</span>
-      <h1 class="section-title" style="margin-bottom: 24px;">YOLOv8 Edge Inference on ESP32</h1>
-      <p style="color: var(--text-muted); max-width: 600px; margin: 0 auto;">Challenges and breakthroughs from porting lighter convolutional architectures to bare-metal embedded devices with tight RAM constraints.</p>
+      <span class="blog-meta">May 28, 2026 • Deep Learning</span>
+      <h1 class="section-title" style="margin-bottom: 24px;">Chest X-ray Classification with 5,000 Images</h1>
+      <p style="color: var(--text-muted); max-width: 640px; margin: 0 auto;">Fine-tuning ResNet and VGG for pneumonia and COVID-19 detection — and why the evaluation design mattered more than the architecture choice.</p>
     </div>
   </header>
+
 
   <!-- ─── CONTENT ──────────────────────────────────────────── -->
   <main class="section" style="padding-top: 20px;">
     <div class="container blog-content">
 
-      <h2>1. The Challenge of Bare-Metal Edge AI</h2>
-      <p>Running a state-of-the-art object detection model like YOLOv8 on a standard PC is trivial. Running it on an ESP32 microcontroller with a few megabytes of PSRAM and barely any flash storage? That's an engineering battle. The constraint isn't just compute speed, it's extreme memory limitation.</p>
-      
-      <p>In this post, I explore how to strip down, quantize, and optimize YOLO architectures into TensorFlow Lite Micro (.tflite) payloads suitable for bare-metal C++ execution.</p>
+      <h2>1. The Task</h2>
+      <p>Classify chest X-rays into pneumonia, COVID-19, and normal classes — with roughly 5,000 labelled images. That number is the whole story: it is far too few to train a modern CNN from scratch, and exactly enough to fine-tune one. This post covers the transfer-learning setup, what actually moved the accuracy, and the evaluation traps specific to medical imaging.</p>
 
-      <div class="diagram-box">
-        <div class="mermaid">
-        flowchart TD
-            A[YOLOv8 Nano Model] -->|Export to ONNX| B[ONNX Graph]
-            B -->|Convert & Quantize INT8| C[TensorFlow Lite Model]
-            C -->|xxd Hex Dump| D[C Byte Array Header]
-            D -->|ESP-IDF Framework| E[ESP32 Execution]
-            E -->|OV2640 Camera| F[Bounding Box Output]
-        </div>
-      </div>
-
-      <h2>2. Model Reduction & INT8 Quantization</h2>
-      <p>The standard YOLOv8n (Nano) is still too large. We have to prune the network, reduce input resolutions to 96x96 or 160x160, and perform Post-Training Quantization (PTQ) to convert all 32-bit floating-point weights into 8-bit integers.</p>
-
+      <h2>2. Transfer Learning Setup</h2>
+      <p>Both backbones I compared — <strong>ResNet</strong> and <strong>VGG</strong> — were initialised from ImageNet weights. The recipe:</p>
+      <ol>
+        <li>Replace the final fully-connected layer with a fresh head sized to the number of classes.</li>
+        <li>Train the head first with the backbone frozen — the pretrained features are already decent edge/texture detectors.</li>
+        <li>Unfreeze the last convolutional stages and fine-tune everything at a much lower learning rate.</li>
+      </ol>
+      <p>Training minimises the standard cross-entropy over classes:</p>
       <div class="formula-box">
-        \[ r = S (q - Z) \]
-        <p style="font-size: 0.9rem; margin-top: 10px; margin-bottom: 0;"><strong>Quantization Math:</strong> We map the real value \(r\) to the quantized integer \(q\) using a Scale \(S\) and a Zero-point \(Z\). This drastically reduces the memory footprint by 4x and speeds up inference on integer-only ALUs.</p>
+        \[ \mathcal{L} = -\sum_{c=1}^{C} y_c \log \hat{p}_c \]
       </div>
+      <p>with class weights folded in, because the dataset — like nearly every medical dataset — was imbalanced across conditions.</p>
 
-      <h2>3. TensorFlow Lite Micro Implementation</h2>
-      <p>Once converted to a C-style array using <code>xxd -i model.tflite > model_data.cc</code>, we use the TensorFlow Lite Micro library in ESP-IDF to allocate a tensor arena and invoke the interpreter.</p>
+      <h2>3. What Actually Helped</h2>
+      <ul>
+        <li><strong>Class weighting</strong> over naive oversampling — duplicating rare-class X-rays mostly taught the network to memorise them.</li>
+        <li><strong>Conservative augmentation.</strong> Small rotations and translations help; horizontal flips are dangerous — anatomy is not symmetric (the heart has a side), and aggressive augmentation quietly destroys diagnostic signal.</li>
+        <li><strong>Lower learning rates for deeper unfreezing.</strong> Fine-tuning with the head's learning rate wipes out the pretrained features you came for.</li>
+      </ul>
 
-<pre><code>// 1. Define memory arena
-constexpr int kTensorArenaSize = 1024 * 500; // 500 KB limit!
-uint8_t tensor_arena[kTensorArenaSize];
+      <h2>4. Evaluating Honestly</h2>
+      <p>The headline number was <strong>85% accuracy</strong>, but accuracy alone is nearly meaningless in a medical setting. Per-class recall matters more: a pneumonia classifier that misses pneumonia is worse than useless regardless of its accuracy. The confusion matrix, per-class precision/recall, and a look at the actual misclassified films were the real evaluation — several "errors" turned out to be genuinely ambiguous cases that clinicians also flag as borderline.</p>
+      <p>Equally important: <strong>patient-level splits</strong>. If images from the same patient land in both train and test sets, the network can recognise the patient (or the scanner) instead of the disease, and your test score is fiction.</p>
 
-// 2. Setup the MicroInterpreter
-tflite::MicroInterpreter interpreter(
-    model, resolver, tensor_arena, kTensorArenaSize, error_reporter);
-
-// 3. Allocate and map image data to input tensor
-TfLiteTensor* input = interpreter.input(0);
-memcpy(input->data.int8, camera_fb->buf, camera_fb->len);
-
-// 4. Run Inference!
-if (interpreter.Invoke() != kTfLiteOk) {
-    ESP_LOGE("TF", "Invoke failed");
-}
-</code></pre>
-
-      <h2>4. Memory Management & Heap Limitations</h2>
-      <p>The ESP32 typically features 520KB of internal SRAM. A large model will immediately fail on <code>AllocateTensors()</code>. The trick is to utilize external PSRAM (e.g., the 4MB module on ESP32-CAM boards). However, PSRAM is connected via SPI and is vastly slower than internal SRAM.</p>
-      <p>By carefully pinning the TFLite operations to internal memory and storing only the static weights in PSRAM/Flash via the <code>EXT_RAM_ATTR</code> directive, we strike a working balance between capacity and latency, achieving ~1-2 FPS for basic real-time object detection directly on the sensor node.</p>
+      <h2>5. Takeaways</h2>
+      <ul>
+        <li>With thousands (not millions) of images, transfer learning is not one option — it is the only option.</li>
+        <li>Augmentation policy is a domain decision, not a hyperparameter sweep.</li>
+        <li>In medical ML, the evaluation design is harder — and more important — than the model.</li>
+      </ul>
     </div>
   </main>
 
@@ -230,6 +224,16 @@ if (interpreter.Invoke() != kTfLiteOk) {
         navLinks.classList.toggle('open');
       });
     }
+    window.addEventListener('scroll', () => {
+      document.body.style.setProperty('--scrollParam', window.scrollY);
+    });
+
+    // Autonomous Background Timer
+    function updateTimeParam() {
+      document.body.style.setProperty('--timeParam', performance.now() / 1000);
+      requestAnimationFrame(updateTimeParam);
+    }
+    updateTimeParam();
   </script>
 </body>
 </html>

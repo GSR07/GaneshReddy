@@ -2,6 +2,46 @@ import { asset, formatDate } from '../../lib/utils'
 
 const POSTS = [
   {
+    id: 'mechabot',
+    title: 'MechaBot: One Nav2 Stack from Gazebo to Real Hardware',
+    summary: 'Custom diff-drive AMR end-to-end — SLAM Toolbox, Nav2, AMCL, and a custom ros2_control hardware interface driving Arduino firmware.',
+    tags: ['ROS2', 'Nav2', 'ros2_control'],
+    url: '/mechabot-blog.html',
+    date: '2026-07-09',
+  },
+  {
+    id: 'arm-kinematics',
+    title: '5-Actuator Open Manipulator — Forward & Inverse Kinematics',
+    summary: 'DH parameters, closed-form FK, and geometric closed-form IK of a 4-DoF articulated arm — elbow branches, reachability, and atan2.',
+    tags: ['Kinematics', 'DH', 'Manipulation'],
+    url: '/robotic-arm-kinematics-blog.html',
+    date: '2026-07-05',
+  },
+  {
+    id: 'sorting',
+    title: 'Grading Parts in Real Time: Classical CV That Ships',
+    summary: 'An HSV + contour OpenCV pipeline at 90% accuracy, 5–10 items/min, driving mechanical sorting actuators — thesis systems write-up.',
+    tags: ['OpenCV', 'Automation'],
+    url: '/sorting-system-blog.html',
+    date: '2026-06-12',
+  },
+  {
+    id: 'medical-pipeline',
+    title: 'The Pipeline Is the Product: ML for Medical Imaging',
+    summary: 'Dataset curation, leakage prevention, bias analysis, and failure-case review — the machinery around the model.',
+    tags: ['ML Pipeline', 'Medical AI'],
+    url: '/medical-pipeline-blog.html',
+    date: '2026-06-20',
+  },
+  {
+    id: 'xray',
+    title: 'Chest X-ray Classification with 5,000 Images',
+    summary: 'Transfer learning with ResNet and VGG for pneumonia and COVID-19 detection — and why evaluation design beats architecture choice.',
+    tags: ['PyTorch', 'Transfer Learning'],
+    url: '/xray-classification-blog.html',
+    date: '2026-05-28',
+  },
+  {
     id: 'franka',
     title: 'Franka Panda Pick & Place — Full ROS2 Build',
     summary: 'Vision-guided pick-and-place pipeline with ROS2, MoveIt2, HSV segmentation, and Ignition Gazebo — from scratch.',

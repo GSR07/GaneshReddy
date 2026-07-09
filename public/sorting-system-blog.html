@@ -3,8 +3,8 @@
 <head>
   <meta charset="UTF-8" />
   <meta name="viewport" content="width=device-width, initial-scale=1.0" />
-  <title>YOLOv8 Edge Inference on ESP32 — Ganesh Reddy</title>
-  <meta name="description" content="Challenges and breakthroughs from porting lighter convolutional architectures to bare-metal embedded devices with tight RAM constraints." />
+  <title>Automated Grading & Sorting with Classical CV — Ganesh Reddy</title>
+  <meta name="description" content="Bachelor thesis systems write-up: a real-time OpenCV grading pipeline driving mechanical sorting actuators — HSV segmentation, contour features, and hard latency budgets." />
   <link rel="preconnect" href="https://fonts.googleapis.com" />
   <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin />
   <link href="https://fonts.googleapis.com/css2?family=Outfit:wght@300;400;500;600;700&family=Syne:wght@500;600;700;800&display=swap" rel="stylesheet" />
@@ -17,13 +17,7 @@
     }
   </script>
   
-  <script id="MathJax-script" async src="https://cdn.jsdelivr.net/npm/mathjax@3/es5/tex-mml-chtml.js"></script>
   
-  <script type="module">
-    import mermaid from 'https://cdn.jsdelivr.net/npm/mermaid@10/dist/mermaid.esm.min.mjs';
-    const _isDark = document.documentElement.getAttribute('data-theme') !== 'light';
-    mermaid.initialize({ startOnLoad: true, theme: _isDark ? 'dark' : 'neutral', fontFamily: 'Outfit' });
-  </script>
 
   <style>
     .blog-header {
@@ -60,6 +54,18 @@
       font-size: 1.4rem;
       margin: 40px 0 16px;
       color: var(--accent);
+    }
+    .blog-video-wrap {
+      margin: 40px auto;
+      border-radius: var(--radius);
+      overflow: hidden;
+      border: 1px solid var(--surface-border);
+      box-shadow: var(--shadow);
+      max-width: 1000px;
+    }
+    .blog-video-wrap video {
+      width: 100%;
+      display: block;
     }
     .formula-box {
       background: var(--surface);
@@ -126,67 +132,47 @@
     </div>
   </nav>
 
-  <!-- ─── HEADER ───────────────────────────────────────────── -->
+    <!-- ─── HEADER ───────────────────────────────────────────── -->
   <header class="blog-header">
     <div class="container">
-      <span class="blog-meta">January 10, 2026 • Edge AI & Embedded Systems</span>
-      <h1 class="section-title" style="margin-bottom: 24px;">YOLOv8 Edge Inference on ESP32</h1>
-      <p style="color: var(--text-muted); max-width: 600px; margin: 0 auto;">Challenges and breakthroughs from porting lighter convolutional architectures to bare-metal embedded devices with tight RAM constraints.</p>
+      <span class="blog-meta">June 12, 2026 • Computer Vision</span>
+      <h1 class="section-title" style="margin-bottom: 24px;">Grading Parts in Real Time: Classical CV That Ships</h1>
+      <p style="color: var(--text-muted); max-width: 640px; margin: 0 auto;">How an HSV + contour pipeline hit 90% accuracy at 5–10 items/min on a student budget — and why most of the accuracy was won with lighting, not algorithms.</p>
     </div>
   </header>
+
 
   <!-- ─── CONTENT ──────────────────────────────────────────── -->
   <main class="section" style="padding-top: 20px;">
     <div class="container blog-content">
 
-      <h2>1. The Challenge of Bare-Metal Edge AI</h2>
-      <p>Running a state-of-the-art object detection model like YOLOv8 on a standard PC is trivial. Running it on an ESP32 microcontroller with a few megabytes of PSRAM and barely any flash storage? That's an engineering battle. The constraint isn't just compute speed, it's extreme memory limitation.</p>
-      
-      <p>In this post, I explore how to strip down, quantize, and optimize YOLO architectures into TensorFlow Lite Micro (.tflite) payloads suitable for bare-metal C++ execution.</p>
+      <h2>1. The Problem</h2>
+      <p>My bachelor's thesis: an automated grading and sorting system — parts arrive continuously, a camera watches them, software decides the grade, and mechanical actuators route each part to its bin. Four people, one semester, and a hard requirement that the whole loop runs in real time at 5–10 items per minute. I led the computer vision module and owned its integration with the SolidWorks-designed actuation hardware.</p>
 
-      <div class="diagram-box">
-        <div class="mermaid">
-        flowchart TD
-            A[YOLOv8 Nano Model] -->|Export to ONNX| B[ONNX Graph]
-            B -->|Convert & Quantize INT8| C[TensorFlow Lite Model]
-            C -->|xxd Hex Dump| D[C Byte Array Header]
-            D -->|ESP-IDF Framework| E[ESP32 Execution]
-            E -->|OV2640 Camera| F[Bounding Box Output]
-        </div>
-      </div>
+      <h2>2. Pipeline Architecture</h2>
+      <p>The classical CV pipeline still wins in constrained industrial settings — it is fast, explainable, and tunable on-site without retraining anything. Ours had five stages:</p>
+      <ol>
+        <li><strong>Capture</strong> — fixed overhead camera, controlled lighting rig to kill shadows and specular highlights before they reach software.</li>
+        <li><strong>Preprocess</strong> — Gaussian blur to suppress sensor noise, then conversion to HSV, where object colour separates from illumination intensity.</li>
+        <li><strong>Segment</strong> — colour thresholding plus morphological opening/closing to produce a clean binary mask per part.</li>
+        <li><strong>Classify</strong> — contour features (area, aspect ratio, solidity) and colour statistics grade each part against calibrated reference ranges.</li>
+        <li><strong>Actuate</strong> — the grade is sent to the sorting mechanism, which diverts the part to the matching bin.</li>
+      </ol>
 
-      <h2>2. Model Reduction & INT8 Quantization</h2>
-      <p>The standard YOLOv8n (Nano) is still too large. We have to prune the network, reduce input resolutions to 96x96 or 160x160, and perform Post-Training Quantization (PTQ) to convert all 32-bit floating-point weights into 8-bit integers.</p>
+      <h2>3. Why HSV and Contours</h2>
+      <p>RGB thresholds break the moment lighting shifts. In HSV, hue is largely invariant to brightness, so a part's colour signature survives lamp warm-up and daylight changes. From the binary mask, <code>cv2.findContours</code> gives each part's outline, and a handful of cheap geometric descriptors — contour area, bounding-box aspect ratio, convexity defects — turned out to separate our part grades far more reliably than any single feature.</p>
+      <p>The lesson that stuck: <strong>90% of classification accuracy was won in the physical world</strong> — lighting, background, camera angle — not in the code. We reached 90% classification accuracy, and nearly every residual error traced back to part presentation, not the algorithm.</p>
 
-      <div class="formula-box">
-        \[ r = S (q - Z) \]
-        <p style="font-size: 0.9rem; margin-top: 10px; margin-bottom: 0;"><strong>Quantization Math:</strong> We map the real value \(r\) to the quantized integer \(q\) using a Scale \(S\) and a Zero-point \(Z\). This drastically reduces the memory footprint by 4x and speeds up inference on integer-only ALUs.</p>
-      </div>
+      <h2>4. Integrating with the Mechanism</h2>
+      <p>Vision that cannot act is a screensaver. The timing contract mattered: a part must be classified before it reaches the diverter, so the pipeline's worst-case latency — not its average — set the conveyor speed. We profiled every stage, pinned the slow tail (contour analysis on noisy masks), and fixed it upstream with better morphology rather than downstream with faster code.</p>
+      <p>The mechanical side — actuator geometry and bin layout designed in SolidWorks by my teammates — was co-designed with the vision timing budget, which is the part of the project that taught me the most about engineering as a team sport.</p>
 
-      <h2>3. TensorFlow Lite Micro Implementation</h2>
-      <p>Once converted to a C-style array using <code>xxd -i model.tflite > model_data.cc</code>, we use the TensorFlow Lite Micro library in ESP-IDF to allocate a tensor arena and invoke the interpreter.</p>
-
-<pre><code>// 1. Define memory arena
-constexpr int kTensorArenaSize = 1024 * 500; // 500 KB limit!
-uint8_t tensor_arena[kTensorArenaSize];
-
-// 2. Setup the MicroInterpreter
-tflite::MicroInterpreter interpreter(
-    model, resolver, tensor_arena, kTensorArenaSize, error_reporter);
-
-// 3. Allocate and map image data to input tensor
-TfLiteTensor* input = interpreter.input(0);
-memcpy(input->data.int8, camera_fb->buf, camera_fb->len);
-
-// 4. Run Inference!
-if (interpreter.Invoke() != kTfLiteOk) {
-    ESP_LOGE("TF", "Invoke failed");
-}
-</code></pre>
-
-      <h2>4. Memory Management & Heap Limitations</h2>
-      <p>The ESP32 typically features 520KB of internal SRAM. A large model will immediately fail on <code>AllocateTensors()</code>. The trick is to utilize external PSRAM (e.g., the 4MB module on ESP32-CAM boards). However, PSRAM is connected via SPI and is vastly slower than internal SRAM.</p>
-      <p>By carefully pinning the TFLite operations to internal memory and storing only the static weights in PSRAM/Flash via the <code>EXT_RAM_ATTR</code> directive, we strike a working balance between capacity and latency, achieving ~1-2 FPS for basic real-time object detection directly on the sensor node.</p>
+      <h2>5. Takeaways</h2>
+      <ul>
+        <li>Classical CV is not legacy CV — for controlled scenes it beats deep learning on latency, hardware cost, and debuggability.</li>
+        <li>Fix problems as far upstream as possible: a €10 lamp beat hours of algorithm tuning.</li>
+        <li>Real-time means worst-case, not average-case.</li>
+      </ul>
     </div>
   </main>
 
@@ -230,6 +216,16 @@ if (interpreter.Invoke() != kTfLiteOk) {
         navLinks.classList.toggle('open');
       });
     }
+    window.addEventListener('scroll', () => {
+      document.body.style.setProperty('--scrollParam', window.scrollY);
+    });
+
+    // Autonomous Background Timer
+    function updateTimeParam() {
+      document.body.style.setProperty('--timeParam', performance.now() / 1000);
+      requestAnimationFrame(updateTimeParam);
+    }
+    updateTimeParam();
   </script>
 </body>
 </html>

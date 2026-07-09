@@ -1,0 +1,294 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+  <title>MechaBot: Sim-to-Real Autonomous Navigation — Ganesh Reddy</title>
+  <meta name="description" content="Building a custom differential-drive AMR end-to-end with ROS 2 — URDF, SLAM Toolbox, Nav2, AMCL, and a custom ros2_control hardware interface driving Arduino firmware." />
+  <link rel="preconnect" href="https://fonts.googleapis.com" />
+  <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin />
+  <link href="https://fonts.googleapis.com/css2?family=Outfit:wght@300;400;500;600;700&family=Syne:wght@500;600;700;800&display=swap" rel="stylesheet" />
+  <link rel="stylesheet" href="style.css" />
+  <link rel="stylesheet" href="blog-common.css" />
+  <script>
+    const savedTheme = localStorage.getItem('theme');
+    if (savedTheme === 'light' || (!savedTheme && window.matchMedia('(prefers-color-scheme: light)').matches)) {
+      document.documentElement.setAttribute('data-theme', 'light');
+    }
+  </script>
+  
+  <!-- MathJax for rendering equations -->
+  <script id="MathJax-script" async src="https://cdn.jsdelivr.net/npm/mathjax@3/es5/tex-mml-chtml.js"></script>
+  
+  <!-- Mermaid for generating architecture diagrams -->
+  <script type="module">
+    import mermaid from 'https://cdn.jsdelivr.net/npm/mermaid@10/dist/mermaid.esm.min.mjs';
+    const _isDark = document.documentElement.getAttribute('data-theme') !== 'light';
+    mermaid.initialize({ startOnLoad: true, theme: _isDark ? 'dark' : 'neutral', fontFamily: 'Outfit' });
+  </script>
+
+  <style>
+    .blog-header {
+      padding: calc(var(--nav-h) + 100px) 40px 60px;
+      text-align: center;
+      position: relative;
+    }
+    .blog-meta {
+      font-size: 0.85rem;
+      color: var(--accent-2);
+      text-transform: uppercase;
+      letter-spacing: 0.1em;
+      font-weight: 600;
+      margin-bottom: 20px;
+      display: block;
+    }
+    .blog-content {
+      max-width: 800px;
+      margin: 0 auto;
+      font-size: 1.1rem;
+      line-height: 1.8;
+      color: var(--text);
+    }
+    .blog-content p {
+      margin-bottom: 24px;
+      color: var(--text-muted);
+    }
+    .blog-content h2 {
+      font-size: 2rem;
+      margin: 60px 0 24px;
+      color: var(--text);
+    }
+    .blog-content h3 {
+      font-size: 1.4rem;
+      margin: 40px 0 16px;
+      color: var(--accent);
+    }
+    .blog-video-wrap {
+      margin: 40px auto;
+      border-radius: var(--radius);
+      overflow: hidden;
+      border: 1px solid var(--surface-border);
+      box-shadow: var(--shadow);
+      max-width: 1000px;
+    }
+    .blog-video-wrap video {
+      width: 100%;
+      display: block;
+    }
+    .formula-box {
+      background: var(--surface);
+      padding: 24px;
+      border-left: 4px solid var(--accent-2);
+      border-radius: 0 var(--radius-sm) var(--radius-sm) 0;
+      margin: 32px 0;
+      overflow-x: auto;
+    }
+    .diagram-box {
+      margin: 48px 0;
+      padding: 32px;
+      background: var(--surface);
+      border: 1px solid var(--surface-border);
+      border-radius: var(--radius);
+      text-align: center;
+    }
+    pre {
+      background: var(--bg-alt);
+      padding: 24px;
+      border-radius: var(--radius-sm);
+      overflow-x: auto;
+      border: 1px solid var(--surface-border);
+      margin-bottom: 24px;
+      font-size: 0.9rem;
+      color: var(--text);
+    }
+    code {
+      font-family: 'Fira Code', monospace;
+    }
+    .mermaid {
+      background: transparent !important;
+    }
+  </style>
+</head>
+<body>
+  <!-- ─── NAV ──────────────────────────────────────────────── -->
+  <nav id="navbar" class="scrolled">
+    <a href="./" class="nav-logo">GR<span class="accent">.</span></a>
+    <ul class="nav-links">
+      <li><a href="./">&larr; Back to Portfolio</a></li>
+      <li><a href="blog.html" class="gradient-text">Blog Home</a></li>
+    </ul>
+    <div class="nav-controls" style="display: flex; align-items: center; gap: 16px;">
+      <button id="theme-toggle" class="theme-btn" aria-label="Toggle theme" style="background: transparent; border: none; color: var(--text); cursor: pointer; display: flex; align-items: center;">
+        <svg class="sun-icon" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" style="width: 22px; height: 22px;">
+          <circle cx="12" cy="12" r="5"></circle>
+          <line x1="12" y1="1" x2="12" y2="3"></line>
+          <line x1="12" y1="21" x2="12" y2="23"></line>
+          <line x1="4.22" y1="4.22" x2="5.64" y2="5.64"></line>
+          <line x1="18.36" y1="18.36" x2="19.78" y2="19.78"></line>
+          <line x1="1" y1="12" x2="3" y2="12"></line>
+          <line x1="21" y1="12" x2="23" y2="12"></line>
+          <line x1="4.22" y1="19.78" x2="5.64" y2="18.36"></line>
+          <line x1="18.36" y1="5.64" x2="19.78" y2="4.22"></line>
+        </svg>
+        <svg class="moon-icon" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" style="width: 22px; height: 22px; display: none;">
+          <path d="M21 12.79A9 9 0 1 1 11.21 3 7 7 0 0 0 21 12.79z"></path>
+        </svg>
+      </button>
+      <button id="hamburger" aria-label="Toggle menu">
+        <span></span><span></span><span></span>
+      </button>
+    </div>
+  </nav>
+
+    <!-- ─── HEADER ───────────────────────────────────────────── -->
+  <header class="blog-header">
+    <div class="container">
+      <span class="blog-meta">July 9, 2026 • Mobile Robotics</span>
+      <h1 class="section-title" style="margin-bottom: 24px;">MechaBot: One Nav2 Stack from Gazebo to Real Hardware</h1>
+      <p style="color: var(--text-muted); max-width: 640px; margin: 0 auto;">How a custom ros2_control hardware interface let the exact same SLAM, localization, and navigation stack drive both a simulated robot and a real one built from an Arduino, two motors, and an RPLIDAR A1.</p>
+    </div>
+  </header>
+
+  <!-- ─── VIDEO ────────────────────────────────────────────── -->
+  <div class="container">
+    <div class="blog-video-wrap">
+      <video src="mechabot_video.mp4" autoplay loop muted playsinline aria-label="MechaBot autonomous navigation demo video"></video>
+    </div>
+  </div>
+
+
+  <!-- ─── CONTENT ──────────────────────────────────────────── -->
+  <main class="section" style="padding-top: 20px;">
+    <div class="container blog-content">
+
+      <h2>1. One Nav Stack, Two Worlds</h2>
+      <p>MechaBot is a custom differential-drive autonomous mobile robot built end-to-end: mechanical model, simulation, mapping, localization, navigation, and — the part most projects never reach — the <strong>same ROS 2 stack driving real hardware</strong>. The goal was simple to state and hard to do: a robot that maps a room, localizes itself, and drives to any goal you click, whether the room is a Gazebo world or my actual floor.</p>
+      <p>The workspace is organised as seven focused packages:</p>
+
+      <div class="diagram-box">
+        <div class="mermaid">
+        flowchart LR
+            B[mechabot_bringup] --> D[mechabot_description]
+            B --> C[mechabot_controller]
+            B --> M[mechabot_mapping]
+            B --> L[mechabot_localization]
+            B --> N[mechabot_navigation]
+            B --> F[mechabot_firmware]
+            F --> A[Arduino motor firmware]
+            N --> C
+        </div>
+      </div>
+
+      <table>
+        <thead><tr><th>Package</th><th>Responsibility</th></tr></thead>
+        <tbody>
+          <tr><td><code>mechabot_description</code></td><td>URDF/Xacro model — two driven wheels + four castors, LiDAR, IMU, camera</td></tr>
+          <tr><td><code>mechabot_controller</code></td><td><code>diff_drive_controller</code> via ros2_control, joystick teleop, twist_mux arbitration</td></tr>
+          <tr><td><code>mechabot_mapping</code></td><td>SLAM Toolbox configuration + saved maps</td></tr>
+          <tr><td><code>mechabot_localization</code></td><td>AMCL against a known map, global relocalization</td></tr>
+          <tr><td><code>mechabot_navigation</code></td><td>Nav2: planner, controller, behavior tree with recovery</td></tr>
+          <tr><td><code>mechabot_firmware</code></td><td>Custom ros2_control hardware interface + Arduino firmware</td></tr>
+          <tr><td><code>mechabot_bringup</code></td><td>Launch files that compose all of the above, sim or real</td></tr>
+        </tbody>
+      </table>
+
+      <h2>2. Differential-Drive Kinematics</h2>
+      <p>Everything the robot does rests on one small model. With wheel radius \(r\), wheel separation \(L\), and wheel angular velocities \(\omega_R, \omega_L\):</p>
+      <div class="formula-box">
+        \[ v = \frac{r\,(\omega_R + \omega_L)}{2}, \qquad \omega = \frac{r\,(\omega_R - \omega_L)}{L} \]
+      </div>
+      <p>Odometry integrates this forward. Encoder ticks give each wheel's rotation; the pose update per cycle is:</p>
+      <div class="formula-box">
+        \[ x_{k+1} = x_k + v\,\Delta t \cos\theta_k, \qquad y_{k+1} = y_k + v\,\Delta t \sin\theta_k, \qquad \theta_{k+1} = \theta_k + \omega\,\Delta t \]
+      </div>
+      <p>In simulation Gazebo produces perfect encoder data. On the real robot this comes from quadrature encoders counted by the Arduino — and every downstream consumer (SLAM, AMCL, Nav2) is identical.</p>
+
+      <h2>3. The Sim-to-Real Bridge: a Custom ros2_control Hardware Interface</h2>
+      <p>The single most valuable design decision: the robot's motors are hidden behind a <strong>custom ros2_control <code>SystemInterface</code></strong>. Nav2 publishes <code>cmd_vel</code>; <code>diff_drive_controller</code> converts it to per-wheel velocity commands; and only at the very bottom does the code fork:</p>
+      <ul>
+        <li><strong>Simulation:</strong> <code>gz_ros2_control</code> applies the commands inside Gazebo.</li>
+        <li><strong>Hardware:</strong> my <code>MechabotInterface</code> streams commands to an Arduino over serial and reads encoder counts back.</li>
+      </ul>
+      <pre><code># hardware interface, 50 Hz loop (simplified)
+def read(time, period):
+    counts = serial.request_encoders()          # "e\n" -> "1024,996"
+    for i, joint in enumerate(wheels):
+        pos[i] = counts[i] * RAD_PER_TICK       # state interface: position
+        vel[i] = (pos[i] - prev[i]) / period    # state interface: velocity
+
+def write(time, period):
+    l, r = cmd[LEFT], cmd[RIGHT]                # command interface: velocity
+    serial.send(f"m {l:.3f} {r:.3f}")           # rad/s per wheel
+</code></pre>
+      <p>Swapping sim for real is one launch argument. Nothing above the hardware interface changes — the URDF, the controllers, SLAM, and Nav2 configs are all shared.</p>
+
+      <h2>4. Mapping and Localization</h2>
+      <p><strong>SLAM Toolbox</strong> builds the occupancy grid online from the RPLIDAR A1 scan and wheel odometry. Once a map is saved, <strong>AMCL</strong> takes over: a particle filter that matches each incoming scan against the map and converges the pose cloud as the robot moves. A global relocalization launch scatters particles across the whole map for the "kidnapped robot" case.</p>
+
+      <h2>5. Navigation with Recovery Behaviors</h2>
+      <p>Nav2 runs a <strong>behavior-tree navigator</strong>: global path from the planner server, local trajectory tracking from the controller server, and — critically for a real robot on a real floor — recovery branches (spin, back up, wait, replan) when the robot gets pinched or the costmap disagrees with reality. On top of that sit the autonomy scripts: waypoint patrol, auto-docking with battery monitoring, an aruco-marker detector, and an experimental RL-based docking policy.</p>
+      <p>Manual override is always live: a joystick feeds <code>twist_mux</code>, which arbitrates between teleop and Nav2 by priority — grab the controller and the autonomy yields instantly.</p>
+
+      <h2>6. What I'd Tell Past Me</h2>
+      <ul>
+        <li><strong>Get the hardware interface right first.</strong> Every hour spent making the ros2_control layer clean paid back tenfold — the whole nav stack was debugged once, in sim, and simply worked on hardware.</li>
+        <li><strong>Trust the encoders, calibrate the geometry.</strong> Odometry drift is dominated by wheel radius and separation errors, not sensor noise. Measure, then measure again.</li>
+        <li><strong>Recovery behaviors are not optional.</strong> In sim the robot never gets stuck. On a floor with castors and carpet edges, it does — the behavior tree is what turns "demo" into "leave it running".</li>
+      </ul>
+      <p>The full source — all seven packages, firmware included — is on <a href="https://github.com/GSR07/mechabot" target="_blank" rel="noreferrer">GitHub</a>.</p>
+    </div>
+  </main>
+
+  <!-- ─── FOOTER ───────────────────────────────────────────── -->
+  <footer>
+    <div class="container">
+      <p>&copy; 2026 Ganesh Reddy. All rights reserved.</p>
+    </div>
+  </footer>
+
+  <script>
+    /* Theme Toggle */
+    const themeToggle = document.getElementById('theme-toggle');
+    if (themeToggle) {
+      const sunIcon = themeToggle.querySelector('.sun-icon');
+      const moonIcon = themeToggle.querySelector('.moon-icon');
+      function updateThemeIcon() {
+        if (document.documentElement.getAttribute('data-theme') === 'light') {
+          sunIcon.style.display = 'none';
+          moonIcon.style.display = 'block';
+        } else {
+          sunIcon.style.display = 'block';
+          moonIcon.style.display = 'none';
+        }
+      }
+      updateThemeIcon();
+      themeToggle.addEventListener('click', () => {
+        const currentTheme = document.documentElement.getAttribute('data-theme') || 'dark';
+        const newTheme = currentTheme === 'light' ? 'dark' : 'light';
+        if (newTheme === 'light') { document.documentElement.setAttribute('data-theme', 'light'); }
+        else { document.documentElement.removeAttribute('data-theme'); }
+        localStorage.setItem('theme', newTheme);
+        updateThemeIcon();
+      });
+    }
+
+    const hamburger = document.getElementById('hamburger');
+    const navLinks = document.querySelector('.nav-links');
+    if (hamburger) {
+      hamburger.addEventListener('click', () => {
+        navLinks.classList.toggle('open');
+      });
+    }
+    window.addEventListener('scroll', () => {
+      document.body.style.setProperty('--scrollParam', window.scrollY);
+    });
+
+    // Autonomous Background Timer
+    function updateTimeParam() {
+      document.body.style.setProperty('--timeParam', performance.now() / 1000);
+      requestAnimationFrame(updateTimeParam);
+    }
+    updateTimeParam();
+  </script>
+</body>
+</html>

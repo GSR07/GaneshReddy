@@ -22,7 +22,7 @@ const EXPERIENCE = [
     badge: 'Internship', badgeType: 'intern', period: 'Jan 2022 – Jul 2022',
     title: 'Systems Engineer Intern', org: 'Centre for Autonomous Systems Engineering · Hubballi',
     bullets: [
-      'Designed and fabricated a <strong>5-DOF robotic arm</strong> in SolidWorks — full mechanical CAD, 3D-printed gripper and link assemblies, Dynamixel XM430 servo motors; achieved <strong>±5 mm</strong> end-effector accuracy with <strong>5 kg</strong> payload',
+      'Designed and fabricated a <strong>4-DOF robotic arm</strong> (5 Dynamixel XM430 actuators) in SolidWorks — full mechanical CAD, 3D-printed gripper and link assemblies, Dynamixel XM430 servo motors; achieved <strong>±5 mm</strong> end-effector accuracy with <strong>5 kg</strong> payload',
       'Derived D-H kinematic model, implemented forward/inverse kinematics, built URDF/Xacro model, validated in Gazebo, and configured MoveIt2 for collision-aware pick-and-place',
       'Programmed Dynamixel XM430 servo controllers (Python/C++ SDK) for joint-level trajectory execution; simulation-first approach reduced physical rework by <strong>10–20%</strong>',
     ],

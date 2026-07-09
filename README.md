@@ -29,6 +29,38 @@ pip install -r requirements.txt
 python execution/utils.py
 ```
 
+## Docker Deployment
+
+Build the production image:
+
+```bash
+export VITE_WEB3FORMS_KEY="$(sed -n 's/^VITE_WEB3FORMS_KEY=//p' .env.local)"
+docker build --build-arg VITE_WEB3FORMS_KEY="$VITE_WEB3FORMS_KEY" -t ganesh-portfolio .
+```
+
+Run it locally:
+
+```bash
+docker run --rm -p 3000:3000 ganesh-portfolio
+```
+
+Then open `http://localhost:3000`.
+
+With Docker Compose:
+
+```bash
+export VITE_WEB3FORMS_KEY="$(sed -n 's/^VITE_WEB3FORMS_KEY=//p' .env.local)"
+docker compose up --build
+```
+
+Push to Docker Hub:
+
+```bash
+docker login
+docker tag ganesh-portfolio YOUR_DOCKERHUB_USERNAME/ganesh-portfolio:latest
+docker push YOUR_DOCKERHUB_USERNAME/ganesh-portfolio:latest
+```
+
 ## Adding a new task
 
 1. Create a directive in `directives/<task_name>.md` describing goal, inputs, tools, outputs, and edge cases.

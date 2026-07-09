@@ -1,4 +1,5 @@
 import { useEffect, useRef } from 'react'
+import { asset } from '../../lib/utils'
 
 const PHRASES = ['Robotics Engineer', 'Computer Vision Engineer', 'Embedded Systems Engineer']
 
@@ -59,7 +60,7 @@ export default function Hero() {
             e.preventDefault()
             document.getElementById('projects')?.scrollIntoView({ behavior: 'smooth' })
           }}>View My Work</a>
-          <a href="/cv/cv/Ganesh_Reddy_CV_MSc_Autonomy_Technologies.pdf" target="_blank" className="btn-ghost">Download CV</a>
+          <a href={asset('/cv/Ganesh_Reddy_CV_MSc_Autonomy_Technologies.pdf')} target="_blank" className="btn-ghost">Download CV</a>
         </div>
         <div className="hero-socials">
           <a href="mailto:ganeshreddy30102000@gmail.com" aria-label="Email">
@@ -83,7 +84,7 @@ export default function Hero() {
 
       <div className="hero-photo-wrap">
         <div className="photo-ring" />
-        <img src="/ganesh_photo.jpg" alt="Ganesh Reddy" className="hero-photo" />
+        <img src={asset('/ganesh_photo.jpg')} alt="Ganesh Reddy" className="hero-photo" />
       </div>
 
       <a href="#about" className="scroll-down" aria-label="Scroll down" onClick={e => {

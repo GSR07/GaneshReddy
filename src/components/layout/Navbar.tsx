@@ -1,4 +1,5 @@
 import { useEffect, useState } from 'react'
+import { asset } from '../../lib/utils'
 
 const HASH_LINKS = [
   { href: '#about',      label: 'About' },
@@ -75,7 +76,7 @@ export default function Navbar() {
 
         {/* Blog → opens blog listing page */}
         <li>
-          <a href="/blog.html" onClick={() => setMenuOpen(false)}>
+          <a href={asset('/blog.html')} onClick={() => setMenuOpen(false)}>
             Blog
           </a>
         </li>

@@ -6,10 +6,3 @@
   from { opacity: 0; transform: translateY(8px); }
   to   { opacity: 1; transform: translateY(0);  }
 }
-
-/* Admin-only layer: scoped utilities that don't conflict with portfolio CSS */
-@layer utilities {
-  .admin-scrollbar::-webkit-scrollbar { width: 4px; }
-  .admin-scrollbar::-webkit-scrollbar-track { background: transparent; }
-  .admin-scrollbar::-webkit-scrollbar-thumb { background: rgba(100,116,139,0.4); border-radius: 2px; }
-}

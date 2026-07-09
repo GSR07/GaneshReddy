@@ -1,4 +1,4 @@
-import { formatDate } from '../../lib/utils'
+import { asset, formatDate } from '../../lib/utils'
 
 const POSTS = [
   {
@@ -46,7 +46,7 @@ export default function BlogSection() {
           {POSTS.map(post => (
             <a
               key={post.id}
-              href={post.url}
+              href={asset(post.url)}
               style={{ textDecoration: 'none' }}
               target="_blank"
               rel="noreferrer"
@@ -79,7 +79,7 @@ export default function BlogSection() {
         </div>
 
         <div style={{ textAlign: 'center', marginTop: '2.5rem' }}>
-          <a href="/blog.html" className="btn-ghost">
+          <a href={asset('/blog.html')} className="btn-ghost">
             View All Posts →
           </a>
         </div>

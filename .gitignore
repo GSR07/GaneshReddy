@@ -34,3 +34,11 @@ Thumbs.db
 # Environment variables
 .env
 .env.*
+
+# Local exports / raw media (originals live outside the repo)
+Ganesh Reddy - Portfolio.html
+franka_video_trimmed.webm
+/franka_video.mp4
+/hero_bg.png
+/photo.jpeg
+/ganeh_photo.jpeg

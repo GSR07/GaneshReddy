@@ -2,6 +2,7 @@ import { useEffect, useState } from 'react'
 import ReactMarkdown from 'react-markdown'
 import remarkGfm from 'remark-gfm'
 import type { Project } from '../../types'
+import { asset } from '../../lib/utils'
 import LoadingSpinner from './LoadingSpinner'
 
 const MD_STYLE = `
@@ -40,7 +41,7 @@ export default function ProjectModal({ project, onClose }: Props) {
   }, [onClose])
 
   useEffect(() => {
-    fetch(`/projects/${project.id}.md`)
+    fetch(asset(`/projects/${project.id}.md`))
       .then(r => { if (r.ok) return r.text(); throw new Error('no md') })
       .then(t => { setMd(t); setMdL(false) })
       .catch(() => { setMd(null); setMdL(false) })
@@ -72,7 +73,7 @@ export default function ProjectModal({ project, onClose }: Props) {
 
         {/* media */}
         {project.video_url && (
-          <video src={project.video_url} controls autoPlay muted
+          <video src={asset(project.video_url)} controls autoPlay muted
             style={{ width:'100%',maxHeight:360,objectFit:'cover',display:'block' }} />
         )}
         {!project.video_url && project.image_url && (
@@ -134,7 +135,7 @@ export default function ProjectModal({ project, onClose }: Props) {
               </a>
             )}
             {project.blog_url && (
-              <a href={project.blog_url} target="_blank" rel="noreferrer" className="btn-ghost"
+              <a href={asset(project.blog_url)} target="_blank" rel="noreferrer" className="btn-ghost"
                 style={{ fontSize:'.85rem',padding:'.45rem 1rem' }}>
                 Read Blog Post ↗
               </a>

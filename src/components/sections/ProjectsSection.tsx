@@ -1,6 +1,6 @@
 import { useEffect, useRef, useState } from 'react'
-import { supabase } from '../../lib/supabase'
 import { STATIC_PROJECTS } from '../../data/projects'
+import { asset } from '../../lib/utils'
 import type { Project } from '../../types'
 import ProjectModal from '../ui/ProjectModal'
 
@@ -29,6 +29,9 @@ function ProjectCard({ project, onOpen }: { project: Project; onOpen: (p: Projec
       <div className={`project-visual ${project.visual_class ?? ''}`}>
         {project.image_url ? (
           <img src={project.image_url} alt={project.title} style={{ width:'100%',height:'100%',objectFit:'cover' }} />
+        ) : project.video_url ? (
+          <video src={asset(project.video_url)} autoPlay loop muted playsInline
+            style={{ width:'100%',height:'100%',objectFit:'cover' }} />
         ) : (
           <div className="pv-icon">
             <svg className="icon-svg icon-bob" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="1.3">
@@ -63,7 +66,7 @@ function ProjectCard({ project, onOpen }: { project: Project; onOpen: (p: Projec
               style={{ fontSize:'.78rem',padding:'.35rem .9rem' }}>GitHub</a>
           )}
           {project.blog_url && (
-            <a href={project.blog_url} target="_blank" rel="noreferrer" className="btn-ghost"
+            <a href={asset(project.blog_url)} target="_blank" rel="noreferrer" className="btn-ghost"
               style={{ fontSize:'.78rem',padding:'.35rem .9rem' }}>Blog Post</a>
           )}
         </div>
@@ -73,15 +76,8 @@ function ProjectCard({ project, onOpen }: { project: Project; onOpen: (p: Projec
 }
 
 export default function ProjectsSection() {
-  const [projects, setProjects]     = useState<Project[]>(STATIC_PROJECTS)
   const [selected, setSelected]     = useState<Project | null>(null)
   const featuredRef = useRef<HTMLDivElement>(null)
-
-  useEffect(() => {
-    supabase.from('projects').select('*').order('sort_order')
-      .then(({ data, error }) => { if (!error && data?.length) setProjects(data as Project[]) })
-      .catch(() => {})
-  }, [])
 
   useEffect(() => {
     const card = featuredRef.current
@@ -93,8 +89,8 @@ export default function ProjectsSection() {
     return () => { card.removeEventListener('mousemove', onMove); card.removeEventListener('mouseleave', onLeave) }
   }, [])
 
-  const featured = projects.find(p => p.featured) ?? projects[0]
-  const grid     = projects.filter(p => !p.featured)
+  const featured = STATIC_PROJECTS.find(p => p.featured) ?? STATIC_PROJECTS[0]
+  const grid     = STATIC_PROJECTS.filter(p => p.id !== featured.id)
 
   return (
     <>
@@ -110,7 +106,7 @@ export default function ProjectsSection() {
               <div className="project-visual pv-franka">
                 <div className="pv-franka-arm">
                   {featured.video_url ? (
-                    <video className="pv-franka-video" src={featured.video_url} autoPlay loop muted playsInline />
+                    <video className="pv-franka-video" src={asset(featured.video_url)} autoPlay loop muted playsInline />
                   ) : featured.image_url ? (
                     <img src={featured.image_url} alt={featured.title} className="pv-franka-video" />
                   ) : null}
@@ -149,7 +145,7 @@ export default function ProjectsSection() {
                     <a href={featured.github_url} target="_blank" rel="noreferrer" className="btn-ghost">GitHub</a>
                   )}
                   {featured.blog_url && (
-                    <a href={featured.blog_url} target="_blank" rel="noreferrer" className="btn-ghost">Read Blog</a>
+                    <a href={asset(featured.blog_url)} target="_blank" rel="noreferrer" className="btn-ghost">Read Blog</a>
                   )}
                 </div>
               </div>

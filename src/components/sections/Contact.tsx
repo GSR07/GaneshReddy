@@ -1,5 +1,6 @@
 import { FormEvent, useState } from 'react'
 import toast from 'react-hot-toast'
+import { asset } from '../../lib/utils'
 
 const WEB3FORMS_KEY = import.meta.env.VITE_WEB3FORMS_KEY as string | undefined
 
@@ -161,7 +162,7 @@ export default function Contact() {
             )}
 
             <a
-              href="/cv/cv/Ganesh_Reddy_CV_MSc_Autonomy_Technologies.pdf"
+              href={asset('/cv/Ganesh_Reddy_CV_MSc_Autonomy_Technologies.pdf')}
               target="_blank"
               className="btn-ghost"
               style={{ justifyContent: 'center', gap: '0.5rem' }}

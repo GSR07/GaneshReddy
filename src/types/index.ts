@@ -103,10 +103,3 @@ export interface BlogPost {
   created_at: string
   updated_at: string
 }
-
-export interface Profile {
-  id: string
-  email: string
-  role: 'admin' | 'viewer'
-  created_at: string
-}

@@ -24,9 +24,12 @@ function ProjectCard({ project, onOpen }: { project: Project; onOpen: (p: Projec
     return () => { card.removeEventListener('mousemove', onMove); card.removeEventListener('mouseleave', onLeave) }
   }, [])
 
+  const hasMedia = Boolean(project.image_url || project.video_url)
+
   return (
     <div ref={cardRef} className="project-card glass-card reveal">
-      <div className={`project-visual ${project.visual_class ?? ''}`}>
+      <div className={`project-visual ${project.visual_class ?? ''}`}
+        style={hasMedia ? { height: 210 } : undefined}>
         {project.image_url ? (
           <img src={asset(project.image_url)} alt={project.title} style={{ width:'100%',height:'100%',objectFit:'cover' }} />
         ) : project.video_url ? (
@@ -46,7 +49,6 @@ function ProjectCard({ project, onOpen }: { project: Project; onOpen: (p: Projec
           {project.badges.map(b => <span key={b} className="pbadge">{b}</span>)}
         </div>
         <h3>{project.title}</h3>
-        <p>{project.description}</p>
         <div className="project-tags">
           {project.tags.map(t => <span key={t} className="tag-sm">{t}</span>)}
         </div>

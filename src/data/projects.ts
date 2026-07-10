@@ -22,10 +22,10 @@ export const STATIC_PROJECTS: Project[] = [
     id: 'mechabot',
     title: 'MechaBot — Custom Autonomous Mobile Robot (Sim to Real)',
     description:
-      'Designed and built a differential-drive AMR end-to-end: URDF/Xacro model, Gazebo simulation, SLAM Toolbox mapping, Nav2 autonomous navigation with AMCL, and a custom ros2_control hardware interface driving Arduino firmware with wheel encoders and an RPLIDAR A1 on the physical robot.',
+      'Designed and built a differential-drive AMR end-to-end: URDF/Xacro model, Gazebo simulation, SLAM Toolbox mapping, Nav2 autonomous navigation with AMCL, camera-based QR docking, battery-aware coverage cleaning, and a custom ros2_control hardware interface driving embedded motor firmware over serial with an RPLIDAR A1 on the physical robot.',
     long_description:
-      'A complete ROS 2 ecosystem spanning seven packages — bringup, description, controller, mapping, localization, navigation, and firmware. The <strong>custom hardware interface</strong> bridges ros2_control to Arduino motor firmware over serial, enabling the same Nav2 stack to run in Gazebo and on the real robot. Includes behavior-tree navigation with recovery, joystick teleop via twist_mux, autonomous waypoint following, auto-docking with battery monitoring, and an <strong>RL-based docking</strong> experiment.',
-    tags: ['ROS2', 'Nav2', 'SLAM Toolbox', 'ros2_control', 'Gazebo', 'RPLIDAR', 'Arduino', 'C++', 'Python'],
+      'A complete ROS 2 ecosystem spanning bringup, description, controller, firmware, mapping, localization, navigation, and autonomy-script packages. The <strong>custom C++ hardware interface</strong> bridges ros2_control to embedded motor firmware over serial (500 kbaud), so the identical Nav2 stack runs in Gazebo and on the real robot. On top: behavior-tree navigation with recovery, joystick teleop via twist_mux, a QR maze solver, <strong>two-phase QR/LiDAR docking</strong> with proportional visual servoing, battery-aware cleaning that generates lawnmower coverage waypoints from the occupancy grid via distance transforms, and a <strong>persistent Q-learning memory</strong> that learns bad navigation zones across runs.',
+    tags: ['ROS2', 'Nav2', 'SLAM Toolbox', 'ros2_control', 'Gazebo', 'OpenCV', 'RPLIDAR', 'Q-Learning', 'C++', 'Python'],
     badges: ['Key Highlight', 'Mobile Robotics', 'Hardware'],
     featured: true,
     sort_order: 2,

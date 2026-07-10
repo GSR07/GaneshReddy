@@ -1,0 +1,374 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+  <title>Turtlesim Catch-Them-All: ROS 2 Fundamentals Done Properly — Ganesh Reddy</title>
+  <meta name="description" content="A deep dive into ROS 2 core concepts through a turtlesim catch-them-all project — nodes, topics, services, custom interfaces, async clients, and a closed-loop proportional controller in Python." />
+  <link rel="preconnect" href="https://fonts.googleapis.com" />
+  <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin />
+  <link href="https://fonts.googleapis.com/css2?family=Outfit:wght@300;400;500;600;700&family=Syne:wght@500;600;700;800&display=swap" rel="stylesheet" />
+  <link rel="stylesheet" href="style.css" />
+  <link rel="stylesheet" href="blog-common.css" />
+  <script>
+    const savedTheme = localStorage.getItem('theme');
+    if (savedTheme === 'light' || (!savedTheme && window.matchMedia('(prefers-color-scheme: light)').matches)) {
+      document.documentElement.setAttribute('data-theme', 'light');
+    }
+  </script>
+
+  <!-- MathJax for rendering equations -->
+  <script id="MathJax-script" async src="https://cdn.jsdelivr.net/npm/mathjax@3/es5/tex-mml-chtml.js"></script>
+
+  <!-- Mermaid for generating architecture diagrams -->
+  <script type="module">
+    import mermaid from 'https://cdn.jsdelivr.net/npm/mermaid@10/dist/mermaid.esm.min.mjs';
+    const _isDark = document.documentElement.getAttribute('data-theme') !== 'light';
+    mermaid.initialize({ startOnLoad: true, theme: _isDark ? 'dark' : 'neutral', fontFamily: 'Outfit' });
+  </script>
+
+  <style>
+    .blog-header {
+      padding: calc(var(--nav-h) + 100px) 40px 60px;
+      text-align: center;
+      position: relative;
+    }
+    .blog-meta {
+      font-size: 0.85rem;
+      color: var(--accent-2);
+      text-transform: uppercase;
+      letter-spacing: 0.1em;
+      font-weight: 600;
+      margin-bottom: 20px;
+      display: block;
+    }
+    .blog-content {
+      max-width: 800px;
+      margin: 0 auto;
+      font-size: 1.1rem;
+      line-height: 1.8;
+      color: var(--text);
+    }
+    .blog-content p {
+      margin-bottom: 24px;
+      color: var(--text-muted);
+    }
+    .blog-content h2 {
+      font-size: 2rem;
+      margin: 60px 0 24px;
+      color: var(--text);
+    }
+    .blog-content h3 {
+      font-size: 1.4rem;
+      margin: 40px 0 16px;
+      color: var(--accent);
+    }
+    .blog-video-wrap {
+      margin: 40px auto;
+      border-radius: var(--radius);
+      overflow: hidden;
+      border: 1px solid var(--surface-border);
+      box-shadow: var(--shadow);
+      max-width: 1000px;
+      aspect-ratio: 16 / 9;
+    }
+    .blog-video-wrap iframe {
+      width: 100%;
+      height: 100%;
+      display: block;
+      border: none;
+    }
+    .formula-box {
+      background: var(--surface);
+      padding: 24px;
+      border-left: 4px solid var(--accent-2);
+      border-radius: 0 var(--radius-sm) var(--radius-sm) 0;
+      margin: 32px 0;
+      overflow-x: auto;
+    }
+    .diagram-box {
+      margin: 48px 0;
+      padding: 32px;
+      background: var(--surface);
+      border: 1px solid var(--surface-border);
+      border-radius: var(--radius);
+      text-align: center;
+    }
+    pre {
+      background: var(--bg-alt);
+      padding: 24px;
+      border-radius: var(--radius-sm);
+      overflow-x: auto;
+      border: 1px solid var(--surface-border);
+      margin-bottom: 24px;
+      font-size: 0.9rem;
+      color: var(--text);
+    }
+    code {
+      font-family: 'Fira Code', monospace;
+    }
+    .mermaid {
+      background: transparent !important;
+    }
+  </style>
+</head>
+<body>
+  <!-- ─── NAV ──────────────────────────────────────────────── -->
+  <nav id="navbar" class="scrolled">
+    <a href="./" class="nav-logo">GR<span class="accent">.</span></a>
+    <ul class="nav-links">
+      <li><a href="./">&larr; Back to Portfolio</a></li>
+      <li><a href="blog.html" class="gradient-text">Blog Home</a></li>
+    </ul>
+    <div class="nav-controls" style="display: flex; align-items: center; gap: 16px;">
+      <button id="theme-toggle" class="theme-btn" aria-label="Toggle theme" style="background: transparent; border: none; color: var(--text); cursor: pointer; display: flex; align-items: center;">
+        <svg class="sun-icon" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" style="width: 22px; height: 22px;">
+          <circle cx="12" cy="12" r="5"></circle>
+          <line x1="12" y1="1" x2="12" y2="3"></line>
+          <line x1="12" y1="21" x2="12" y2="23"></line>
+          <line x1="4.22" y1="4.22" x2="5.64" y2="5.64"></line>
+          <line x1="18.36" y1="18.36" x2="19.78" y2="19.78"></line>
+          <line x1="1" y1="12" x2="3" y2="12"></line>
+          <line x1="21" y1="12" x2="23" y2="12"></line>
+          <line x1="4.22" y1="19.78" x2="5.64" y2="18.36"></line>
+          <line x1="18.36" y1="5.64" x2="19.78" y2="4.22"></line>
+        </svg>
+        <svg class="moon-icon" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" style="width: 22px; height: 22px; display: none;">
+          <path d="M21 12.79A9 9 0 1 1 11.21 3 7 7 0 0 0 21 12.79z"></path>
+        </svg>
+      </button>
+      <button id="hamburger" aria-label="Toggle menu">
+        <span></span><span></span><span></span>
+      </button>
+    </div>
+  </nav>
+
+  <!-- ─── HEADER ───────────────────────────────────────────── -->
+  <header class="blog-header">
+    <div class="container">
+      <span class="blog-meta">July 10, 2026 • ROS 2 Fundamentals</span>
+      <h1 class="section-title" style="margin-bottom: 24px;">Turtlesim Catch-Them-All: Every Core ROS 2 Concept in ~200 Lines</h1>
+      <p style="color: var(--text-muted); max-width: 640px; margin: 0 auto;">A spawner node, a hunter node, three custom interfaces, and a 100 Hz proportional controller — how one small turtlesim project exercises the entire ROS 2 communication model: topics, services, async clients, timers, and custom message design.</p>
+    </div>
+  </header>
+
+  <!-- ─── VIDEO ────────────────────────────────────────────── -->
+  <div class="container">
+    <div class="blog-video-wrap">
+      <iframe src="https://www.youtube.com/embed/4x6qxieF2jQ" title="Turtlesim catch-them-all demo" allow="accelerometer; autoplay; clipboard-write; encrypted-media; gyroscope; picture-in-picture" allowfullscreen loading="lazy"></iframe>
+    </div>
+  </div>
+
+  <!-- ─── CONTENT ──────────────────────────────────────────── -->
+  <main class="section" style="padding-top: 20px;">
+    <div class="container blog-content">
+
+      <h2>1. Why Turtlesim Is the Right Gym</h2>
+      <p>Every ROS 2 system — a warehouse AMR, a 7-DOF manipulator, a fleet manager — is built from the same five primitives: <strong>nodes</strong>, <strong>topics</strong>, <strong>services</strong>, <strong>interfaces</strong>, and <strong>timers</strong>. The problem with learning them on a real robot is that hardware noise, TF trees, and launch-file plumbing bury the concepts. Turtlesim strips all of that away: a 11&times;11 unit 2D world, a turtle with a perfect pose sensor, and a <code>cmd_vel</code> interface identical in shape to what drives a real differential-drive robot.</p>
+      <p>The game: turtles spawn at random poses every two seconds; a hunter turtle must chase each one down and "catch" it (remove it from the world). Simple to state — but implementing it properly forces you through <strong>every communication pattern ROS 2 offers</strong>, including the ones tutorials usually skip: custom interface packages, asynchronous service clients, and closed-loop control inside a timer callback.</p>
+
+      <h2>2. Architecture: Two Nodes and a Referee</h2>
+      <p>The system is three nodes. <code>turtlesim_node</code> is the "world" — it owns the turtles and exposes standard services. My two nodes divide the game logic cleanly:</p>
+
+      <div class="diagram-box">
+        <div class="mermaid">
+        flowchart LR
+            subgraph world["turtlesim_node (the world)"]
+              W[turtle physics + rendering]
+            end
+            S[turtle_spawner] -- "/spawn (srv client)" --> W
+            S -- "/kill (srv client)" --> W
+            S -- "alive_turtles (topic)" --> C[turtle_controller]
+            C -- "catch_turtle (srv client)" --> S
+            C -- "/turtle1/cmd_vel (topic)" --> W
+            W -- "/turtle1/pose (topic)" --> C
+        </div>
+      </div>
+
+      <table>
+        <thead><tr><th>Node</th><th>Owns</th><th>Communication</th></tr></thead>
+        <tbody>
+          <tr><td><code>turtle_spawner</code></td><td>The list of alive turtles (single source of truth)</td><td>Publishes <code>alive_turtles</code>, serves <code>catch_turtle</code>, calls <code>/spawn</code> and <code>/kill</code></td></tr>
+          <tr><td><code>turtle_controller</code></td><td>The hunter's control loop</td><td>Subscribes to <code>/turtle1/pose</code> and <code>alive_turtles</code>, publishes <code>cmd_vel</code>, calls <code>catch_turtle</code></td></tr>
+        </tbody>
+      </table>
+
+      <p>Note the deliberate asymmetry: the controller never talks to <code>/kill</code> directly. It <em>requests</em> a catch from the spawner, and the spawner — the owner of the alive list — decides, kills, and republishes. That is the ROS pattern for shared state: <strong>one node owns the data; everyone else reads it from a topic or mutates it through a service</strong>. Two nodes both calling <code>/kill</code> and both keeping their own turtle lists would race and drift apart.</p>
+
+      <h2>3. Topics vs Services: Choosing the Right Primitive</h2>
+      <p>The project uses both communication styles, and the choice is never arbitrary:</p>
+      <ul>
+        <li><strong>Topics</strong> (pub/sub, many-to-many, fire-and-forget) carry <em>streams</em>: the turtle pose at ~60 Hz, velocity commands at 100 Hz, and the alive-turtle list whenever it changes. Nobody waits for an answer.</li>
+        <li><strong>Services</strong> (request/response, one-to-one) carry <em>transactions</em>: "spawn a turtle named turtle7 at (3.2, 8.1)" has a definite outcome the caller needs — success or failure, plus the assigned name.</li>
+      </ul>
+      <p>A useful litmus test that generalises far beyond turtlesim: <em>if losing one message doesn't matter, it's a topic; if you need to know it happened, it's a service.</em> A missed pose update is irrelevant — a fresher one arrives in 16 ms. A missed kill request leaves a ghost turtle in the game forever.</p>
+
+      <h2>4. Custom Interfaces: <code>rob_interfaces</code></h2>
+      <p>Standard messages don't describe "a named turtle at a pose", so the project defines its own interface package — an <code>ament_cmake</code> package containing nothing but message and service definitions:</p>
+      <pre><code># msg/Turtle.msg
+string name
+float64 x
+float64 y
+float64 theta
+
+# msg/TurtleArray.msg
+Turtle[] turtles          # messages compose: an array of a custom type
+
+# srv/CatchTurtleKill.srv
+string name               # ── request
+---
+bool success              # ── response</code></pre>
+      <p>Three design points worth noting:</p>
+      <ul>
+        <li><strong>Interfaces live in their own package.</strong> Both Python nodes depend on <code>rob_interfaces</code>, but the interface package depends on neither. If tomorrow a C++ node or a dashboard wants the turtle list, it links against the same package — interfaces are the API contract of the system.</li>
+        <li><strong>Message composition</strong>: <code>TurtleArray</code> embeds <code>Turtle[]</code>, exactly how <code>PoseArray</code> embeds <code>Pose</code> in the standard library. The code generator handles nesting for free.</li>
+        <li><strong>Service responses should carry outcomes.</strong> <code>CatchTurtleKill</code> returns a <code>bool success</code>, which the controller checks and logs — a failed catch is an error, not a silent no-op.</li>
+      </ul>
+
+      <h2>5. The Spawner: Timers, Async Clients, and Why You Never Block</h2>
+      <p>The spawner's rhythm comes from a wall timer: every 2 seconds, generate a random pose and call <code>/spawn</code>:</p>
+      <pre><code>self.spawn_turtle_timer_ = self.create_timer(2.0, self.spawn_new_turtle)
+
+def spawn_new_turtle(self):
+    self.turtle_counter_ += 1
+    name  = "turtle" + str(self.turtle_counter_)
+    x     = random.uniform(0.0, 11.0)      # turtlesim world is 11 x 11
+    y     = random.uniform(0.0, 11.0)
+    theta = random.uniform(0.0, 2 * math.pi)
+    self.call_spawn_service(name, x, y, theta)</code></pre>
+      <p>The interesting part is <em>how</em> the service is called. ROS 2 offers <code>call()</code> (synchronous) and <code>call_async()</code> (returns a future). Inside a node callback you must use the async form:</p>
+      <pre><code>future = self.spawn_client_.call_async(request)
+future.add_done_callback(
+    partial(self.callback_call_spawn_service, request=request))</code></pre>
+      <p>The reason is a classic deadlock. A single-threaded executor processes one callback at a time. A synchronous <code>call()</code> inside the timer callback would <strong>block the executor thread waiting for a response — but that same thread is the only one that can receive the response</strong>. The node freezes forever. <code>call_async()</code> returns immediately; the executor stays free; and when the response arrives, the done-callback fires with the result.</p>
+      <p><code>functools.partial</code> solves the second subtlety: the response to <code>/spawn</code> doesn't echo back the pose you asked for, so the done-callback binds the original request. Only when the world confirms the spawn does the turtle enter the alive list and get republished:</p>
+      <pre><code>def callback_call_spawn_service(self, future, request):
+    response = future.result()
+    if response.name != "":
+        new_turtle       = Turtle()
+        new_turtle.name  = response.name
+        new_turtle.x     = request.x        # bound via partial — the
+        new_turtle.y     = request.y        # response doesn't carry the pose
+        new_turtle.theta = request.theta
+        self.alive_turtles_.append(new_turtle)
+        self.publish_alive_turtles()</code></pre>
+
+      <h2>6. The Controller: a 100 Hz Proportional Controller</h2>
+      <p>The hunter runs a control loop on a 10 ms timer. Each tick computes the error between the hunter's pose \((x, y, \theta)\) and the target \((x_t, y_t)\), and publishes a velocity command. Turtlesim's turtle is a <strong>unicycle model</strong> — it can only move along its heading and rotate:</p>
+      <div class="formula-box">
+        \[ \dot{x} = v\cos\theta, \qquad \dot{y} = v\sin\theta, \qquad \dot{\theta} = \omega \]
+      </div>
+      <p>So the controller has exactly two knobs, \(v\) (linear) and \(\omega\) (angular), and two errors to drive to zero — distance and heading:</p>
+      <div class="formula-box">
+        \[ d = \sqrt{(x_t - x)^2 + (y_t - y)^2}, \qquad \theta_{goal} = \operatorname{atan2}(y_t - y,\; x_t - x) \]
+        \[ v = K_v\, d, \qquad \omega = K_\omega \,\big(\theta_{goal} - \theta\big)_{wrapped}, \qquad K_v = 2,\; K_\omega = 6 \]
+      </div>
+      <p>This is pure <strong>proportional control</strong>: command strength scales with error. Far from the target the turtle sprints; close in, it slows down smoothly, so it doesn't need a separate braking phase. Two details make it work:</p>
+
+      <h3>atan2, not atan</h3>
+      <p>\(\operatorname{atan2}(\Delta y, \Delta x)\) returns the bearing in the correct quadrant over the full \((-\pi, \pi]\) range. A plain \(\arctan(\Delta y / \Delta x)\) collapses opposite directions onto the same angle and divides by zero when the target is straight above — the classic bug that sends robots driving away from their goal.</p>
+
+      <h3>Wrapping the heading error</h3>
+      <p>Angles live on a circle. If the hunter faces \(\theta = 3\) rad and the goal bearing is \(-3\) rad, the raw difference is \(-6\) rad — commanding nearly a full spin the long way round, when the true error is only \(\approx 0.28\) rad the other way. The fix normalises the error into \([-\pi, \pi]\):</p>
+      <pre><code>diff = goal_theta - self.pose_.theta
+if diff > math.pi:
+    diff -= 2 * math.pi          # take the short way round
+elif diff < -math.pi:
+    diff += 2 * math.pi
+cmd.angular.z = 6 * diff</code></pre>
+      <p>Skip this and the turtle visibly pirouettes before every catch. With it, the hunter always turns through the minimal angle — and because \(K_\omega \gg K_v\), heading converges faster than position, so the trajectory bends into a clean pursuit curve rather than a spiral.</p>
+
+      <h3>The catch condition</h3>
+      <p>When \(d \le 0.5\) the controller declares the turtle caught: it zeroes the command, fires the <code>catch_turtle</code> service (async, of course — this runs inside the timer callback), and clears its target until the next <code>alive_turtles</code> update assigns a new one:</p>
+      <pre><code>if distance > 0.5:
+    cmd.linear.x  = 2 * distance
+    cmd.angular.z = 6 * diff
+else:
+    cmd.linear.x  = 0.0
+    cmd.angular.z = 0.0
+    self.call_catch_turtle_service(self.turtle_to_catch_.name)
+    self.turtle_to_catch_ = None</code></pre>
+
+      <h2>7. The Catch Handshake, End to End</h2>
+      <p>The full lifecycle of one catch shows every primitive cooperating:</p>
+      <div class="diagram-box">
+        <div class="mermaid">
+        sequenceDiagram
+            participant C as turtle_controller
+            participant S as turtle_spawner
+            participant W as turtlesim_node
+            C->>C: control loop reaches d ≤ 0.5
+            C->>S: catch_turtle(name) — async request
+            S->>W: /kill(name) — async request
+            W-->>S: kill confirmed
+            S->>S: remove from alive list
+            S-->>C: alive_turtles (topic) — updated list
+            C->>C: lock onto next target
+        </div>
+      </div>
+      <p>Nothing blocks anywhere in this chain. The controller keeps its 100 Hz loop alive while the catch request is in flight; the spawner keeps spawning while the kill request is in flight. That responsiveness under concurrency is not a nicety — it is exactly the property that lets the same patterns scale to a robot where the "control loop" is Nav2 and the "service" is a docking request.</p>
+
+      <h2>8. What This Small Project Actually Teaches</h2>
+      <ul>
+        <li><strong>Ownership beats sharing.</strong> One node owns the mutable state; topics broadcast it; services mutate it. This single rule eliminates whole classes of race conditions.</li>
+        <li><strong>Async service calls are not optional.</strong> The sync-call-in-callback deadlock is the most common beginner ROS 2 freeze, and this project makes the correct future/done-callback pattern muscle memory.</li>
+        <li><strong>Control theory shows up immediately.</strong> Even a toy pursuit needs a proportional law, angle wrapping, and gain tuning — the same P-on-heading structure I later reused for real differential-drive robots in the MechaBot and TurtleBot3 projects.</li>
+        <li><strong>Interface packages are the system's contract.</strong> Defining <code>Turtle</code>, <code>TurtleArray</code>, and <code>CatchTurtleKill</code> in a standalone package is the habit that keeps larger workspaces language-agnostic and dependency-clean.</li>
+      </ul>
+      <p>The full source — both nodes and the interface package — is on <a href="https://github.com/GSR07/ROS2_turtle_spawnner-" target="_blank" rel="noreferrer">GitHub</a>, with a demo video on <a href="https://youtu.be/4x6qxieF2jQ" target="_blank" rel="noreferrer">YouTube</a>.</p>
+    </div>
+  </main>
+
+  <!-- ─── FOOTER ───────────────────────────────────────────── -->
+  <footer>
+    <div class="container">
+      <p>&copy; 2026 Ganesh Reddy. All rights reserved.</p>
+    </div>
+  </footer>
+
+  <script>
+    /* Theme Toggle */
+    const themeToggle = document.getElementById('theme-toggle');
+    if (themeToggle) {
+      const sunIcon = themeToggle.querySelector('.sun-icon');
+      const moonIcon = themeToggle.querySelector('.moon-icon');
+      function updateThemeIcon() {
+        if (document.documentElement.getAttribute('data-theme') === 'light') {
+          sunIcon.style.display = 'none';
+          moonIcon.style.display = 'block';
+        } else {
+          sunIcon.style.display = 'block';
+          moonIcon.style.display = 'none';
+        }
+      }
+      updateThemeIcon();
+      themeToggle.addEventListener('click', () => {
+        const currentTheme = document.documentElement.getAttribute('data-theme') || 'dark';
+        const newTheme = currentTheme === 'light' ? 'dark' : 'light';
+        if (newTheme === 'light') { document.documentElement.setAttribute('data-theme', 'light'); }
+        else { document.documentElement.removeAttribute('data-theme'); }
+        localStorage.setItem('theme', newTheme);
+        updateThemeIcon();
+      });
+    }
+
+    const hamburger = document.getElementById('hamburger');
+    const navLinks = document.querySelector('.nav-links');
+    if (hamburger) {
+      hamburger.addEventListener('click', () => {
+        navLinks.classList.toggle('open');
+      });
+    }
+    window.addEventListener('scroll', () => {
+      document.body.style.setProperty('--scrollParam', window.scrollY);
+    });
+
+    // Autonomous Background Timer
+    function updateTimeParam() {
+      document.body.style.setProperty('--timeParam', performance.now() / 1000);
+      requestAnimationFrame(updateTimeParam);
+    }
+    updateTimeParam();
+  </script>
+</body>
+</html>

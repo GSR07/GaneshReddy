@@ -28,7 +28,7 @@ function ProjectCard({ project, onOpen }: { project: Project; onOpen: (p: Projec
     <div ref={cardRef} className="project-card glass-card reveal">
       <div className={`project-visual ${project.visual_class ?? ''}`}>
         {project.image_url ? (
-          <img src={project.image_url} alt={project.title} style={{ width:'100%',height:'100%',objectFit:'cover' }} />
+          <img src={asset(project.image_url)} alt={project.title} style={{ width:'100%',height:'100%',objectFit:'cover' }} />
         ) : project.video_url ? (
           <video src={asset(project.video_url)} autoPlay loop muted playsInline
             style={{ width:'100%',height:'100%',objectFit:'cover' }} />
@@ -108,7 +108,7 @@ export default function ProjectsSection() {
                   {featured.video_url ? (
                     <video className="pv-franka-video" src={asset(featured.video_url)} autoPlay loop muted playsInline />
                   ) : featured.image_url ? (
-                    <img src={featured.image_url} alt={featured.title} className="pv-franka-video" />
+                    <img src={asset(featured.image_url)} alt={featured.title} className="pv-franka-video" />
                   ) : null}
                 </div>
                 <div className="pv-franka-labels">

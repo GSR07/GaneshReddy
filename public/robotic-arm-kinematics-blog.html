@@ -151,6 +151,17 @@
       <h2>1. Hardware &amp; Configuration</h2>
       <p>This arm rides on an Autonomous Mobile Robot (AMR) and does pick-and-place in a warehouse/logistics setting. It uses <strong>5 Dynamixel XM430 actuators</strong> — but kinematically it is a <strong>4-DoF articulated positioning arm</strong> (base yaw + three coplanar revolute joints) plus a <strong>1-DoF parallel-jaw gripper</strong>. The gripper opens and closes the end-effector; it does not add a positioning degree of freedom. Everything below is derived for the 4-DoF positioning chain.</p>
 
+      <div class="diagram-box" style="display:flex;flex-wrap:wrap;gap:24px;justify-content:center;align-items:center;">
+        <figure style="margin:0;flex:1 1 280px;max-width:380px;">
+          <img src="arm_cad_render.png" alt="SolidWorks render of the 4-DOF robotic arm on its circular base plate" style="width:100%;border-radius:8px;" loading="lazy">
+          <figcaption style="color:var(--text-muted);font-size:.85rem;margin-top:10px;">SolidWorks assembly — carbon-fiber links, GI-sheet flanges, geared parallel-jaw gripper</figcaption>
+        </figure>
+        <figure style="margin:0;flex:1 1 320px;max-width:440px;">
+          <img src="arm_cad_drawing.png" alt="Engineering drawing of the arm with link dimensions: 177 mm, 54 mm, 152.5 mm horizontal and 153 mm, 47 mm, 44 mm vertical" style="width:100%;border-radius:8px;background:#fff;" loading="lazy">
+          <figcaption style="color:var(--text-muted);font-size:.85rem;margin-top:10px;">Final-arm drawing (first-angle projection, dims in mm) — the link lengths behind the DH table</figcaption>
+        </figure>
+      </div>
+
       <table>
         <thead><tr><th>Property</th><th>Value</th></tr></thead>
         <tbody>

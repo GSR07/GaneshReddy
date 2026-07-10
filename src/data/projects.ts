@@ -46,6 +46,7 @@ export const STATIC_PROJECTS: Project[] = [
     featured: false,
     sort_order: 3,
     visual_class: 'pv-robotics',
+    image_url: '/arm_cad_card.png',
     blog_url: '/robotic-arm-kinematics-blog.html',
     created_at: '',
     updated_at: '',

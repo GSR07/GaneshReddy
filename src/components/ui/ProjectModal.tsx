@@ -43,7 +43,8 @@ export default function ProjectModal({ project, onClose }: Props) {
   useEffect(() => {
     fetch(asset(`/projects/${project.id}.md`))
       .then(r => { if (r.ok) return r.text(); throw new Error('no md') })
-      .then(t => { setMd(t); setMdL(false) })
+      // the SPA fallback serves index.html for missing files, so reject HTML
+      .then(t => { setMd(t.trimStart().startsWith('<') ? null : t); setMdL(false) })
       .catch(() => { setMd(null); setMdL(false) })
   }, [project.id])
 
@@ -77,7 +78,7 @@ export default function ProjectModal({ project, onClose }: Props) {
             style={{ width:'100%',maxHeight:360,objectFit:'cover',display:'block' }} />
         )}
         {!project.video_url && project.image_url && (
-          <img src={project.image_url} alt={project.title}
+          <img src={asset(project.image_url)} alt={project.title}
             style={{ width:'100%',maxHeight:320,objectFit:'cover',display:'block' }} />
         )}
 

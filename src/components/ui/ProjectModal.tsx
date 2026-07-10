@@ -81,6 +81,14 @@ export default function ProjectModal({ project, onClose }: Props) {
           <img src={asset(project.image_url)} alt={project.title}
             style={{ width:'100%',maxHeight:320,objectFit:'cover',display:'block' }} />
         )}
+        {!project.video_url && !project.image_url && project.youtube_id && (
+          <iframe
+            src={`https://www.youtube.com/embed/${project.youtube_id}?autoplay=1&mute=1&rel=0`}
+            title={project.title}
+            allow="autoplay; encrypted-media; fullscreen"
+            allowFullScreen
+            style={{ width:'100%',aspectRatio:'16/9',border:'none',display:'block' }} />
+        )}
 
         <div style={{ padding:'1.75rem 2rem 2rem' }}>
           {/* badges */}

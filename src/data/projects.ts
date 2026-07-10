@@ -77,6 +77,7 @@ export const STATIC_PROJECTS: Project[] = [
     featured: false,
     sort_order: 5,
     visual_class: 'pv-robotics',
+    youtube_id: '4x6qxieF2jQ',
     github_url: 'https://github.com/GSR07/ROS2_turtle_spawnner-',
     blog_url: '/turtlesim-catch-all-blog.html',
     created_at: '',

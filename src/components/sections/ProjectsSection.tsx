@@ -24,7 +24,7 @@ function ProjectCard({ project, onOpen }: { project: Project; onOpen: (p: Projec
     return () => { card.removeEventListener('mousemove', onMove); card.removeEventListener('mouseleave', onLeave) }
   }, [])
 
-  const hasMedia = Boolean(project.image_url || project.video_url)
+  const hasMedia = Boolean(project.image_url || project.video_url || project.youtube_id)
 
   return (
     <div ref={cardRef} className="project-card glass-card reveal">
@@ -35,6 +35,12 @@ function ProjectCard({ project, onOpen }: { project: Project; onOpen: (p: Projec
         ) : project.video_url ? (
           <video src={asset(project.video_url)} autoPlay loop muted playsInline
             style={{ width:'100%',height:'100%',objectFit:'cover' }} />
+        ) : project.youtube_id ? (
+          <iframe
+            src={`https://www.youtube.com/embed/${project.youtube_id}?autoplay=1&mute=1&loop=1&playlist=${project.youtube_id}&controls=0&playsinline=1&rel=0`}
+            title={project.title}
+            allow="autoplay; encrypted-media"
+            style={{ width:'100%',height:'100%',border:'none',pointerEvents:'none' }} />
         ) : (
           <div className="pv-icon">
             <svg className="icon-svg icon-bob" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="1.3">

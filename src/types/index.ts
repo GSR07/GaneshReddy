@@ -7,6 +7,7 @@ export interface Project {
   badges: string[]
   image_url?: string
   video_url?: string
+  youtube_id?: string
   github_url?: string
   demo_url?: string
   blog_url?: string

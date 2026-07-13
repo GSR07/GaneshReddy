@@ -3,8 +3,8 @@
 <head>
   <meta charset="UTF-8" />
   <meta name="viewport" content="width=device-width, initial-scale=1.0" />
-  <title>MechaBot: Sim-to-Real Autonomous Navigation — Ganesh Reddy</title>
-  <meta name="description" content="Building a custom differential-drive AMR end-to-end with ROS 2 — URDF/Xacro modeling, Gazebo, SLAM Toolbox, AMCL, Nav2, QR docking, battery-aware coverage cleaning, and a Q-learning memory layer, all behind one ros2_control interface." />
+  <title>MechaBot: A Deep Guide to Differential-Drive AMRs — Ganesh Reddy</title>
+  <meta name="description" content="A from-first-principles guide to building an autonomous mobile robot: differential-drive kinematics, odometry, ESP32 motor control with PID, SLAM, AMCL, Nav2, visual-servo docking, and Q-learning — all traced to real code and math from a working ROS 2 robot." />
   <link rel="preconnect" href="https://fonts.googleapis.com" />
   <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin />
   <link href="https://fonts.googleapis.com/css2?family=Outfit:wght@300;400;500;600;700&family=Syne:wght@500;600;700;800&display=swap" rel="stylesheet" />
@@ -75,6 +75,26 @@
       width: 100%;
       display: block;
     }
+    .blog-img-wrap {
+      margin: 40px auto;
+      border-radius: var(--radius);
+      overflow: hidden;
+      border: 1px solid var(--surface-border);
+      box-shadow: var(--shadow);
+      max-width: 720px;
+      background: var(--surface);
+    }
+    .blog-img-wrap img {
+      width: 100%;
+      display: block;
+    }
+    .blog-img-caption {
+      text-align: center;
+      font-size: 0.85rem;
+      color: var(--text-muted);
+      padding: 12px 20px;
+      border-top: 1px solid var(--surface-border);
+    }
     .formula-box {
       background: var(--surface);
       padding: 24px;
@@ -91,6 +111,15 @@
       border-radius: var(--radius);
       text-align: center;
     }
+    .note-box {
+      background: var(--surface);
+      padding: 20px 24px;
+      border-left: 4px solid var(--accent);
+      border-radius: 0 var(--radius-sm) var(--radius-sm) 0;
+      margin: 28px 0;
+      font-size: 0.98rem;
+    }
+    .note-box strong { color: var(--accent); }
     pre {
       background: var(--bg-alt);
       padding: 24px;
@@ -98,8 +127,9 @@
       overflow-x: auto;
       border: 1px solid var(--surface-border);
       margin-bottom: 24px;
-      font-size: 0.9rem;
+      font-size: 0.88rem;
       color: var(--text);
+      line-height: 1.6;
     }
     code {
       font-family: 'Fira Code', monospace;
@@ -144,9 +174,9 @@
     <!-- ─── HEADER ───────────────────────────────────────────── -->
   <header class="blog-header">
     <div class="container">
-      <span class="blog-meta">July 9, 2026 • Mobile Robotics</span>
-      <h1 class="section-title" style="margin-bottom: 24px;">MechaBot: One Nav2 Stack from Gazebo to Real Hardware</h1>
-      <p style="color: var(--text-muted); max-width: 680px; margin: 0 auto;">The full mobile-robotics pipeline on a custom differential-drive robot: URDF/Xacro modeling, ros2_control with a serial hardware interface, SLAM Toolbox, AMCL, Nav2, camera-based QR docking, battery-aware coverage cleaning, and a Q-learning memory that learns which parts of the map to avoid.</p>
+      <span class="blog-meta">July 9, 2026 · Updated July 13, 2026 • Mobile Robotics</span>
+      <h1 class="section-title" style="margin-bottom: 24px;">MechaBot: A Deep Guide to Differential-Drive AMRs</h1>
+      <p style="color: var(--text-muted); max-width: 680px; margin: 0 auto;">Everything a two-wheeled autonomous mobile robot needs, taught through one real ROS 2 robot: differential-drive kinematics derived from scratch, ESP32 motor control with PID and feedforward, SLAM Toolbox mapping, AMCL localization, Nav2 navigation, camera-based docking, and a Q-learning memory layer. Every number and every line of pseudocode below is traced to MechaBot's actual source.</p>
     </div>
   </header>
 
@@ -160,6 +190,7 @@
       <a class="blog-tag" href="concepts.html#q-learning">Q-Learning</a>
       <a class="blog-tag" href="concepts.html#behavior-trees">Behavior Trees</a>
       <a class="blog-tag" href="concepts.html#occupancy-grid">Occupancy Grids</a>
+      <a class="blog-tag" href="concepts.html#p-controller">P-Controller</a>
     </div>
   </div>
 
@@ -175,11 +206,21 @@
   <main class="section" style="padding-top: 20px;">
     <div class="container blog-content">
 
-      <h2>1. What MechaBot Is</h2>
+      <h2>1. What MechaBot Is — and What This Post Teaches</h2>
       <p>MechaBot is a compact differential-drive autonomous mobile robot built end-to-end: robot modeling, Gazebo simulation, real hardware control, SLAM mapping, AMCL localization, Nav2 navigation, QR-code docking, battery-aware mission logic, and an experimental reinforcement-learning layer for adaptive cleaning. The core idea: <strong>one software stack that moves between simulation and real hardware with the same ROS 2 interfaces</strong> — the robot that maps a Gazebo warehouse is the same robot, bit for bit above the hardware interface, that maps my actual floor.</p>
-      <p>At a high level the robot can simulate itself in Gazebo, publish TF/odometry/LiDAR/IMU/camera data, build occupancy-grid maps with SLAM Toolbox, localize on saved maps with AMCL, navigate with Nav2 (global planning, local control, costmaps, recoveries), detect QR markers with OpenCV for visual docking, return to a charging dock when battery is low, generate cleaning coverage waypoints directly from the occupancy grid, and learn problematic navigation zones with a persistent Q-table.</p>
+      <p>This post is written to double as a general guide. If you've never built a two-wheeled robot before, by the end you should understand <em>why</em> differential drive works the way it does, how a robot turns wheel spin into a pose estimate, how it decides where it is on a map it can't fully see, how it plans and follows a path, and how a simple proportional controller can dock a robot within millimeters of a target. Every equation is derived, not just stated, and every pseudocode block below is lifted from MechaBot's real source — variable names, gains, and thresholds included — not idealized textbook code.</p>
 
-      <h2>2. System Architecture</h2>
+      <h2>2. A Primer: What Makes a Robot "Differential-Drive"?</h2>
+      <p>A differential-drive robot has exactly two independently powered wheels sharing one axle, plus passive support (MechaBot uses four unpowered castors, like an office chair). There's no steering mechanism — no servo turns the wheels sideways. Instead, <strong>the robot steers by making its two wheels spin at different speeds.</strong> Spin both wheels at the same speed and the robot drives straight. Spin them at equal-and-opposite speeds and the robot rotates in place, pivoting about the midpoint of the wheel axle. Everything in between — a wide arc, a tight turn — comes from picking the right pair of wheel speeds.</p>
+      <p>This is why the layout is so popular for hobby and research robots: it needs only two motors and no steering linkage, yet it can still reach any position and orientation in a 2D plane. The price is a constraint worth naming explicitly, because it explains a lot of robotics vocabulary you'll see elsewhere: a differential-drive robot cannot move sideways instantaneously (it has no wheel pointed that way). This is called a <strong>nonholonomic constraint</strong> — the robot's reachable direction of motion at any instant is restricted, even though its reachable set of positions over time is not. A car has the same constraint, which is why parallel parking takes maneuvering instead of a straight sideways slide.</p>
+      <p>The geometric idea that makes the two-wheel-speeds-to-motion mapping click is the <strong>Instantaneous Center of Curvature (ICC)</strong>: at any moment, both wheels are tracing arcs around one common point on the extended wheel axis. Driving straight is just an ICC at infinity. Spinning in place is an ICC exactly at the axle midpoint. Every other combination of wheel speeds places the ICC somewhere else along that line, and the whole robot rotates around it at one shared angular rate — which is exactly what the kinematics in §5 formalizes.</p>
+
+      <div class="blog-img-wrap">
+        <img src="mechabot_rviz_model.png" alt="MechaBot's URDF robot model rendered in RViz2, showing the base, wheels, castors, LiDAR, camera and top lid" loading="lazy" />
+        <div class="blog-img-caption">MechaBot's URDF model in RViz2 — the same robot_description used in Gazebo and on real hardware, rendered from the actual mesh and joint tree.</div>
+      </div>
+
+      <h2>3. System Architecture</h2>
       <p>The stack follows a layered architecture — sensors and actuators at the bottom, task autonomy at the top. Every layer talks to its neighbors only through standard ROS 2 interfaces, which is what makes the sim/real swap possible.</p>
 
       <div class="diagram-box">
@@ -201,7 +242,7 @@
               R2C[ros2_control → diff_drive_controller]
             end
             subgraph HW["Sensors & Actuators"]
-              LID[RPLIDAR] --- IMU[IMU] --- CAM[Camera] --- MOT[Wheel motors + feedback]
+              LID[RPLIDAR] --- IMU[IMU] --- CAM[Camera] --- MOT[Wheel motors + encoders]
             end
             Autonomy --> Nav --> Ctrl
             Loc --> Nav
@@ -216,7 +257,7 @@
         <tbody>
           <tr><td><code>mechabot_description</code></td><td>URDF/Xacro model, meshes, Gazebo sensor config, worlds, RViz configs</td></tr>
           <tr><td><code>mechabot_controller</code></td><td>ros2_control config, diff-drive controller, joystick teleop, twist_mux</td></tr>
-          <tr><td><code>mechabot_firmware</code></td><td>Real-robot ros2_control <code>SystemInterface</code> plugin over serial (ESP32/Arduino-class motor controller)</td></tr>
+          <tr><td><code>mechabot_firmware</code></td><td>Real-robot <code>ros2_control</code> <code>SystemInterface</code> plugin over serial, plus the ESP32 Arduino firmware it talks to</td></tr>
           <tr><td><code>mechabot_mapping</code></td><td>SLAM Toolbox configuration + saved occupancy-grid maps</td></tr>
           <tr><td><code>mechabot_localization</code></td><td>AMCL + map_server launch/config for saved maps</td></tr>
           <tr><td><code>mechabot_navigation</code></td><td>Nav2 planner, controller, smoother, behavior server, BT navigator, waypoint follower</td></tr>
@@ -233,40 +274,64 @@
       </div>
       <p><code>map → odom</code> comes from localization (SLAM Toolbox while mapping, AMCL afterwards), <code>odom → base_footprint</code> comes from wheel odometry via <code>diff_drive_controller</code>, and the fixed robot geometry comes from the URDF through <code>robot_state_publisher</code>. When people say "my robot jumps around in RViz", they are almost always describing a disagreement between the first two transforms.</p>
 
-      <h2>3. The Robot Model</h2>
+      <h2>4. The Robot Model</h2>
       <p>The robot is defined in <code>mechabot.urdf.xacro</code>, split into base, sensors, Gazebo properties, and ros2_control modules. The key design decision is a single argument that switches the entire control backend:</p>
       <pre><code>&lt;xacro:arg name="is_sim" default="true"/&gt;</code></pre>
-      <p>With <code>is_sim:=true</code> the model loads the Gazebo/Ignition ros2_control plugin; with <code>is_sim:=false</code> it loads my custom serial hardware plugin from <code>mechabot_firmware</code>. Nothing else in the file changes.</p>
-      <p>The physical model has two driven wheels, four castors, a top lid, and three sensor frames (<code>lidar_link</code>, <code>camera_link</code> + optical frame, <code>imu_link</code>), with realistic masses (5&nbsp;kg base, 2&nbsp;kg lid, 0.5&nbsp;kg per wheel) so Gazebo's physics behave sensibly. The geometry that matters for everything downstream:</p>
+      <p>With <code>is_sim:=true</code> the URDF's <code>ros2_control</code> block loads the <code>ign_ros2_control/IgnitionSystem</code> plugin; with <code>is_sim:=false</code> it loads <code>mechabot_firmware/MechabotInterface</code> — my custom serial hardware plugin — with the port hardcoded to <code>/dev/ttyUSB1</code>. Nothing else in the file changes.</p>
+      <p>The physical model has two driven wheels, four castors, a top lid, and three sensor frames (<code>lidar_link</code>, <code>camera_link</code> + optical frame, <code>imu_link</code>). Every link's mass comes from a real <code>&lt;inertial&gt;</code> tag in the URDF:</p>
+      <table>
+        <thead><tr><th>Link</th><th>Mass</th></tr></thead>
+        <tbody>
+          <tr><td>base_link</td><td>5.0 kg</td></tr>
+          <tr><td>left / right wheel</td><td>0.5 kg each</td></tr>
+          <tr><td>4× castors</td><td>0.2 kg each (0.8 kg total)</td></tr>
+          <tr><td>toplid_link</td><td>2.0 kg</td></tr>
+          <tr><td>lidar_link</td><td>0.5 kg</td></tr>
+          <tr><td>camera_link / imu_link</td><td>0.1 kg each</td></tr>
+          <tr><td><strong>Total</strong></td><td><strong>≈ 9.5 kg</strong></td></tr>
+        </tbody>
+      </table>
+      <p>and the geometry that matters for everything downstream:</p>
       <table>
         <thead><tr><th>Parameter</th><th>Value</th></tr></thead>
         <tbody>
-          <tr><td>Wheel radius \(r\)</td><td>0.034 m</td></tr>
-          <tr><td>Wheel separation \(L\)</td><td>0.185 m (wheel joints at \(y = \pm 0.0925\) m)</td></tr>
-          <tr><td>Footprint</td><td>0.270 m × 0.230 m rectangle</td></tr>
+          <tr><td>Wheel radius \(r\)</td><td>0.034 m (from the collision sphere on each wheel link)</td></tr>
+          <tr><td>Wheel separation \(L\)</td><td>0.185 m (wheel joints at \(y = \pm 0.0925\) m — the two numbers agree exactly)</td></tr>
+          <tr><td>Footprint polygon</td><td>\((\pm0.135,\ \pm0.115)\) m → 0.270 m × 0.230 m rectangle, used by both costmaps</td></tr>
+          <tr><td>Castor offsets</td><td>\(x=\pm0.085\) m, \(y=\pm0.065\) m from base_link origin, tiny 6.25 mm collision spheres</td></tr>
           <tr><td>Wheel joints</td><td>continuous, axis \((0, 1, 0)\)</td></tr>
         </tbody>
       </table>
-      <p>One subtlety worth calling out: the camera optical frame uses the standard optical convention rotation <code>rpy="-π/2 0 -π/2"</code>, so OpenCV sees +z forward / +x right / +y down, regardless of how the physical camera link is oriented on the robot.</p>
+      <div class="note-box"><strong>An honest simplification:</strong> every link's rotational inertia is set to the placeholder \(I_{xx}=I_{yy}=I_{zz}=0.001\ \text{kg·m}^2\) with zero cross-terms, rather than being computed from the actual mesh geometry. Gazebo's contact solver is what actually keeps the robot upright and well-behaved (see the friction parameters in §8) — the inertia tensor mostly affects how "snappy" collisions feel, not whether the sim is physically plausible.</div>
+      <p>One more subtlety worth calling out: the camera optical frame uses the standard optical convention rotation <code>rpy="-π/2 0 -π/2"</code>, so OpenCV sees +z forward / +x right / +y down, regardless of how the physical camera link is oriented on the robot.</p>
 
-      <h2>4. Differential-Drive Kinematics</h2>
-      <p>Everything the robot does rests on one small model. With wheel radius \(r\), separation \(L\), and wheel angular velocities \(\omega_L, \omega_R\), the wheel rim speeds are \(v_{L,R} = r\,\omega_{L,R}\), and the body velocities follow:</p>
+      <h2>5. Differential-Drive Kinematics, Derived</h2>
+      <p>Start from a single wheel. If it has radius \(r\) and spins at angular velocity \(\omega\), the point where it touches the ground moves at linear speed \(v = r\omega\) — the same rolling-without-slipping relationship as a bicycle wheel or a car tire. MechaBot has two such wheels, a left and a right, separated by \(L = 0.185\) m, both rigidly attached to the same rigid body.</p>
+      <p>Now place the ICC from §2 on the line through both wheels, a (signed) distance \(R\) from the robot's centerline. Because the whole body rotates about the ICC at one shared angular rate \(\omega_{body}\), each wheel's ground-contact speed equals \(\omega_{body}\) times its own distance from the ICC:</p>
+      <div class="formula-box">
+        \[ v_R = \omega_{body}\left(R + \frac{L}{2}\right), \qquad v_L = \omega_{body}\left(R - \frac{L}{2}\right) \]
+      </div>
+      <p>Two equations, two unknowns (\(R\) and \(\omega_{body}\)) in terms of the two wheel speeds. Adding and subtracting them and solving gives the robot's forward speed \(v\) (the ICC-to-centerline midpoint speed) and turn rate \(\omega\):</p>
+      <div class="formula-box">
+        \[ v = \frac{v_R + v_L}{2}, \qquad \omega = \frac{v_R - v_L}{L} \]
+      </div>
+      <p>Substituting \(v_{L,R} = r\,\omega_{L,R}\) (wheel angular velocity, not to be confused with body \(\omega\)) gives the form actually used in code:</p>
       <div class="formula-box">
         \[ v = \frac{r\,(\omega_R + \omega_L)}{2}, \qquad \omega = \frac{r\,(\omega_R - \omega_L)}{L} \]
       </div>
-      <p>The controller needs the inverse map — body command in, wheel commands out:</p>
+      <p>The controller needs the inverse map — body command in, wheel commands out — which just means solving the two equations above back for \(\omega_L,\omega_R\):</p>
       <div class="formula-box">
         \[ \omega_R = \frac{v + \omega L/2}{r}, \qquad \omega_L = \frac{v - \omega L/2}{r} \]
       </div>
-      <p>Plugging in MechaBot's numbers makes it concrete. Driving straight at \(v = 0.15\) m/s: both wheels spin at \(0.15/0.034 = 4.41\) rad/s. Rotating in place at \(\omega = 1.0\) rad/s: the wheels split to \(\pm(0.185/2)/0.034 = \pm 2.72\) rad/s. This same algebra is behind <code>diff_drive_controller</code>, wheel odometry, in-place rotations, and the QR alignment controller later.</p>
+      <p>Plugging in MechaBot's numbers makes it concrete. Driving straight at \(v = 0.15\) m/s: both wheels spin at \(0.15/0.034 = 4.41\) rad/s. Rotating in place at \(\omega = 1.0\) rad/s: the wheels would need to split to \(\pm(0.185/2)/0.034 = \pm 2.72\) rad/s — which actually exceeds the ±2.0 rad/s per-wheel command-interface limit from §4's ros2_control block. That ceiling caps the achievable in-place spin rate at roughly \(\omega_{max} = 2.0 \cdot r \cdot 2/L \approx 0.735\) rad/s, well under the body-level ±2.5 rad/s the diff_drive_controller advertises in §6 — a reminder that the tighter of two stacked limits is the one that actually matters. This same algebra is behind <code>diff_drive_controller</code>, wheel odometry, in-place rotations, and the QR alignment controller later.</p>
       <h3>Odometry integration</h3>
-      <p>Wheel feedback is integrated into a planar pose \((x, y, \theta)\) at every control cycle:</p>
+      <p>Wheel feedback is integrated into a planar pose \((x, y, \theta)\) at every control cycle. This is literally walking the ICC-arc forward by a small timestep and approximating it as a straight-line step (Euler integration):</p>
       <div class="formula-box">
         \[ x_{t+1} = x_t + v\cos\theta_t\,\Delta t, \qquad y_{t+1} = y_t + v\sin\theta_t\,\Delta t, \qquad \theta_{t+1} = \theta_t + \omega\,\Delta t \]
       </div>
-      <p>This is the entire <code>odom → base_footprint</code> transform. It drifts — every small error in \(r\) or \(L\) integrates forever — which is exactly why the map frame and a localizer exist.</p>
+      <p>This is the entire <code>odom → base_footprint</code> transform. It drifts — every small error in \(r\) or \(L\) integrates forever, and Euler integration itself accumulates a small curvature error every step even with perfect wheel data — which is exactly why the map frame and a localizer exist. A common refinement (not used here, but worth knowing) is to integrate the exact arc instead of a straight-line chord when \(\omega \neq 0\); at MechaBot's control rates and speeds the difference is negligible next to wheel-calibration error.</p>
 
-      <h2>5. One Control Stack, Two Backends</h2>
+      <h2>6. One Control Stack, Two Backends</h2>
       <p>The controller manager runs at <strong>100 Hz</strong> with <code>diff_drive_controller/DiffDriveController</code> configured from the physical geometry, plus limits that protect the robot from unreasonable commands:</p>
       <table>
         <thead><tr><th>Parameter</th><th>Value</th></tr></thead>
@@ -274,19 +339,75 @@
           <tr><td><code>wheel_radius</code> / <code>wheel_separation</code></td><td>0.034 m / 0.185 m</td></tr>
           <tr><td>Odometry publish rate</td><td>100 Hz, <code>base_frame_id: base_footprint</code>, odom TF enabled</td></tr>
           <tr><td><code>cmd_vel_timeout</code></td><td>0.5 s (robot stops if commands go stale)</td></tr>
-          <tr><td>Velocity limits</td><td>\(|v_x| \le 2.0\) m/s, \(|\omega_z| \le 2.5\) rad/s</td></tr>
-          <tr><td>Acceleration limits</td><td>\(|a_x| \le 1.0\) m/s², \(|\alpha_z| \le 2.5\) rad/s²</td></tr>
+          <tr><td>Linear velocity / acceleration</td><td>\(|v_x| \le 2.0\) m/s, \(|a_x| \le 1.0\) m/s²</td></tr>
+          <tr><td>Angular velocity / acceleration</td><td>\(|\omega_z| \le 2.5\) rad/s, \(|\alpha_z| \le 2.5\) rad/s²</td></tr>
+          <tr><td>Jerk limits</td><td>defined (0.5 m/s³ linear, 2.24 rad/s³ angular) but <code>has_jerk_limits: false</code> — not actually enforced</td></tr>
         </tbody>
       </table>
+      <p>Above <code>diff_drive_controller</code>, a <code>twist_mux</code> node arbitrates who is allowed to drive:</p>
+      <table>
+        <thead><tr><th>Source</th><th>Topic</th><th>Priority</th><th>Timeout</th></tr></thead>
+        <tbody>
+          <tr><td>Safety-stop lock</td><td><code>safety_stop</code></td><td>255 (overrides everything)</td><td>0.0 s — must be actively held</td></tr>
+          <tr><td>Joystick</td><td><code>joy_vel</code></td><td>99</td><td>0.5 s</td></tr>
+          <tr><td>Navigation (Nav2)</td><td><code>cmd_vel</code></td><td>90</td><td>0.5 s</td></tr>
+          <tr><td>Keyboard</td><td><code>key_vel</code></td><td>80</td><td>0.5 s</td></tr>
+        </tbody>
+      </table>
+      <p>In practice this means a human on the joystick always wins over autonomous navigation — exactly what you want while debugging a robot that's about to hit something.</p>
+
       <h3>The real hardware interface</h3>
-      <p>The sim-to-real bridge is a C++ <code>hardware_interface::SystemInterface</code> plugin in <code>mechabot_firmware</code>. It talks to the embedded motor controller over serial at <strong>500000 baud</strong> on <code>/dev/ttyUSB1</code>, exporting velocity command interfaces and position + velocity state interfaces for both wheels. Commands go out as compact formatted strings:</p>
-      <pre><code>rp05.30,ln12.45,</code></pre>
-      <p>meaning <em>right wheel, positive, 5.30 rad/s; left wheel, negative, 12.45 rad/s</em> — the pattern is <code>r&lt;sign&gt;&lt;velocity&gt;,l&lt;sign&gt;&lt;velocity&gt;,</code> with two decimals. Feedback comes back in the same style and is parsed into signed wheel velocities. Since the embedded side reports velocity, joint position is recovered by integrating in the plugin's <code>read()</code>:</p>
-      <pre><code>// theta_i(t + dt) = theta_i(t) + omega_i(t) * dt
-position_states_[i] += velocity_states_[i] * dt;</code></pre>
+      <p>The sim-to-real bridge is a C++ <code>hardware_interface::SystemInterface</code> plugin, <code>mechabot_firmware::MechabotInterface</code>, using <code>LibSerial</code> at <strong>500,000 baud</strong>. It exports one velocity command interface and position + velocity state interfaces per wheel. Its <code>write()</code> builds a compact formatted command string every cycle:</p>
+      <pre><code>// mechabot_firmware/src/mechabot_interface.cpp — write()
+char right_sign = velocity_commands_[0] &gt;= 0 ? 'p' : 'n';
+char left_sign  = velocity_commands_[1] &gt;= 0 ? 'p' : 'n';
+
+message &lt;&lt; "r" &lt;&lt; right_sign &lt;&lt; zero_pad &lt;&lt; abs(velocity_commands_[0])
+        &lt;&lt; ",l" &lt;&lt; left_sign &lt;&lt; zero_pad &lt;&lt; abs(velocity_commands_[1]) &lt;&lt; ",";
+// e.g. "rp05.30,ln12.45," = right +5.30 rad/s, left -12.45 rad/s
+esp_.Write(message.str());</code></pre>
+      <p>and <code>read()</code> parses the returning line the same way, integrating position in software since the firmware only reports velocity:</p>
+      <pre><code>// read() — comma-separated tokens like "rp05.30,ln12.45,"
+for each token in ReadLine(esp_, '\n', timeout_ms=100):
+    sign = (token[1] == 'p') ? +1 : -1
+    value = parse_double(token[2:])
+    if token[0] == 'r': velocity_states[0] = sign * value
+    if token[0] == 'l': velocity_states[1] = sign * value
+    position_states[i] += velocity_states[i] * dt   // integrated on the ROS side</code></pre>
       <p>The payoff: the ROS side is completely independent of the embedded implementation. Swapping sim for real is one launch argument, and the URDF, controllers, SLAM, AMCL, and Nav2 configs are all shared. The whole nav stack was debugged once, in sim, and simply worked on hardware.</p>
 
-      <h2>6. Sensors: Simulated Like the Real Ones</h2>
+      <h2>7. Inside the ESP32: PID + Feedforward on the Motors</h2>
+      <p>Everything above assumes the wheels obey a commanded angular velocity. Making that true is the ESP32's job, and it's worth walking through because it's a self-contained example of a classic embedded control loop. The board drives two 12 V DC gearmotors through an <strong>L298N</strong> H-bridge (PWM pins 15/19, direction pins 2, 4, 5, 18) and reads quadrature encoders on interrupt pins (right: GPIO 22/23, left: GPIO 16/17) at <strong>330 ticks per revolution</strong>.</p>
+      <h3>Measuring wheel speed from ticks</h3>
+      <p>An interrupt service routine fires on the encoder's phase-A edge and uses phase-B's level to determine direction:</p>
+      <pre><code>void rightEncoderCallback() {
+  if (digitalRead(right_encoder_phaseB) == HIGH) right_encoder_ticks--;
+  else                                            right_encoder_ticks++;
+}</code></pre>
+      <p>Every 100 ms control cycle (<strong>10 Hz</strong>), the accumulated tick count converts to an angular velocity the same way any incremental encoder does — ticks over the counting period, scaled to radians:</p>
+      <div class="formula-box">
+        \[ \omega_{meas} = \frac{\text{ticks}}{\text{TICKS\_PER\_REV}} \cdot \frac{2\pi}{\Delta t}, \qquad \text{TICKS\_PER\_REV} = 330,\ \ \Delta t = 0.1\ \text{s} \]
+      </div>
+      <div class="note-box"><strong>A real limitation worth naming:</strong> the interrupt is attached only to phase A, in <code>CHANGE</code> mode — it fires on both the rising and falling edge of that one channel (2× decoding), reading phase B only to determine direction. Full 4× quadrature decoding would fire interrupts on both edges of <em>both</em> channels for twice the resolution again. It's a legitimate design tradeoff (simpler ISR, fewer interrupts to service) that trades off some low-speed velocity-estimate resolution.</div>
+      <h3>PID plus feedforward</h3>
+      <p>A pure PID loop on velocity works, but it's sluggish at startup because the controller has to "discover" how much PWM a given speed needs. MechaBot's firmware instead combines a feedforward term (a pre-computed PWM-per-rad/s ratio, derived once from bench testing at 100 RPM) with a PID trim on top of it:</p>
+      <div class="formula-box">
+        \[ \text{PWM} = \underbrace{K_{ff}\cdot\omega_{cmd}}_{\text{feedforward}} \;+\; \underbrace{K_p e + K_i\!\int e\,dt + K_d\frac{de}{dt}}_{\text{PID trim, } e = \omega_{cmd}-\omega_{meas}} \]
+      </div>
+      <table>
+        <thead><tr><th>Constant</th><th>Value</th></tr></thead>
+        <tbody>
+          <tr><td>\(K_{ff}\) (left / right)</td><td>7.8 / 6.7 PWM-counts per rad/s</td></tr>
+          <tr><td>\(K_p, K_i, K_d\) (both wheels)</td><td>11.0, 2.5, 0.0 — a PI controller in practice, no derivative term</td></tr>
+          <tr><td>Output clamp</td><td>PID trim limited to ±80 counts, final PWM to [0, 255] (8-bit, 1 kHz)</td></tr>
+          <tr><td>Startup boost</td><td>a one-shot higher "start PWM" (160 left / 150 right) breaks static friction, then drops to the min-moving PWM (35 both) once the wheel is turning</td></tr>
+          <tr><td>Stop threshold</td><td>commands below 0.01 rad/s are treated as zero</td></tr>
+        </tbody>
+      </table>
+      <p>This pairing is a common pattern anywhere precise low-level control meets a system with real friction and inertia: <strong>feedforward gets you close immediately using a known plant model, feedback (PID) corrects for whatever the model got wrong.</strong> A PID loop alone would eventually converge to the same PWM, but only after several control cycles of error had accumulated — feedforward removes that lag.</p>
+      <p>Encoder ticks per revolution, serial baud rate (500,000), and the packet format all match exactly between the ESP32 sketch and the ROS-side <code>MechabotInterface</code> plugin from §6 — they're a matched production pair, not two independently-tuned pieces.</p>
+
+      <h2>8. Sensors: Simulated Like the Real Ones</h2>
       <p>Gazebo sensors are configured to match the real hardware's character, not an idealised version of it:</p>
       <table>
         <thead><tr><th>Sensor</th><th>Configuration</th></tr></thead>
@@ -296,65 +417,95 @@ position_states_[i] += velocity_states_[i] * dt;</code></pre>
           <tr><td><strong>Camera</strong> (<code>/camera/image_raw</code>)</td><td>640 × 480 @ 10 Hz, 1.396 rad horizontal FOV, clip 0.02–8.0 m</td></tr>
         </tbody>
       </table>
-      <p>Each LiDAR beam is a polar measurement \(z_i = (r_i, \phi_i)\) with \(\Delta\phi \approx 2\pi/360\). The autonomy nodes derive a single scalar from it — the front obstacle distance, taken as the minimum (or mean, in simpler nodes) of the valid ranges in a small sector around 0° — used for emergency stops and docking thresholds. For yaw control, the IMU quaternion collapses to:</p>
+      <p>Wheel contact is tuned the same way: the driven wheels get near-infinite friction (\(\mu \approx 10^{15}\)) so they never slip, while the four castors get low friction (\(\mu = 0.01\)) so they roll freely and never fight the differential-drive kinematics from §5 — an important sim detail, since a differential-drive model is only valid if the only wheels that matter are the two driven ones.</p>
+
+      <div class="blog-img-wrap">
+        <img src="mechabot_gazebo_warehouse.png" alt="MechaBot spawned in the Ignition Gazebo warehouse world, sitting on a lane marking near pallet shelving" loading="lazy" />
+        <div class="blog-img-caption">MechaBot spawned in the <code>ware_house</code> Ignition Gazebo world — the same shelving, dock markers, and lane markings the SLAM and Nav2 stacks below actually operate against.</div>
+      </div>
+
+      <p>Each LiDAR beam is a polar measurement \(z_i = (r_i, \phi_i)\) with \(\Delta\phi \approx 2\pi/360\). The autonomy nodes derive a single scalar from it — the front obstacle distance — used for emergency stops and docking thresholds; in the read_lidar diagnostic node this is literally <code>mean(ranges[-1:] + ranges[:1])</code>, i.e. just the single ray dead ahead, with a wider 20-ray sector version present in the code but commented out. For yaw control, the IMU (or camera-frame) quaternion collapses to the standard yaw-only extraction:</p>
       <div class="formula-box">
         \[ \text{yaw} = \operatorname{atan2}\!\big(2(wz + xy),\; 1 - 2(y^2 + z^2)\big) \]
       </div>
 
-      <h2>7. Mapping with SLAM Toolbox</h2>
-      <p>Mapping uses SLAM Toolbox with the Ceres solver (<code>SPARSE_NORMAL_CHOLESKY</code> + Levenberg–Marquardt), scan matching and loop closure enabled, max laser range 12 m, and a map resolution of <strong>0.05 m/cell</strong>. Conceptually, graph SLAM estimates the set of robot poses \(X\) that best explains all constraints simultaneously:</p>
+      <h2>9. Mapping with SLAM Toolbox</h2>
+      <p>Mapping uses SLAM Toolbox's <strong>synchronous</strong> node (<code>sync_slam_toolbox_node</code> — scans are processed in strict order, not asynchronously) with the Ceres solver (<code>SPARSE_NORMAL_CHOLESKY</code> + Levenberg–Marquardt trust region + Schur-Jacobi preconditioner), in <code>mode: mapping</code>. Conceptually, graph SLAM estimates the set of robot poses \(X\) that best explains all constraints simultaneously:</p>
       <div class="formula-box">
         \[ X^\ast = \arg\min_X \sum_i \left\lVert e_i(X) \right\rVert^2_{\Omega_i} \]
       </div>
-      <p>where each \(e_i\) is the error of an odometry, scan-matching, or loop-closure constraint and \(\Omega_i\) weights how much you trust it. Loop closures are what pull the accumulated odometry drift back into shape — without them, the two ends of a long corridor never quite meet.</p>
+      <p>where each \(e_i\) is the error of an odometry, scan-matching, or loop-closure constraint and \(\Omega_i\) weights how much you trust it. Concretely, a new scan is only folded into the graph once the robot has moved <strong>0.5 m or turned 0.5 rad</strong> (<code>minimum_travel_distance</code> / <code>minimum_travel_heading</code>) — this is both a compute saver and a way to avoid adding near-duplicate constraints. Loop closure is enabled (<code>do_loop_closing: true</code>), searching an 8 m × 8 m window at 0.05 m resolution for a candidate chain of at least 10 nodes with a correlation response above 0.35 (coarse) / 0.45 (fine) before accepting it — loop closures are what pull accumulated odometry drift back into shape; without them, the two ends of a long corridor never quite meet.</p>
+
+      <div class="blog-img-wrap">
+        <img src="mechabot_slam_live.png" alt="SLAM Toolbox building an occupancy grid map live in RViz2, showing the pose graph nodes and edges alongside the growing occupied/free/unknown grid" loading="lazy" />
+        <div class="blog-img-caption">SLAM Toolbox mapping live: the blue/red lines are literally the pose graph from the optimization above — each node a robot pose, each edge a scan-match or odometry constraint — overlaid on the occupancy grid it produces.</div>
+      </div>
+
       <h3>Occupancy grid math</h3>
-      <p>The output map stores each cell as unknown (−1), free (0), or occupied (100). Converting a grid cell \((m_x, m_y)\) back to world coordinates — needed later when the cleaning planner turns cells into waypoints — is a scale plus the map-origin rigid transform:</p>
+      <p>The output map stores each cell as unknown (−1), free (0), or occupied (100), at <strong>0.05 m/cell</strong> for both shipped maps. Converting a grid cell \((m_x, m_y)\) back to world coordinates — needed later when the cleaning planner turns cells into waypoints — is a scale plus the map-origin rigid transform:</p>
       <div class="formula-box">
         \[ x_{local} = (m_x + 0.5)\,\text{res}, \qquad y_{local} = (m_y + 0.5)\,\text{res} \]
         \[ x_{world} = x_0 + x_{local}\cos\theta_0 - y_{local}\sin\theta_0, \qquad y_{world} = y_0 + x_{local}\sin\theta_0 + y_{local}\cos\theta_0 \]
       </div>
-      <p>The project ships saved maps for the <code>small_house</code> and <code>qr_maze</code> Gazebo worlds, both at 0.05 m/cell.</p>
+      <p>The project ships two saved maps: <code>qr_maze</code> (288×311 cells ≈ 14.4 m × 15.6 m, origin at \((-9.07,-7.73)\)) and <code>small_house</code> (500×500 cells ≈ 25 m × 25 m, origin at \((-12.5,-12.5)\)) — both centered so the robot starts well inside positive map coordinates.</p>
 
-      <h2>8. Localization with AMCL</h2>
-      <p>Once a map exists, AMCL estimates the posterior over the robot pose with a particle filter:</p>
+      <h2>10. Localization with AMCL</h2>
+      <p>Once a map exists, AMCL estimates the posterior over the robot pose with a particle filter — a set of weighted pose guesses that collectively approximate the true probability distribution instead of tracking one single estimate:</p>
       <div class="formula-box">
         \[ p(x_t \mid z_{1:t}, u_{1:t}, m) \]
       </div>
-      <p>where \(x_t\) is the pose, \(z_t\) the LiDAR scan, \(u_t\) the odometry motion, and \(m\) the known map. Each cycle repeats three steps over the particle set:</p>
-      <div class="formula-box">
-        \[ \textbf{1. Motion:}\quad x_t^{[i]} \sim p(x_t \mid u_t, x_{t-1}^{[i]}) \qquad
-           \textbf{2. Weight:}\quad w_t^{[i]} = p(z_t \mid x_t^{[i]}, m) \qquad
-           \textbf{3. Resample by } w_t \]
-      </div>
-      <p>MechaBot uses the <code>DifferentialMotionModel</code> with 500–2000 particles, the <code>likelihood_field</code> laser model with 60 beams, and update thresholds of 0.25 m / 0.2 rad so the filter only spends compute when the robot has actually moved. The likelihood-field model scores a particle by how close each projected beam endpoint lands to an obstacle in the map — a simplified per-beam probability:</p>
+      <p>where \(x_t\) is the pose, \(z_t\) the LiDAR scan, \(u_t\) the odometry motion, and \(m\) the known map. Each cycle repeats three steps over every particle in the set — this is the entire algorithm, and it's worth internalizing as pseudocode since it generalizes to almost every particle filter you'll meet:</p>
+      <pre><code>for each particle i in particles:                       # e.g. 500–2000 of them
+    particle[i].pose = sample_motion_model(u_t, particle[i].pose)   # 1. predict
+    particle[i].weight = measurement_model(z_t, particle[i].pose, map)  # 2. weight
+
+normalize(particle.weight for particle in particles)
+particles = resample(particles, weighted by particle.weight)        # 3. resample
+pose_estimate = weighted_mean(particles)</code></pre>
+      <p>MechaBot uses the <code>DifferentialMotionModel</code> — noise coefficients \(\alpha_1=\alpha_2=\alpha_3=\alpha_4=0.2\), covering rotation-from-rotation, rotation-from-translation, translation-from-translation, and translation-from-rotation error — 500–2000 particles, the <code>likelihood_field</code> laser model with 60 beams, and update thresholds of 0.25 m / 0.2 rad so the filter only spends compute when the robot has actually moved. Resampling happens every update (<code>resample_interval: 1</code>); the augmented-MCL random-particle-injection recovery mechanism is present in AMCL but explicitly disabled here (<code>recovery_alpha_slow = recovery_alpha_fast = 0.0</code>) — MechaBot trusts its motion model enough not to need it. The likelihood-field model scores a particle by how close each projected beam endpoint lands to an obstacle in the map:</p>
       <div class="formula-box">
         \[ p(z \mid x, m) = z_{hit}\, e^{-d^2 / (2\sigma_{hit}^2)} + \frac{z_{rand}}{z_{max}}, \qquad \sigma_{hit} = 0.2,\; z_{hit} = z_{rand} = 0.5 \]
       </div>
-      <p>where \(d\) is the distance from the measured endpoint to the nearest obstacle. The initial pose is seeded at the dock (\(x = 1.5,\; y = 5.18,\; \theta = 1.57\)), so the robot wakes up knowing roughly where it is.</p>
+      <p>where \(d\) is the distance from the measured endpoint to the nearest obstacle. The initial pose is seeded at the dock (\(x = 1.5,\; y = 5.18,\; \theta = 1.57\)), so the robot wakes up knowing roughly where it is instead of needing a global-localization search on every boot.</p>
 
-      <h2>9. Navigation: Nav2 End to End</h2>
-      <p>Nav2 brings up <code>planner_server</code>, <code>controller_server</code>, <code>smoother_server</code>, <code>behavior_server</code>, <code>bt_navigator</code>, and <code>waypoint_follower</code> under a lifecycle manager.</p>
+      <h2>11. Navigation: Nav2 End to End</h2>
+      <p>Nav2 brings up <code>planner_server</code>, <code>controller_server</code>, <code>smoother_server</code>, <code>behavior_server</code>, <code>bt_navigator</code>, and <code>waypoint_follower</code> under a lifecycle manager, at a controller frequency of 20 Hz.</p>
       <h3>Global planning — SmacPlanner2D</h3>
       <p>The global planner is grid-based A*-style search over the costmap, minimizing the classic:</p>
       <div class="formula-box">
         \[ f(n) = g(n) + h(n) \]
       </div>
-      <p>with \(g\) the accumulated path cost and \(h\) the heuristic to goal. A cost-travel multiplier of 2.0 makes cells near inflated obstacles genuinely expensive, so the planner prefers open space over wall-scraping shortcuts. Tolerance is 0.125 m with a 2 s planning budget.</p>
+      <p>with \(g\) the accumulated path cost and \(h\) the heuristic to goal. A cost-travel multiplier of 2.0 makes cells near inflated obstacles genuinely expensive, so the planner prefers open space over wall-scraping shortcuts (up to 1,000,000 search iterations, 2 s planning budget, 0.125 m goal tolerance). A separate, standalone <code>SimpleSmoother</code> stage then relaxes the raw grid path (up to 1000 iterations with refinement) before it ever reaches the controller.</p>
       <h3>Local control — Regulated Pure Pursuit</h3>
       <p>The local controller picks a lookahead point on the global path and steers toward it. If that point is at \((x_L, y_L)\) in robot coordinates at lookahead distance \(L_d\), the commanded curvature and angular velocity are:</p>
       <div class="formula-box">
         \[ \kappa = \frac{2\,y_L}{L_d^2}, \qquad \omega = v\,\kappa \]
       </div>
-      <p>The "regulated" part scales speed down in tight curvature and near obstacles, and adds collision checking. MechaBot runs it deliberately slow and precise: 0.15 m/s desired velocity, adaptive lookahead 0.30–0.50 m (1.5 s lookahead time), rotate-to-heading at 1.8 rad/s, reversing allowed, and tight goal tolerances of 0.04 m / 0.04 rad — because the docking approach pose needs to be exact.</p>
+      <p>The "regulated" part scales speed down in tight curvature (below a 0.9 m turn radius, down to a 0.25 m/s floor) and near obstacles (cost-scaling starts 0.3 m from an obstacle), and adds collision checking up to 1.0 s ahead on the carrot. MechaBot runs it deliberately slow and precise: 0.15 m/s desired velocity, adaptive lookahead 0.30–0.50 m (1.5 s lookahead time), rotate-in-place whenever heading error exceeds 45°(at 1.8 rad/s, accel-limited to 3.2 rad/s²), reversing allowed, and tight goal tolerances of 0.04 m / 0.04 rad — because the docking approach pose in §12 needs to be exact.</p>
       <h3>Costmaps and inflation</h3>
-      <p>Both costmaps run at 0.05 m/cell with the rectangular footprint. The inflation layer (radius 0.30 m, cost scaling 4.0) decays cost exponentially with distance from obstacles:</p>
+      <p>Both costmaps run at 0.05 m/cell with the same 0.27 m × 0.23 m footprint from §4. The local costmap is a 3 m × 3 m rolling window fed only by the live LiDAR (obstacle + inflation layers); the global costmap adds a static layer from the saved map, and tracks unknown space as unexplored rather than free. Both share an inflation layer (radius 0.30 m, cost scaling 4.0) that decays cost exponentially with distance from obstacles:</p>
       <div class="formula-box">
         \[ \text{cost}(d) = C\, e^{-k\,(d - r_{inscribed})} \]
       </div>
-      <p>This buffer is what turns "collision-free" paths into <em>comfortable</em> paths. On top sits the behavior tree (<code>simple_navigation_w_replanning_and_recovery.xml</code>) with <code>Spin</code>, <code>BackUp</code>, and <code>Wait</code> recoveries — in sim the robot never gets stuck; on a floor with castors and carpet edges it does, and recoveries are what turn "demo" into "leave it running". Manual override stays live throughout: a joystick feeds <code>twist_mux</code>, which arbitrates teleop vs. Nav2 by priority.</p>
+      <p>This buffer is what turns "collision-free" paths into <em>comfortable</em> paths.</p>
+      <h3>The behavior tree</h3>
+      <p>Recoveries live in <code>simple_navigation_w_replanning_and_recovery.xml</code> — a deliberately flat tree, not the stock Nav2 tree's branching fallback logic:</p>
+      <pre><code>RecoveryNode(retries=3, name="NavigateRecovery"):
+    try:
+        PipelineSequence("NavigateWithReplanning"):
+            RateController(hz=1.0):
+                ComputePathToPose(goal, path, planner_id="GridBased")
+            FollowPath(path, controller_id="FollowPath")
+    on_failure:
+        Sequence:
+            Wait(duration=3.0s)
+            BackUp(dist=0.30m, speed=0.15 m/s)
+            Spin(dist=3.14 rad)          # a full 180°
+    # retries the whole thing up to 3 times before giving up</code></pre>
+      <p>In sim the robot never gets stuck; on a floor with castors and carpet edges it does, and this fixed wait → back-up → 180° spin sequence is what turns "demo" into "leave it running."</p>
 
-      <h2>10. QR-Code Docking: Visual Servoing for the Last 60 cm</h2>
-      <p>Nav2 is good at reaching a pose, but charging contacts need alignment tighter than a 4 cm map-frame tolerance can guarantee. So docking is split into two phases: Nav2 gets the robot to a <em>pre-dock</em> pose, then a camera + LiDAR controller takes over for the final approach.</p>
+      <h2>12. QR-Code Docking: Visual Servoing for the Last 60 cm</h2>
+      <p>Nav2 is good at reaching a pose, but charging contacts need alignment tighter than a 4 cm map-frame tolerance can guarantee. So docking is split into two phases: Nav2 gets the robot to a <em>pre-dock</em> pose, then a camera + LiDAR controller takes over for the final approach — all detection uses OpenCV's built-in <code>cv2.QRCodeDetector</code>, never ArUco.</p>
 
       <div class="diagram-box">
         <div class="mermaid">
@@ -365,7 +516,7 @@ position_states_[i] += velocity_states_[i] * dt;</code></pre>
             PreDock --> Acquire: search for QR marker
             Acquire --> Align: marker visible
             Align --> Approach: pixel error small
-            Approach --> Docked: LiDAR d ≤ 0.15 m,<br/>max travel, or timeout
+            Approach --> Docked: LiDAR d ≤ threshold,<br/>max travel, or timeout
             Docked --> [*]: charging
         </div>
       </div>
@@ -375,29 +526,76 @@ position_states_[i] += velocity_states_[i] * dt;</code></pre>
       <div class="formula-box">
         \[ x_{pre} = x_{dock} - d\cos\theta_{dock}, \qquad y_{pre} = y_{dock} - d\sin\theta_{dock} \]
       </div>
-      <p>With the dock at \((1.5,\, 5.18,\, 1.57)\) and \(d = 0.60\) m, this lands at roughly \((1.5,\, 4.58)\) — 60 cm straight out from the charger, facing it.</p>
-      <h3>Proportional visual servoing</h3>
-      <p>For docking the robot never decodes the QR payload — <code>cv2.QRCodeDetector.detect()</code> returns only the four corners, and the controller needs just their centroid \(c_x\). The horizontal pixel error against the image center drives yaw:</p>
+      <p>With the dock at \((1.5,\, 5.18,\, 1.57)\), <code>auto_docking_with_battery.py</code> uses a standoff of \(d = 0.55\) m, landing at roughly \((1.5,\, 4.63)\) — 55 cm straight out from the charger, facing it. (The RL-augmented cleaning node in §15 uses a slightly larger 0.60 m standoff for the same maneuver — the two scripts were tuned independently.)</p>
+      <h3>Proportional visual servoing — the real gains</h3>
+      <p>For docking the robot never decodes the QR payload — <code>cv2.QRCodeDetector.detect()</code> returns only the four corners, and the controller needs just their centroid \(c_x\). The horizontal pixel error against the image center drives yaw with a plain proportional law:</p>
       <div class="formula-box">
         \[ e = c_x - \frac{\text{image width}}{2}, \qquad \omega_z = \operatorname{clip}(-K_p\, e,\; \omega_{min},\; \omega_{max}) \]
       </div>
-      <p>Different phases use different gains: \(K_p = 0.0030\) for coarse alignment, 0.0015 in the safer battery-docking version, and 0.0010 during the final forward creep — the clip prevents oscillation when the marker sits far off-center. Any rotation to a target yaw uses the same wrapped-error proportional law you'd use on any robot:</p>
+      <p>MechaBot actually ships two docking implementations with different gains, tuned for different amounts of caution:</p>
+      <pre><code># auto_dock_undock.py — align_with_qr()
+error = qr_center_x - image_width / 2
+if abs(error) &lt; 5:               # px, tight tolerance
+    stop()
+else:
+    angular_speed = -error * 0.003          # Kp = 0.003, unclamped
+    publish(linear=0.0, angular=angular_speed)
+
+# auto_docking_with_battery.py — align_with_qr(), safer version
+error = qr_center_x - image_width / 2
+if abs(error) &lt; 10:
+    stop()
+else:
+    angular_speed = clip(-error * 0.0015, -0.12, 0.12)   # gentler Kp, hard clip
+    publish(linear=0.0, angular=angular_speed)</code></pre>
+      <p>Final approach in both scripts creeps forward while steering on the same pixel error, but at a smaller gain than alignment (so forward motion doesn't overshoot heading corrections) and with independent stop conditions layered on top so no single sensor is a single point of failure:</p>
+      <pre><code># auto_docking_with_battery.py — dock_forward()
+if front_distance &lt; 0.160:                    stop("lidar")
+if odom_travelled &gt;= 0.65:                     stop("max travel")   # safety fallback
+if qr_detected:
+    correction = clip(-(qr_center_x - image_width/2) * 0.0010, -0.08, 0.08)
+else:
+    correction = 0.0
+publish(linear=0.050, angular=correction)</code></pre>
+      <p>The simpler <code>auto_dock_undock.py</code> uses a 0.15 m LiDAR threshold and a 0.002 steering gain at 0.05 m/s — close enough to the battery-aware version's 0.160 m / 0.0010 that they're clearly the same idea tuned twice. Any rotation to a target yaw (undocking, maze turns) uses the same wrapped-error proportional law you'd use on any robot:</p>
       <div class="formula-box">
-        \[ e_\theta = \operatorname{atan2}\!\big(\sin(\theta_{target} - \theta),\, \cos(\theta_{target} - \theta)\big), \qquad \omega_z = \operatorname{clip}(K_p\, e_\theta,\, -0.35,\, 0.35) \]
+        \[ e_\theta = \operatorname{atan2}\!\big(\sin(\theta_{target} - \theta),\, \cos(\theta_{target} - \theta)\big), \qquad \omega_z = \operatorname{clip}(K_p\, e_\theta,\, -\omega_{max},\, \omega_{max}) \]
       </div>
-      <p>The atan2 wrap keeps \(e_\theta \in [-\pi, \pi]\) so the robot never rotates the long way around; it stops when \(|e_\theta| &lt; 0.035\) rad (about 2°).</p>
-      <h3>Layered stop conditions</h3>
-      <p>The final approach never trusts one sensor. The robot creeps forward while correcting heading and stops on <em>any</em> of: LiDAR front distance \(\le 0.15\) m, odometry travel exceeding a max distance from the approach start, a timeout, or (in some versions) the QR marker growing past a size threshold. One more real-world fix lives here: the QR marker drops out for a few frames under motion blur, so the controller keeps a <strong>0.7 s QR memory</strong> — briefly losing the marker continues on the last known center instead of aborting.</p>
+      <p>The atan2 wrap keeps \(e_\theta \in [-\pi, \pi]\) so the robot never rotates the long way around.</p>
+      <h3>Layered stop conditions and QR memory</h3>
+      <p>The final approach never trusts one sensor: it stops on <em>any</em> of LiDAR front distance below threshold, odometry travel past a max distance, or a timeout. One more real-world fix lives here: the QR marker drops out for a few frames under motion blur, so the battery-aware controller keeps a <strong>0.7 s QR memory</strong> (<code>self.qr_memory_time = 0.7</code>) — briefly losing the marker continues on the last known heading instead of aborting or stalling, and if the marker stays lost past that window the robot pivots to search, using the sign of the last known pixel error to guess which way to turn.</p>
+      <div class="note-box"><strong>Two battery thresholds, from two different scripts:</strong> the cleaning and RL-augmented nodes (§14–15) use a 45% threshold to trigger a <em>proactive</em> return-to-dock while there's still comfortable margin. The standalone <code>auto_docking_with_battery.py</code> demo above uses a separate, much lower 5% threshold as a hard abort during any active Nav2 task — if it's ever hit, the task is cancelled and the robot stops immediately. These aren't two tiers of one unified safety system; they're two independently-tuned thresholds living in different scripts that solve a similar problem (don't let the robot strand itself) in slightly different ways.</div>
 
-      <h2>11. The QR Maze Solver</h2>
-      <p>The same camera reads QR payloads (<code>left</code>, <code>right</code>, <code>stop</code>) posted around a Gazebo maze, this time via <code>detectAndDecode()</code>. The node is a small state machine — <code>FORWARD → TURNING → FORWARD</code>, or <code>FORWARD → STOPPED</code>. It drives at 0.15 m/s until the LiDAR front distance drops below 0.45 m, then executes the last QR command it saw: a left turn targets \(\theta + \pi/2\), a right turn \(\theta - \pi/2\) (from IMU yaw, using the wrapped P-rotation above), and <code>stop</code> halts permanently. It's the same three primitives — drive, rotate-to-yaw, read the world — recombined.</p>
+      <h2>13. The QR Maze Solver</h2>
+      <p>The same camera reads QR payloads (<code>left</code>, <code>right</code>, <code>stop</code>) posted around a Gazebo maze, this time via <code>detectAndDecode()</code>. The node is a small, real finite-state machine:</p>
+      <pre><code>state = "FORWARD"
+loop at control rate:
+    if state == "FORWARD":
+        cmd = (linear=0.15, angular=0.0)
+        if front_distance &lt;= 0.45:                     # wall / intersection reached
+            if qr_command == "stop":       state = "STOPPED"
+            elif qr_command in ("left","right"):
+                target_yaw = normalize(current_yaw + (+1.57 if qr_command=="left" else -1.57))
+                state = "TURNING"
+            else: cmd.linear = 0.0                       # no command yet: hold
 
-      <h2>12. Battery-Aware Cleaning and Coverage Planning</h2>
-      <p>The most complete mission is a vacuum-style cleaning system. A simulated battery drains at 0.25 %/s while working and charges at 2.0 %/s on the dock:</p>
+    elif state == "TURNING":
+        cmd = (linear=0.0, angular=+0.3 if qr_command=="left" else -0.3)
+        if abs(normalize(target_yaw - current_yaw)) &lt; 0.1:
+            state = "FORWARD"; qr_command = None
+
+    elif state == "STOPPED":
+        cmd = (linear=0.0, angular=0.0)
+
+    publish(cmd)</code></pre>
+      <p>It's <em>not</em> a maze-graph search or an occupancy-grid flood fill — there's no map involved at all. It's reactive sign-following: drive until a wall forces a decision, read the last QR command, execute a fixed ±90° turn using the same wrapped-heading proportional law from §12, repeat. It's the same three primitives — drive, rotate-to-yaw, read the world — recombined from the docking code.</p>
+
+      <h2>14. Battery-Aware Cleaning and Coverage Planning</h2>
+      <p>The most complete mission is a vacuum-style cleaning system. A simulated battery drains at 0.25%/s while working and charges at 2.0%/s on the dock:</p>
       <div class="formula-box">
         \[ B_{t+1} = B_t - d_{drain}\,\Delta t \;\;\text{(working)}, \qquad B_{t+1} = B_t + d_{charge}\,\Delta t \;\;\text{(charging)} \]
       </div>
-      <p>When \(B\) drops below <strong>45%</strong>, the node cancels the current Nav2 goal, returns to the pre-dock pose, runs the full QR/LiDAR docking sequence, charges to 100%, undocks, and <em>resumes the same cleaning route where it left off</em>.</p>
+      <p>When \(B\) drops below <strong>45%</strong>, the node cancels the current Nav2 goal, returns to the pre-dock pose, runs the full QR/LiDAR docking sequence from §12, charges to 100%, undocks, and <em>resumes the same cleaning route where it left off</em>.</p>
       <h3>Coverage waypoints straight from the map</h3>
       <p>Cleaning waypoints aren't hand-placed — they're generated from the live <code>/map</code> occupancy grid in a pipeline:</p>
       <ol style="color: var(--text-muted); margin-bottom: 24px; padding-left: 1.4rem;">
@@ -405,16 +603,22 @@ position_states_[i] += velocity_states_[i] * dt;</code></pre>
         <li>Run an OpenCV <strong>distance transform</strong>: \(D(m_x, m_y)\) = distance to the nearest obstacle cell, converted to meters via the 0.05 m resolution.</li>
         <li>Keep only cells with clearance \(D_m \ge 0.40\) m — waypoints never hug walls or clutter.</li>
         <li>Sweep rows in a <strong>lawnmower (boustrophedon) pattern</strong>: with 0.65 m coverage spacing, the row step is \(\lfloor 0.65 / 0.05 \rfloor = 13\) cells, alternating direction each row to minimise transit.</li>
-        <li>Convert surviving cells to world coordinates (the grid-to-world transform from §7).</li>
+        <li>Convert surviving cells to world coordinates (the grid-to-world transform from §9).</li>
         <li>Drop waypoints within <strong>1.20 m of the dock</strong> — \(\sqrt{(x - x_{dock})^2 + (y - y_{dock})^2} &lt; 1.20\) is forbidden — and de-duplicate points that are too close together.</li>
       </ol>
-      <p>The result is a safe, evenly spaced coverage route computed in milliseconds from whatever map the robot happens to have.</p>
+      <p>The result is a safe, evenly spaced coverage route computed in milliseconds from whatever map the robot happens to have. Note that <em>traversing</em> those waypoints, whether in the plain cleaning node or the RL-augmented one below, is delegated entirely to Nav2's <code>BasicNavigator.followWaypoints()</code> — none of MechaBot's own Python code implements a hand-rolled path tracker; that job stays inside Regulated Pure Pursuit from §11. The scripts' own contribution is deciding <em>which</em> waypoints to send and monitoring battery while Nav2 drives.</p>
 
-      <h2>13. Learning the Bad Zones: A Q-Table Over Nav2</h2>
-      <p>Some map regions fail repeatedly — clutter, narrow passages, costmap artifacts. Rather than replacing Nav2, the RL layer sits <em>above</em> it and learns how to dispatch waypoints, persisting everything to a JSON memory (<code>cleaning_rl_memory.json</code>) so learning survives restarts.</p>
+      <h2>15. Learning the Bad Zones: A Q-Table Over Nav2</h2>
+      <p>Some map regions fail repeatedly — clutter, narrow passages, costmap artifacts. Rather than replacing Nav2, the RL layer sits <em>above</em> it and learns how to dispatch waypoints, persisting everything to a JSON memory (<code>cleaning_rl_memory.json</code>) so learning survives restarts. This is genuine tabular Q-learning — no neural network — with an ε-greedy policy.</p>
       <h3>State, actions, policy</h3>
-      <p>The state key discretises the waypoint to a 0.50 m grid — \(x_g = \operatorname{round}(x/s)\,s\) — and appends the front-obstacle band, whether the point is near a learned bad zone, and the battery band, e.g. <code>x=-4.5|y=2.0|front=clear|bad=0|battery=ok</code>. Three actions are available per waypoint: <strong>NAVIGATE</strong> (send to Nav2 directly), <strong>CLEAR_AND_NAVIGATE</strong> (clear costmaps first), and <strong>SKIP</strong>. Selection is ε-greedy with \(\varepsilon = 0.08\) — mostly exploit the best known action, occasionally explore.</p>
-      <h3>The update</h3>
+      <p>The state key discretises the waypoint to a 0.50 m grid — \(x_g = \operatorname{round}(x/s)\,s\) — and appends the front-obstacle band (<code>very_close</code> / <code>close</code> / <code>medium</code> / <code>clear</code>, thresholded at 0.20/0.40/0.80 m), whether the point is near a learned bad zone, and the battery band, e.g. <code>x=-4.5|y=2.0|front=clear|bad=0|battery=ok</code>. Three actions are available per waypoint:</p>
+      <pre><code>def choose_action(state, waypoint):
+    if is_near_bad_zone(waypoint):
+        return "SKIP"                              # hard override, bypasses the policy
+    if random() &lt; epsilon:                          # epsilon = 0.08
+        return random_choice(["NAVIGATE", "CLEAR_AND_NAVIGATE", "SKIP"])
+    return argmax_a( Q[state][a] )                  # exploit the best known action</code></pre>
+      <h3>The Bellman update — and a real caveat</h3>
       <div class="formula-box">
         \[ Q(s, a) \leftarrow Q(s, a) + \alpha\left[ r + \gamma \max_{a'} Q(s', a') - Q(s, a) \right], \qquad \alpha = 0.35,\; \gamma = 0.80 \]
       </div>
@@ -429,28 +633,32 @@ position_states_[i] += velocity_states_[i] * dt;</code></pre>
           <tr><td>COLLISION_RISK</td><td>−80</td></tr>
         </tbody>
       </table>
-      <p>On failure, timeout, or collision risk the node also records a circular <strong>bad zone</strong> of radius 0.75 m around the waypoint; future waypoints falling inside a learned bad zone can be skipped automatically. Over a few runs the robot stops re-attempting the corner it always gets pinched in — cheap, persistent, and it never fights the planner.</p>
+      <div class="note-box"><strong>Reading the code closely matters here.</strong> Every call site that updates the Q-table passes <code>next_state=None</code> — the code never actually looks ahead to the state that follows a waypoint outcome. With <code>next_state=None</code>, <code>max_{a'} Q(s',a')</code> is defined as 0, so the update degenerates from a full Bellman backup to simple reward averaging: \(Q(s,a) \leftarrow Q(s,a) + \alpha(r - Q(s,a))\). The discount factor \(\gamma=0.80\) is defined but, in this codebase, never actually multiplies anything nonzero. This isn't a bug that breaks the system — one-step reward averaging is a perfectly reasonable simplification for this problem, since a waypoint's outcome doesn't meaningfully chain into the "next" waypoint's value the way, say, a maze does — but it's a good reminder that a formula in a config file and the formula the code actually executes can quietly diverge, and the only way to know is to read the call sites.</div>
+      <p>On failure, timeout, or collision risk the node also records a circular <strong>bad zone</strong> of radius 0.75 m around the waypoint; future waypoints falling inside a learned bad zone are skipped automatically, before the Q-table is even consulted. Over a few runs the robot stops re-attempting the corner it always gets pinched in — cheap, persistent, and it never fights the planner.</p>
 
-      <h2>14. Challenges That Shaped the Design</h2>
+      <h2>16. Challenges That Shaped the Design</h2>
       <ul>
-        <li><strong>Stable docking near the charger.</strong> Global navigation isn't precise enough for physical charging contacts. Solution: split docking into Nav2-to-pre-dock plus QR/LiDAR visual servoing for the final centimeters.</li>
-        <li><strong>QR detection dropouts.</strong> Motion blur and viewing angle kill detection for a few frames. Solution: the 0.7 s QR memory — hold the last known marker center instead of aborting or oscillating.</li>
+        <li><strong>Stable docking near the charger.</strong> Global navigation isn't precise enough for physical charging contacts. Solution: split docking into Nav2-to-pre-dock plus QR/LiDAR visual servoing for the final centimeters, with independently-thresholded gains for the cautious battery-aware variant.</li>
+        <li><strong>QR detection dropouts.</strong> Motion blur and viewing angle kill detection for a few frames. Solution: the 0.7 s QR memory — hold the last known marker direction instead of aborting or oscillating.</li>
         <li><strong>Unsafe coverage waypoints.</strong> Naïve grid sampling puts waypoints against walls. Solution: distance-transform clearance filtering (\(D_m \ge 0.40\) m) before waypoint generation.</li>
-        <li><strong>Repeated navigation failures.</strong> Some zones fail every run. Solution: the Q-table plus persistent bad-zone memory changes the dispatch decision, not the planner.</li>
+        <li><strong>Repeated navigation failures.</strong> Some zones fail every run. Solution: the Q-table plus persistent bad-zone memory changes the dispatch decision, not the planner — and it's honest that, as implemented, it's closer to a learned lookup table than full temporal-difference learning (see §15).</li>
+        <li><strong>2× rather than 4× quadrature decoding.</strong> The ESP32 ISR fires on both edges of phase A only, not both edges of both channels. It's simpler and cheaper on interrupts, at the cost of the extra resolution full 4× decoding would give at low speed.</li>
         <li><strong>Sim-to-real drift.</strong> Odometry error is dominated by wheel radius and separation calibration, not sensor noise. Measure the geometry, then measure it again — and keep both backends behind the same ros2_control interfaces so nothing above them ever knows the difference.</li>
       </ul>
 
-      <h2>15. Where It Goes Next</h2>
-      <p>The natural upgrades: fuse wheel odometry and IMU with an EKF, replace the simulated battery with real voltage sensing, move from QR to AprilTags with full pose-from-corners visual servoing for docking, track cleaned-area coverage explicitly, and train the RL policy properly in simulation before deploying it. But the architecture is already the point — every one of those swaps happens behind an interface the rest of the stack never sees.</p>
+      <h2>17. Where It Goes Next</h2>
+      <p>The natural upgrades: fuse wheel odometry and IMU with an EKF (the workspace already depends on <code>robot_localization</code> but doesn't launch it yet), replace the simulated battery with real voltage sensing, move from QR to AprilTags with full pose-from-corners visual servoing for docking, upgrade the encoder ISR to full 4× quadrature decoding, wire the RL layer's Bellman update to an actual next-state lookup instead of the degenerate reward-averaging case, and track cleaned-area coverage explicitly. But the architecture is already the point — every one of those swaps happens behind an interface the rest of the stack never sees.</p>
       <p>The full source — all packages, firmware included — is on <a href="https://github.com/GSR07/mechabot" target="_blank" rel="noreferrer">GitHub</a>.</p>
 
-      <h2>16. Further Reading</h2>
+      <h2>18. Further Reading</h2>
       <ul>
         <li><a href="https://docs.nav2.org/" target="_blank" rel="noreferrer">Nav2 documentation</a> — the navigation stack behind planning, control, and recovery behaviors.</li>
         <li><a href="https://github.com/SteveMacenski/slam_toolbox" target="_blank" rel="noreferrer">SLAM Toolbox</a> — the mapping backend used for scan-matching and loop closure.</li>
         <li><a href="https://docs.nav2.org/configuration/packages/configuring-amcl.html" target="_blank" rel="noreferrer">AMCL configuration reference</a> — the particle-filter localizer running on top of the built map.</li>
         <li><a href="https://control.ros.org/humble/index.html" target="_blank" rel="noreferrer">ros2_control documentation</a> — the hardware-abstraction framework the custom serial interface plugs into.</li>
         <li><a href="https://www.slamtec.com/en/lidar/a1" target="_blank" rel="noreferrer">RPLIDAR A1 product page</a> — the 2D LiDAR feeding both SLAM and AMCL.</li>
+        <li><a href="https://docs.espressif.com/projects/esp-idf/en/stable/esp32/api-reference/peripherals/ledc.html" target="_blank" rel="noreferrer">ESP32 LEDC (PWM) peripheral reference</a> — the hardware timer/PWM block behind <code>ledcAttach()</code>/<code>ledcWrite()</code> in the motor firmware.</li>
+        <li><a href="https://www.sparkfun.com/datasheets/Robotics/L298_H_Bridge.pdf" target="_blank" rel="noreferrer">L298N dual H-bridge datasheet</a> — the motor driver IC MechaBot's ESP32 firmware controls.</li>
       </ul>
     </div>
   </main>

@@ -1,0 +1,340 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+  <title>Concepts — Ganesh Reddy</title>
+  <meta name="description" content="A glossary of the recurring robotics, ROS 2, control, vision, and embedded-systems concepts used across Ganesh Reddy's projects." />
+  <link rel="preconnect" href="https://fonts.googleapis.com" />
+  <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin />
+  <link href="https://fonts.googleapis.com/css2?family=Outfit:wght@300;400;500;600;700&family=Syne:wght@500;600;700;800&display=swap" rel="stylesheet" />
+  <link rel="stylesheet" href="style.css" />
+  <link rel="stylesheet" href="blog-common.css" />
+  <script>
+    const savedTheme = localStorage.getItem('theme');
+    if (savedTheme === 'light' || (!savedTheme && window.matchMedia('(prefers-color-scheme: light)').matches)) {
+      document.documentElement.setAttribute('data-theme', 'light');
+    }
+  </script>
+  <style>
+    #concepts-hero {
+      padding: calc(var(--nav-h) + 60px) 40px 40px;
+      text-align: center;
+      position: relative;
+    }
+    .concepts-grid {
+      display: grid;
+      grid-template-columns: repeat(auto-fill, minmax(360px, 1fr));
+      gap: 28px;
+      margin-top: 40px;
+    }
+    .concept-card {
+      padding: 28px 30px;
+      scroll-margin-top: calc(var(--nav-h) + 20px);
+    }
+    .concept-cat {
+      display: inline-block;
+      padding: 3px 10px;
+      border-radius: 50px;
+      font-size: 0.68rem;
+      font-weight: 700;
+      text-transform: uppercase;
+      letter-spacing: 0.06em;
+      margin-bottom: 12px;
+    }
+    .concept-cat.fundamentals { background: rgba(148,163,184,0.12); border: 1px solid rgba(148,163,184,0.3); color: var(--text-muted); }
+    .concept-cat.navigation   { background: rgba(99,102,241,0.1); border: 1px solid rgba(99,102,241,0.25); color: #818cf8; }
+    .concept-cat.manipulation { background: rgba(52,211,153,0.1); border: 1px solid rgba(52,211,153,0.25); color: #34d399; }
+    .concept-cat.control      { background: rgba(255,107,157,0.1); border: 1px solid rgba(255,107,157,0.25); color: #fb7185; }
+    .concept-cat.vision       { background: rgba(14,165,233,0.1); border: 1px solid rgba(14,165,233,0.25); color: #38bdf8; }
+    .concept-cat.embedded     { background: rgba(251,191,36,0.1); border: 1px solid rgba(251,191,36,0.25); color: #fbbf24; }
+    .concept-card h3 {
+      font-family: var(--font-head);
+      font-size: 1.15rem;
+      font-weight: 700;
+      color: var(--text);
+      margin-bottom: 10px;
+    }
+    .concept-card p {
+      color: var(--text-muted);
+      font-size: 0.92rem;
+      line-height: 1.75;
+      margin-bottom: 14px;
+    }
+    .concept-appears {
+      font-size: 0.8rem;
+      color: var(--text-dim);
+      border-top: 1px solid var(--surface-border);
+      padding-top: 12px;
+    }
+    .concept-appears strong { color: var(--text-muted); font-weight: 600; }
+    .concept-appears a {
+      color: var(--accent-2);
+      text-decoration: none;
+      margin-right: 10px;
+    }
+    .concept-appears a:hover { text-decoration: underline; }
+    .concepts-toc {
+      max-width: 900px;
+      margin: 0 auto;
+      display: flex;
+      flex-wrap: wrap;
+      gap: 8px;
+      justify-content: center;
+    }
+    .concepts-toc a {
+      font-size: 0.78rem;
+      padding: 5px 12px;
+      border-radius: 50px;
+      background: var(--surface);
+      border: 1px solid var(--surface-border);
+      color: var(--text-muted);
+      text-decoration: none;
+    }
+    .concepts-toc a:hover { border-color: var(--accent); color: var(--text); }
+  </style>
+</head>
+<body>
+  <!-- ─── NAV ──────────────────────────────────────────────── -->
+  <nav id="navbar" class="scrolled">
+    <a href="./" class="nav-logo">GR<span class="accent">.</span></a>
+    <ul class="nav-links">
+      <li><a href="./">&larr; Back to Portfolio</a></li>
+      <li><a href="blog.html" class="gradient-text">Blog Home</a></li>
+      <li><a href="concepts.html">Concepts</a></li>
+    </ul>
+    <div class="nav-controls" style="display: flex; align-items: center; gap: 16px;">
+      <button id="theme-toggle" class="theme-btn" aria-label="Toggle theme" style="background: transparent; border: none; color: var(--text); cursor: pointer; display: flex; align-items: center;">
+        <svg class="sun-icon" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" style="width: 22px; height: 22px;">
+          <circle cx="12" cy="12" r="5"></circle>
+          <line x1="12" y1="1" x2="12" y2="3"></line>
+          <line x1="12" y1="21" x2="12" y2="23"></line>
+          <line x1="4.22" y1="4.22" x2="5.64" y2="5.64"></line>
+          <line x1="18.36" y1="18.36" x2="19.78" y2="19.78"></line>
+          <line x1="1" y1="12" x2="3" y2="12"></line>
+          <line x1="21" y1="12" x2="23" y2="12"></line>
+          <line x1="4.22" y1="19.78" x2="5.64" y2="18.36"></line>
+          <line x1="18.36" y1="5.64" x2="19.78" y2="4.22"></line>
+        </svg>
+        <svg class="moon-icon" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" style="width: 22px; height: 22px; display: none;">
+          <path d="M21 12.79A9 9 0 1 1 11.21 3 7 7 0 0 0 21 12.79z"></path>
+        </svg>
+      </button>
+      <button id="hamburger" aria-label="Toggle menu">
+        <span></span><span></span><span></span>
+      </button>
+    </div>
+  </nav>
+
+  <!-- ─── HERO ─────────────────────────────────────────────── -->
+  <section id="concepts-hero" class="section">
+    <div class="container">
+      <div class="section-label">Glossary</div>
+      <h1 class="section-title" style="margin-bottom: 24px; text-align: center;">Concepts</h1>
+      <p style="color: var(--text-muted); max-width: 640px; margin: 0 auto 32px; text-align: center;">Short, plain-English explanations of the recurring ideas behind the projects and blog posts — written once here, linked from wherever they come up.</p>
+      <div class="concepts-toc">
+        <a href="#ros2-nodes-topics-services">ROS 2 Nodes/Topics/Services</a>
+        <a href="#slam">SLAM</a>
+        <a href="#amcl">AMCL</a>
+        <a href="#nav2">Nav2</a>
+        <a href="#tf2">TF2</a>
+        <a href="#moveit2">MoveIt2</a>
+        <a href="#ros2-control">ros2_control</a>
+        <a href="#micro-ros">micro-ROS</a>
+        <a href="#behavior-trees">Behavior Trees</a>
+        <a href="#p-controller">P-Control</a>
+        <a href="#hsv-segmentation">HSV Segmentation</a>
+        <a href="#dh-kinematics">D-H Kinematics</a>
+        <a href="#path-planning">Path Planning</a>
+        <a href="#q-learning">Q-Learning</a>
+        <a href="#occupancy-grid">Occupancy Grids</a>
+        <a href="#ble-rssi-trilateration">BLE RSSI Trilateration</a>
+        <a href="#cnn-transfer-learning">CNN Transfer Learning</a>
+        <a href="#ekf-ukf">EKF vs UKF</a>
+        <a href="#int8-quantization">INT8 Quantization</a>
+        <a href="#mqtt">MQTT</a>
+      </div>
+    </div>
+  </section>
+
+  <!-- ─── CONCEPTS GRID ────────────────────────────────────── -->
+  <section id="concepts-list" class="section section-alt" style="min-height: 60vh;">
+    <div class="container">
+      <div class="concepts-grid">
+
+        <article id="ros2-nodes-topics-services" class="concept-card glass-card">
+          <span class="concept-cat fundamentals">Fundamentals</span>
+          <h3>ROS 2: Nodes, Topics &amp; Services</h3>
+          <p>ROS 2 programs are organized as independent processes called <strong>nodes</strong> that communicate over three core primitives: <strong>topics</strong> (async pub/sub streams, e.g. sensor data), <strong>services</strong> (sync request/reply calls, e.g. "spawn a turtle"), and <strong>actions</strong> (long-running goals with feedback and cancellation, e.g. navigate to a pose). A node can be a publisher, subscriber, service client, and server all at once — the DDS middleware handles discovery and delivery so nodes never need to know about each other directly.</p>
+          <div class="concept-appears"><strong>Appears in:</strong> <a href="turtlesim-catch-all-blog.html">Turtlesim Catch-Them-All</a> <a href="mechabot-blog.html">MechaBot</a></div>
+        </article>
+
+        <article id="slam" class="concept-card glass-card">
+          <span class="concept-cat navigation">Navigation</span>
+          <h3>SLAM (Simultaneous Localization and Mapping)</h3>
+          <p>SLAM solves the chicken-and-egg problem of building a map of an unknown environment while simultaneously tracking the robot's own position within it, using only noisy sensor data (LiDAR, wheel odometry, IMU). Scan-matching algorithms align successive laser scans against the growing map and correct for drift with <strong>loop closures</strong> whenever the robot revisits a previously mapped area.</p>
+          <div class="concept-appears"><strong>Appears in:</strong> <a href="mechabot-blog.html">MechaBot</a> <a href="nav2-ekf-blog.html">Autonomous Navigation: Theory to Algorithm</a></div>
+        </article>
+
+        <article id="amcl" class="concept-card glass-card">
+          <span class="concept-cat navigation">Navigation</span>
+          <h3>AMCL (Adaptive Monte Carlo Localization)</h3>
+          <p>A particle-filter localization algorithm that estimates a robot's pose on a pre-built map by maintaining a cloud of weighted pose hypotheses ("particles"). Each particle moves per the motion model and is re-weighted by how well a LiDAR scan matches the map from that hypothetical pose; resampling concentrates particles around the most likely pose over time, and the particle count adapts with localization confidence — hence "adaptive."</p>
+          <div class="concept-appears"><strong>Appears in:</strong> <a href="mechabot-blog.html">MechaBot</a> <a href="nav2-ekf-blog.html">TurtleBot3 SLAM &amp; Nav</a></div>
+        </article>
+
+        <article id="nav2" class="concept-card glass-card">
+          <span class="concept-cat navigation">Navigation</span>
+          <h3>Nav2 (ROS 2 Navigation Stack)</h3>
+          <p>Nav2 is ROS 2's production navigation framework: a global planner computes a path across the costmap (A*/Dijkstra-based), a local controller (e.g. Regulated Pure Pursuit or DWB) tracks that path while avoiding dynamic obstacles in real time, and a behavior-tree executive coordinates planning, recovery behaviors, and goal handling as a state machine.</p>
+          <div class="concept-appears"><strong>Appears in:</strong> <a href="mechabot-blog.html">MechaBot</a> <a href="nav2-ekf-blog.html">TurtleBot3 SLAM &amp; Nav</a></div>
+        </article>
+
+        <article id="tf2" class="concept-card glass-card">
+          <span class="concept-cat manipulation">Manipulation</span>
+          <h3>TF2 Coordinate Transforms</h3>
+          <p>TF2 is ROS 2's library for tracking the position and orientation of every frame (camera, gripper, base, world) relative to every other frame over time, as a tree of transforms. Instead of hand-computing coordinate conversions, any node can ask "where was the camera relative to the robot base 200&nbsp;ms ago?" and TF2 interpolates the answer from buffered transform history.</p>
+          <div class="concept-appears"><strong>Appears in:</strong> <a href="franka-pick-and-place-blog.html">Franka Panda Pick &amp; Place</a></div>
+        </article>
+
+        <article id="moveit2" class="concept-card glass-card">
+          <span class="concept-cat manipulation">Manipulation</span>
+          <h3>MoveIt2 Motion Planning</h3>
+          <p>MoveIt2 is ROS 2's motion-planning framework for robotic arms: given a target end-effector pose, it plans a collision-free joint trajectory through a sampling-based planner (e.g. OMPL's RRTConnect), checks it against the robot's kinematic model and the world's collision geometry, and hands the result to a controller for execution.</p>
+          <div class="concept-appears"><strong>Appears in:</strong> <a href="franka-pick-and-place-blog.html">Franka Panda Pick &amp; Place</a> <a href="robotic-arm-kinematics-blog.html">4-DOF Robotic Arm</a></div>
+        </article>
+
+        <article id="ros2-control" class="concept-card glass-card">
+          <span class="concept-cat embedded">Embedded</span>
+          <h3>ros2_control Hardware Abstraction</h3>
+          <p>ros2_control decouples high-level ROS 2 controllers (e.g. diff-drive, joint trajectory) from the actual hardware. A hardware interface exposes command/state interfaces — like "velocity command" and "position feedback" — over a fixed contract, so the identical controller stack can run unmodified against a Gazebo simulation or real motor firmware.</p>
+          <div class="concept-appears"><strong>Appears in:</strong> <a href="mechabot-blog.html">MechaBot</a></div>
+        </article>
+
+        <article id="micro-ros" class="concept-card glass-card">
+          <span class="concept-cat embedded">Embedded</span>
+          <h3>micro-ROS (ROS 2 on Microcontrollers)</h3>
+          <p>Bare-metal microcontrollers like the ESP32 or an STM32 don't have the RAM or OS to run full ROS 2. micro-ROS solves this with a lightweight client library (rclc) over XRCE-DDS — a compact wire protocol that a "micro-ROS Agent" running on a full ROS 2 machine (a Raspberry Pi, laptop, etc.) bridges back into the normal ROS 2 graph, so a $10 microcontroller node can publish/subscribe like any other node.</p>
+          <div class="concept-appears"><strong>Appears in:</strong> <a href="choosing-a-microcontroller-blog.html">Choosing Your First Microcontroller for Robotics</a></div>
+        </article>
+
+        <article id="behavior-trees" class="concept-card glass-card">
+          <span class="concept-cat navigation">Navigation</span>
+          <h3>Behavior Trees for Robot Autonomy</h3>
+          <p>A behavior tree is a hierarchical way to structure decision-making: leaf nodes represent actions/conditions ("compute path", "is battery low?"), and composite nodes (Sequence, Fallback) route control flow between them, ticking the tree at a fixed rate. Nav2 uses one to coordinate planning, execution, and recovery — more composable than a monolithic state machine or nested if/else logic.</p>
+          <div class="concept-appears"><strong>Appears in:</strong> <a href="mechabot-blog.html">MechaBot</a></div>
+        </article>
+
+        <article id="p-controller" class="concept-card glass-card">
+          <span class="concept-cat control">Control</span>
+          <h3>Proportional (P) Control</h3>
+          <p>A proportional controller outputs a correction proportional to the current error: <code>command = Kp × error</code>. For heading control the error must be wrapped into (−π, π] (via <code>atan2</code>) so the robot always turns the short way around — the same P-on-distance, P-on-heading structure scales from a simulated turtlesim chase up to real differential-drive navigation.</p>
+          <div class="concept-appears"><strong>Appears in:</strong> <a href="turtlesim-catch-all-blog.html">Turtlesim Catch-Them-All</a></div>
+        </article>
+
+        <article id="hsv-segmentation" class="concept-card glass-card">
+          <span class="concept-cat vision">Vision</span>
+          <h3>HSV Color Segmentation</h3>
+          <p>Converting an image from RGB to HSV (hue, saturation, value) separates color identity (hue) from lighting/brightness, which makes it far more robust to isolate an object by color under variable lighting than thresholding raw RGB. A hue/saturation range defines a binary mask, which contour detection then turns into object centroids and bounding boxes.</p>
+          <div class="concept-appears"><strong>Appears in:</strong> <a href="franka-pick-and-place-blog.html">Franka Panda Pick &amp; Place</a> <a href="sorting-system-blog.html">Automated Grading &amp; Sorting</a></div>
+        </article>
+
+        <article id="dh-kinematics" class="concept-card glass-card">
+          <span class="concept-cat manipulation">Manipulation</span>
+          <h3>Denavit–Hartenberg Kinematics (FK/IK)</h3>
+          <p>D-H parameters give a standard 4-parameter-per-joint recipe (link length, twist, offset, angle) for building the chain of transforms from a robot arm's base to its end effector. <strong>Forward kinematics</strong> multiplies these transforms to get end-effector pose from joint angles; <strong>inverse kinematics</strong> solves the reverse problem, either in closed form (geometric, elbow-up/down branches) or numerically (Jacobian-based iteration).</p>
+          <div class="concept-appears"><strong>Appears in:</strong> <a href="robotic-arm-kinematics-blog.html">4-DOF Robotic Arm</a></div>
+        </article>
+
+        <article id="path-planning" class="concept-card glass-card">
+          <span class="concept-cat navigation">Navigation</span>
+          <h3>Path Planning (Dijkstra, A*, RRT)</h3>
+          <p>Path planners search a robot's configuration space for a collision-free route from start to goal. Grid-based graph search (Dijkstra, A*) is optimal and complete on discretized maps but scales poorly in high dimensions; sampling-based planners (RRT, PRM) instead build a randomized tree/graph through free space, trading optimality for speed — a choice Nav2's global planner and MoveIt2's OMPL backend both have to make.</p>
+          <div class="concept-appears"><strong>Appears in:</strong> <a href="nav2-ekf-blog.html">Autonomous Navigation: Theory to Algorithm</a></div>
+        </article>
+
+        <article id="q-learning" class="concept-card glass-card">
+          <span class="concept-cat control">Control</span>
+          <h3>Q-Learning (Reinforcement Learning)</h3>
+          <p>Q-learning learns, through trial and error, an estimate <code>Q(state, action)</code> of the long-term reward of taking a given action in a given state, updating that estimate after every experienced transition without needing a model of the environment's dynamics. A persistent Q-table that penalizes previously-bad navigation zones lets a robot carry hard-won experience across separate runs instead of relearning it from scratch each time.</p>
+          <div class="concept-appears"><strong>Appears in:</strong> <a href="mechabot-blog.html">MechaBot</a></div>
+        </article>
+
+        <article id="occupancy-grid" class="concept-card glass-card">
+          <span class="concept-cat navigation">Navigation</span>
+          <h3>Occupancy Grids &amp; Costmaps</h3>
+          <p>An occupancy grid discretizes the environment into cells, each holding the probability that it's occupied, built up from LiDAR returns during mapping. Nav2 inflates this into a <strong>costmap</strong> by adding a decaying cost gradient around obstacles, so the planner is discouraged from grazing walls even where the raw grid is technically free — the same occupancy data also drives coverage planning via distance-transform-based lawnmower paths.</p>
+          <div class="concept-appears"><strong>Appears in:</strong> <a href="mechabot-blog.html">MechaBot</a></div>
+        </article>
+
+        <article id="ble-rssi-trilateration" class="concept-card glass-card">
+          <span class="concept-cat embedded">Embedded</span>
+          <h3>BLE RSSI Trilateration</h3>
+          <p>Bluetooth Low Energy beacons broadcast a signal whose Received Signal Strength Indicator (RSSI) falls off roughly with the log of distance from the receiver. By measuring RSSI to three or more fixed anchor nodes at known positions and combining the resulting distance estimates, a receiver's 2D/3D position can be trilaterated — noisy in practice, so it's usually paired with filtering (moving average, Kalman) to be usable for asset tracking.</p>
+          <div class="concept-appears"><strong>Appears in:</strong> <a href="ble.html">BLE Indoor Localisation System</a></div>
+        </article>
+
+        <article id="cnn-transfer-learning" class="concept-card glass-card">
+          <span class="concept-cat vision">Vision</span>
+          <h3>CNNs &amp; Transfer Learning</h3>
+          <p>Convolutional neural networks learn hierarchical spatial filters (edges → textures → parts → objects) directly from image data. Transfer learning starts from a CNN (e.g. ResNet, VGG) already pretrained on a large generic dataset like ImageNet, then fine-tunes it on a much smaller domain-specific dataset (e.g. chest X-rays) — the early, general-purpose filters transfer almost for free, so only the later layers need meaningful retraining.</p>
+          <div class="concept-appears"><strong>Appears in:</strong> <a href="xray-classification-blog.html">Lung Disease Detection</a> <a href="medical-pipeline-blog.html">Medical Image Classification Pipeline</a></div>
+        </article>
+
+        <article id="ekf-ukf" class="concept-card glass-card">
+          <span class="concept-cat navigation">Navigation</span>
+          <h3>EKF vs UKF State Estimation</h3>
+          <p>Both the Extended and Unscented Kalman Filters fuse noisy, asynchronous sensor measurements (wheel odometry, IMU, GPS) into a single smoothed state estimate for a nonlinear system. The EKF linearizes the nonlinear model around the current estimate with a first-order Taylor expansion, which breaks down under sharp nonlinearity; the UKF instead propagates a small set of deterministically chosen "sigma points" through the true nonlinear model, typically giving a more accurate estimate at modest extra computational cost.</p>
+          <div class="concept-appears"><strong>Appears in:</strong> <a href="nav2-ekf-blog.html">Autonomous Navigation: Theory to Algorithm</a></div>
+        </article>
+
+        <article id="int8-quantization" class="concept-card glass-card">
+          <span class="concept-cat embedded">Embedded</span>
+          <h3>INT8 Quantization &amp; TFLite Micro</h3>
+          <p>Quantization converts a neural network's 32-bit floating point weights and activations into 8-bit integers, shrinking model size roughly 4× and letting inference run on microcontrollers with no floating-point unit, at dramatically lower latency and power — at the cost of some accuracy, managed by calibrating the int8 ranges against representative data. TensorFlow Lite Micro runs these quantized models in a fixed, pre-allocated "tensor arena" with no dynamic memory allocation, which is what makes it fit on something as constrained as an ESP32.</p>
+          <div class="concept-appears"><strong>Appears in:</strong> <a href="yolov8-esp32-blog.html">YOLOv8 Edge Inference on ESP32</a></div>
+        </article>
+
+        <article id="mqtt" class="concept-card glass-card">
+          <span class="concept-cat embedded">Embedded</span>
+          <h3>MQTT Telemetry</h3>
+          <p>MQTT is a lightweight publish/subscribe messaging protocol built for constrained devices and unreliable networks: clients publish small messages to named topics through a central broker, and any number of subscribers receive them without the publisher needing to know who's listening. Its low overhead and QoS-level delivery guarantees make it the standard choice for streaming sensor telemetry from IoT devices up to a cloud backend.</p>
+          <div class="concept-appears"><strong>Appears in:</strong> <a href="ble.html">BLE Indoor Localisation System</a></div>
+        </article>
+
+      </div>
+    </div>
+  </section>
+
+  <!-- ─── FOOTER ───────────────────────────────────────────── -->
+  <footer>
+    <div class="container">
+      <p>© 2026 Ganesh Reddy. All rights reserved.</p>
+    </div>
+  </footer>
+
+  <script>
+    const themeToggle = document.getElementById('theme-toggle');
+    if (themeToggle) {
+      const sunIcon = themeToggle.querySelector('.sun-icon');
+      const moonIcon = themeToggle.querySelector('.moon-icon');
+      function updateThemeIcon() {
+        if (document.documentElement.getAttribute('data-theme') === 'light') {
+          sunIcon.style.display = 'none'; moonIcon.style.display = 'block';
+        } else { sunIcon.style.display = 'block'; moonIcon.style.display = 'none'; }
+      }
+      updateThemeIcon();
+      themeToggle.addEventListener('click', () => {
+        const isLight = document.documentElement.getAttribute('data-theme') === 'light';
+        if (isLight) document.documentElement.removeAttribute('data-theme');
+        else document.documentElement.setAttribute('data-theme', 'light');
+        localStorage.setItem('theme', isLight ? 'dark' : 'light');
+        updateThemeIcon();
+      });
+    }
+    const hamburger = document.getElementById('hamburger');
+    const navLinks = document.querySelector('.nav-links');
+    if (hamburger) hamburger.addEventListener('click', () => navLinks.classList.toggle('open'));
+  </script>
+</body>
+</html>

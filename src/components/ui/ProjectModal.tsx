@@ -4,6 +4,7 @@ import remarkGfm from 'remark-gfm'
 import type { Project } from '../../types'
 import { asset } from '../../lib/utils'
 import LoadingSpinner from './LoadingSpinner'
+import ConceptChips from './ConceptChips'
 
 const MD_STYLE = `
 .md-body{color:var(--text);line-height:1.8;font-family:var(--font-main)}
@@ -102,9 +103,16 @@ export default function ProjectModal({ project, onClose }: Props) {
           </h2>
 
           {/* tags */}
-          <div className="project-tags" style={{ marginBottom:'1.25rem' }}>
+          <div className="project-tags" style={{ marginBottom:'1rem' }}>
             {project.tags.map(t => <span key={t} className="tag-sm">{t}</span>)}
           </div>
+
+          {/* concept links */}
+          {project.concepts && project.concepts.length > 0 && (
+            <div style={{ marginBottom:'1.25rem' }}>
+              <ConceptChips concepts={project.concepts} />
+            </div>
+          )}
 
           {/* content */}
           {mdLoading ? (

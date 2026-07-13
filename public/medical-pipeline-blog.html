@@ -108,6 +108,7 @@
     <ul class="nav-links">
       <li><a href="./">&larr; Back to Portfolio</a></li>
       <li><a href="blog.html" class="gradient-text">Blog Home</a></li>
+      <li><a href="concepts.html">Concepts</a></li>
     </ul>
     <div class="nav-controls" style="display: flex; align-items: center; gap: 16px;">
       <button id="theme-toggle" class="theme-btn" aria-label="Toggle theme" style="background: transparent; border: none; color: var(--text); cursor: pointer; display: flex; align-items: center;">
@@ -141,6 +142,13 @@
     </div>
   </header>
 
+  <div class="container" style="text-align:center;margin-bottom:32px;">
+    <div class="blog-tags">
+      <span style="color:var(--text-dim);font-size:0.78rem;align-self:center;margin-right:2px;">KEY CONCEPTS:</span>
+      <a class="blog-tag" href="concepts.html#cnn-transfer-learning">CNN Transfer Learning</a>
+    </div>
+  </div>
+
 
   <!-- ─── CONTENT ──────────────────────────────────────────── -->
   <main class="section" style="padding-top: 20px;">
@@ -170,6 +178,12 @@
         <li>The pipeline is the product; the model is a replaceable part inside it.</li>
         <li>Most "model" failures are data failures wearing a disguise.</li>
         <li>Bias analysis is not a compliance step — it is where the real generalisation problems show up first.</li>
+      </ul>
+
+      <h2>6. Further Reading</h2>
+      <ul>
+        <li><a href="https://www.nature.com/articles/s41591-021-01595-0" target="_blank" rel="noreferrer">Seyyed-Kalantari et al., "Underdiagnosis bias of AI algorithms applied to chest radiographs" (Nature Medicine, 2021)</a> — well-cited study on exactly the dataset-bias failure modes this pipeline is designed to catch.</li>
+        <li><a href="https://www.nature.com/articles/s41591-022-01846-8" target="_blank" rel="noreferrer">Bernhardt, Jones &amp; Glocker, "Potential sources of dataset bias..." (Nature Medicine, 2022)</a> — a follow-up discussion on confounders vs. true bias, useful for a more rigorous bias-analysis framing.</li>
       </ul>
     </div>
   </main>

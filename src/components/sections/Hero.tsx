@@ -37,6 +37,7 @@ export default function Hero() {
   }, [])
 
   return (
+    <>
     <section id="hero">
       <div className="hero-bg" style={{ backgroundColor: 'var(--bg)' }}>
         <div className="grid-overlay" />
@@ -55,6 +56,12 @@ export default function Hero() {
         <p className="hero-sub">
           Master's student at <strong>FAU Erlangen</strong> · ROS2 · MoveIt2 · Embedded Systems · Autonomous Navigation
         </p>
+        <div className="hero-role-chips">
+          <span className="tag-sm">Robotics</span>
+          <span className="tag-sm">Embedded Systems</span>
+          <span className="tag-sm">Computer Vision</span>
+          <span className="tag-sm">Autonomous Navigation</span>
+        </div>
         <div className="hero-actions">
           <a href="#projects" className="btn-primary" onClick={e => {
             e.preventDefault()
@@ -83,8 +90,31 @@ export default function Hero() {
       </div>
 
       <div className="hero-photo-wrap">
-        <div className="photo-ring" />
-        <img src={asset('/ganesh_photo.jpg')} alt="Ganesh Reddy" className="hero-photo" />
+        <div className="photo-frame">
+          <span className="photo-caption">GANESH_REDDY.JPG</span>
+          <div className="photo-bracket">
+            <span className="frame-corner tl" />
+            <span className="frame-corner tr" />
+            <span className="frame-corner bl" />
+            <span className="frame-corner br" />
+            <div className="photo-ring" />
+            <img src={asset('/ganesh_photo.jpg')} alt="Ganesh Reddy" className="hero-photo" />
+          </div>
+          <div className="photo-readout">
+            <div className="readout-line">
+              <span className="readout-label">LOC</span>
+              <span className="readout-value">ERLANGEN, DE</span>
+            </div>
+            <div className="readout-line">
+              <span className="readout-label">ROLE</span>
+              <span className="readout-value">SEEKING MASTER'S THESIS / WERKSTUDENT</span>
+            </div>
+            <div className="readout-line">
+              <span className="readout-label">EDU</span>
+              <span className="readout-value">M.SC. AUTONOMY TECHNOLOGIES, FAU</span>
+            </div>
+          </div>
+        </div>
       </div>
 
       <a href="#about" className="scroll-down" aria-label="Scroll down" onClick={e => {
@@ -95,6 +125,28 @@ export default function Hero() {
           <path d="M12 5v14M5 12l7 7 7-7" />
         </svg>
       </a>
-    </section>
+      </section>
+
+      <div className="hero-status-strip">
+        <div className="container status-strip-grid">
+          <div className="status-cell glass-card">
+            <span className="status-label">Based</span>
+            <span className="status-value">Erlangen, DE</span>
+          </div>
+          <div className="status-cell glass-card">
+            <span className="status-label">Working Toward</span>
+            <span className="status-value">Master's Thesis / Werkstudent Role</span>
+          </div>
+          <div className="status-cell glass-card">
+            <span className="status-label">Studying</span>
+            <span className="status-value">M.Sc. Autonomy Technologies · FAU</span>
+          </div>
+          <div className="status-cell glass-card">
+            <span className="status-label">Tinkering With</span>
+            <span className="status-value">MechaBot — Autonomous Mobile Robot</span>
+          </div>
+        </div>
+      </div>
+    </>
   )
 }

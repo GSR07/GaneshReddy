@@ -1,0 +1,267 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+  <title>Choosing Your First Microcontroller or SBC for Robotics — Ganesh Reddy</title>
+  <meta name="description" content="Raspberry Pi vs ESP32 vs Orange Pi vs Arduino vs STM32 vs Jetson — a practical, spec-backed guide to picking the right board for a robotics project, with a simple decision framework and real ROS 2 compatibility notes." />
+  <link rel="preconnect" href="https://fonts.googleapis.com" />
+  <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin />
+  <link href="https://fonts.googleapis.com/css2?family=Outfit:wght@300;400;500;600;700&family=Syne:wght@500;600;700;800&display=swap" rel="stylesheet" />
+  <link rel="stylesheet" href="style.css" />
+  <link rel="stylesheet" href="blog-common.css" />
+  <script>
+    const savedTheme = localStorage.getItem('theme');
+    if (savedTheme === 'light' || (!savedTheme && window.matchMedia('(prefers-color-scheme: light)').matches)) {
+      document.documentElement.setAttribute('data-theme', 'light');
+    }
+  </script>
+
+  <style>
+    .blog-header {
+      padding: calc(var(--nav-h) + 100px) 40px 60px;
+      text-align: center;
+      position: relative;
+    }
+    .blog-meta {
+      font-size: 0.85rem;
+      color: var(--accent-2);
+      text-transform: uppercase;
+      letter-spacing: 0.1em;
+      font-weight: 600;
+      margin-bottom: 20px;
+      display: block;
+    }
+    .blog-content {
+      max-width: 820px;
+      margin: 0 auto;
+      font-size: 1.1rem;
+      line-height: 1.8;
+      color: var(--text);
+    }
+    .blog-content p { margin-bottom: 24px; color: var(--text-muted); }
+    .blog-content h2 { font-size: 2rem; margin: 60px 0 24px; color: var(--text); }
+    .blog-content h3 { font-size: 1.4rem; margin: 40px 0 16px; color: var(--accent); }
+    .blog-content table { width: 100%; border-collapse: collapse; margin: 24px 0; font-size: 0.92rem; }
+    .blog-content th, .blog-content td { padding: 10px 14px; border: 1px solid var(--surface-border); text-align: left; vertical-align: top; }
+    .blog-content th { background: var(--surface); color: var(--text); font-weight: 600; }
+    .blog-content td { color: var(--text-muted); }
+    code { font-family: 'Fira Code', monospace; }
+    .callout, .info-box {
+      background: var(--surface-soft, var(--surface));
+      border: 1px solid var(--surface-border);
+      border-radius: var(--radius-sm);
+      padding: 16px 20px;
+      margin: 24px 0;
+      color: var(--text-muted);
+      font-size: 0.95rem;
+    }
+    .callout strong { color: var(--text); }
+    .decision-list { counter-reset: step; list-style: none; padding-left: 0; margin-bottom: 24px; }
+    .decision-list li {
+      counter-increment: step;
+      position: relative;
+      padding: 14px 16px 14px 52px;
+      margin-bottom: 10px;
+      background: var(--surface);
+      border: 1px solid var(--surface-border);
+      border-radius: var(--radius-sm);
+      color: var(--text-muted);
+    }
+    .decision-list li::before {
+      content: counter(step);
+      position: absolute;
+      left: 14px; top: 50%; transform: translateY(-50%);
+      width: 26px; height: 26px;
+      border-radius: 50%;
+      background: rgba(99,102,241,0.15);
+      color: var(--accent-2);
+      font-weight: 700;
+      font-size: 0.85rem;
+      display: flex; align-items: center; justify-content: center;
+    }
+    .decision-list strong { color: var(--text); }
+  </style>
+</head>
+<body>
+  <!-- ─── NAV ──────────────────────────────────────────────── -->
+  <nav id="navbar" class="scrolled">
+    <a href="./" class="nav-logo">GR<span class="accent">.</span></a>
+    <ul class="nav-links">
+      <li><a href="./">&larr; Back to Portfolio</a></li>
+      <li><a href="blog.html" class="gradient-text">Blog Home</a></li>
+      <li><a href="concepts.html">Concepts</a></li>
+    </ul>
+    <div class="nav-controls" style="display: flex; align-items: center; gap: 16px;">
+      <button id="theme-toggle" class="theme-btn" aria-label="Toggle theme" style="background: transparent; border: none; color: var(--text); cursor: pointer; display: flex; align-items: center;">
+        <svg class="sun-icon" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" style="width: 22px; height: 22px;">
+          <circle cx="12" cy="12" r="5"></circle>
+          <line x1="12" y1="1" x2="12" y2="3"></line>
+          <line x1="12" y1="21" x2="12" y2="23"></line>
+          <line x1="4.22" y1="4.22" x2="5.64" y2="5.64"></line>
+          <line x1="18.36" y1="18.36" x2="19.78" y2="19.78"></line>
+          <line x1="1" y1="12" x2="3" y2="12"></line>
+          <line x1="21" y1="12" x2="23" y2="12"></line>
+          <line x1="4.22" y1="19.78" x2="5.64" y2="18.36"></line>
+          <line x1="18.36" y1="5.64" x2="19.78" y2="4.22"></line>
+        </svg>
+        <svg class="moon-icon" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" style="width: 22px; height: 22px; display: none;">
+          <path d="M21 12.79A9 9 0 1 1 11.21 3 7 7 0 0 0 21 12.79z"></path>
+        </svg>
+      </button>
+      <button id="hamburger" aria-label="Toggle menu">
+        <span></span><span></span><span></span>
+      </button>
+    </div>
+  </nav>
+
+  <!-- ─── HEADER ───────────────────────────────────────────── -->
+  <header class="blog-header">
+    <div class="container">
+      <span class="blog-meta">Robotics Fundamentals &bull; Hardware</span>
+      <h1 class="section-title" style="margin-bottom: 24px;">Choosing Your First Microcontroller (or SBC) for Robotics</h1>
+      <p style="color: var(--text-muted); max-width: 680px; margin: 0 auto;">Raspberry Pi, ESP32, Orange Pi, Arduino, STM32, Jetson — they get lumped together as "the board," but they solve completely different problems. Here's how to actually pick.</p>
+    </div>
+  </header>
+
+  <div class="container" style="text-align:center;margin-bottom:32px;">
+    <div class="blog-tags">
+      <span style="color:var(--text-dim);font-size:0.78rem;align-self:center;margin-right:2px;">KEY CONCEPTS:</span>
+      <a class="blog-tag" href="concepts.html#micro-ros">micro-ROS</a>
+      <a class="blog-tag" href="concepts.html#ros2-nodes-topics-services">ROS 2 Nodes/Topics/Services</a>
+    </div>
+  </div>
+
+  <main class="section">
+    <div class="container blog-content">
+
+      <h2>1. The Real Question Isn't "Which Board" — It's "Which Category"</h2>
+      <p>Every one of these boards gets recommended for "robotics" in some YouTube video, which makes them sound interchangeable. They aren't. There are three fundamentally different categories, and the first decision is which one you actually need:</p>
+      <ul>
+        <li><strong>Bare-metal microcontroller (MCU)</strong> — no operating system. Your code is the whole program, running directly on the chip. Arduino Uno/Mega, ESP32, and STM32 (Blue Pill/Nucleo) live here. You get deterministic timing and dirt-cheap hardware, at the cost of doing everything yourself — no filesystem, no threads-for-free, no <code>apt install</code>.</li>
+        <li><strong>Linux single-board computer (SBC)</strong> — a full computer that happens to be small. Raspberry Pi 4/5 and Orange Pi 5 live here. You get a real OS, ROS 2 running natively, and a package manager — at the cost of a non-real-time kernel and GPIO timing that jitters under load.</li>
+        <li><strong>AI-accelerated SBC</strong> — a Linux SBC with a GPU/NPU built specifically for running neural networks fast. NVIDIA Jetson lives here. Same OS-level tradeoffs as a Pi, plus a hardware accelerator that changes what's actually feasible for on-device vision.</li>
+      </ul>
+      <p>Most real robots use <em>two</em> of these together — a Pi-class "brain" for planning/vision, talking over serial or micro-ROS to an MCU handling the motors — which is exactly the split I used across my own MechaBot and BLE localisation projects below.</p>
+
+      <h2>2. The Boards, One by One</h2>
+
+      <h3>Arduino Uno / Mega — the on-ramp</h3>
+      <p>ATmega328P (Uno) or ATmega2560 (Mega) @ 16&nbsp;MHz, 2&nbsp;KB/8&nbsp;KB SRAM, no built-in wireless. The Uno has 14 digital I/O (6 PWM); the Mega has 54 (15 PWM) for projects juggling many servos or sensors on one board. Officially <strong>&euro;29.30</strong> (Uno) and <strong>&euro;52.80</strong> (Mega) at the <a href="https://store.arduino.cc/products/arduino-uno-rev3" target="_blank" rel="noreferrer">Arduino Store</a> — clones run far cheaper.</p>
+      <p>Classic Uno/Mega are <strong>not</strong> on the officially supported <a href="https://github.com/micro-ROS/micro_ros_arduino" target="_blank" rel="noreferrer">micro-ROS Arduino board list</a> (that list targets newer boards — Due, Zero, UNO R4 WiFi, Portenta, Giga R1). They're too small on RAM/flash for the XRCE-DDS stack. If you want them talking to ROS 2 at all, it's a hand-rolled serial bridge, not a first-class node.</p>
+      <p><strong>Best for:</strong> learning GPIO, PWM, and sensor reading with the simplest toolchain and the largest tutorial base on the internet. Not a real ROS 2 citizen.</p>
+
+      <h3>ESP32 — the wireless workhorse</h3>
+      <p>Dual-core Xtensa LX6 @ 240&nbsp;MHz, 520&nbsp;KB SRAM, 34 GPIOs, and — the reason it dominates hobbyist robotics — <strong>WiFi + Bluetooth/BLE built in</strong>, per the <a href="https://www.espressif.com/sites/default/files/documentation/esp32_datasheet_en.pdf" target="_blank" rel="noreferrer">official Espressif datasheet</a>. The LEDC peripheral gives 16 independent PWM generators, comfortably enough for real motor/servo control. Dev boards run about <strong>$10</strong>.</p>
+      <p>Unlike the Arduino Uno, the ESP32 (and S2/S3/C3 variants) is officially supported by <a href="concepts.html#micro-ros">micro-ROS</a> — see the <a href="https://micro.vulcanexus.org/docs/overview/hardware/" target="_blank" rel="noreferrer">official hardware support page</a>. That means it can be a genuine ROS 2 node, bridged through a micro-ROS Agent running on a Pi or laptop, not just a serial peripheral.</p>
+      <p><strong>Best for:</strong> wireless sensor nodes, telemetry, and low-level actuator control that needs WiFi/BLE — this is exactly what I used it for in the <a href="ble.html">BLE indoor localisation project</a> below.</p>
+
+      <h3>STM32 (Blue Pill / Nucleo) — real-time, done properly</h3>
+      <p>ARM Cortex-M3 @ up to 72&nbsp;MHz, 64&nbsp;KB flash, 20&nbsp;KB SRAM, 37 GPIOs across 4 ports, 3 general-purpose timers plus 1 advanced timer for tight PWM control. No built-in wireless. The "Blue Pill" (STM32F103C8T6) is an unofficial ~$2 clone board; the official <a href="https://www.st.com/en/evaluation-tools/nucleo-f103rb.html" target="_blank" rel="noreferrer">ST Nucleo-F103RB</a> has the same chip plus a built-in ST-Link debugger and Arduino-compatible headers, for roughly $10&ndash;$34 depending on distributor.</p>
+      <p>micro-ROS support exists but is strongest on the F4/F7 Nucleo family rather than this classic F103 — check the <a href="https://micro.vulcanexus.org/docs/overview/hardware/" target="_blank" rel="noreferrer">supported hardware list</a> before committing to a specific STM32 line for a ROS 2 project.</p>
+      <p><strong>Best for:</strong> deterministic, low-jitter control — precise PWM, encoder reading, anything where Arduino's 8-bit performance and lack of real hardware timers becomes the bottleneck. A natural step up once you've outgrown Arduino but don't need Linux.</p>
+
+      <h3>Raspberry Pi 4 / 5 — the brain</h3>
+      <p>Pi 4: quad-core Cortex-A72 @ 1.8&nbsp;GHz, 1&ndash;8&nbsp;GB RAM. Pi 5: quad-core Cortex-A76 @ 2.4&nbsp;GHz, 1&ndash;16&nbsp;GB RAM, plus PCIe 2.0 and an onboard RTC. Both have 802.11ac WiFi + Bluetooth 5.0 built in and the same 40-pin header (<a href="https://www.raspberrypi.com/products/raspberry-pi-5/" target="_blank" rel="noreferrer">official Pi 5 product page</a>). Pi Foundation launch pricing for the 5 was $50/$60/$80/$120 across the 2/4/8/16&nbsp;GB variants — <strong>treat current street prices as volatile</strong> and check at purchase time.</p>
+      <p>This is the one board here that runs <strong>full, native ROS 2</strong> — a 64-bit Ubuntu install on a Pi is Tier&nbsp;1 supported per <a href="https://reps.openrobotics.org/rep-2000/" target="_blank" rel="noreferrer">REP&nbsp;2000</a>, the official ROS platform-support policy. REP&nbsp;2000's tiers are defined per-OS (Ubuntu, Debian, RHEL, etc.) and don't mention Raspberry Pi OS at all — which in practice is exactly why the standard advice is to run 64-bit Ubuntu on the Pi rather than Raspberry Pi OS if you want first-class ROS 2 support. The catch: only 2 true hardware-PWM channels on the header, and Linux isn't a real-time OS, so anything needing tight, jitter-free motor timing belongs on an MCU instead, talking to the Pi over serial or micro-ROS.</p>
+      <p><strong>Best for:</strong> the robot's "brain" — Nav2, SLAM, OpenCV/vision pipelines, high-level planning. This is what ran the navigation stack on <a href="mechabot-blog.html">MechaBot</a> and <a href="nav2-ekf-blog.html">TurtleBot3</a>.</p>
+
+      <h3>Orange Pi 5 — the budget alternative, with caveats</h3>
+      <p>Rockchip RK3588S, 8-core (4&times;Cortex-A76 + 4&times;Cortex-A55) up to 2.4&nbsp;GHz, with a built-in 6&nbsp;TOPS NPU — genuinely more raw compute and on-device AI acceleration than a Pi 5 for less money (the 8&nbsp;GB variant lists around $199 through distributors). It has a smaller 26-pin GPIO header versus the Pi's 40, and built-in WiFi + Bluetooth 5.0.</p>
+      <div class="callout"><strong>Worth knowing before you buy:</strong> Orange Pi's official documentation and first-party support are noticeably thinner than Raspberry Pi's — expect to lean on community forums more, and to double-check exact pricing/specs directly with a distributor rather than trusting a cached spec sheet. It isn't officially listed in ROS 2's REP&nbsp;2000 platform tiers, though since it runs standard arm64 Ubuntu, full ROS 2 is technically feasible the same way it is on any arm64 Ubuntu machine.</div>
+      <p><strong>Best for:</strong> a Pi-class Linux brain on a tighter budget, or where the onboard NPU is genuinely useful — accepted in exchange for a smaller community and less polished docs.</p>
+
+      <h3>NVIDIA Jetson Orin Nano — when you need real inference</h3>
+      <div class="callout"><strong>Skip the original Jetson Nano.</strong> NVIDIA's own <a href="https://developer.nvidia.com/embedded/lifecycle" target="_blank" rel="noreferrer">product lifecycle page</a> lists the Jetson Nano Developer Kit under boards that have reached end-of-life; it's not a sensible "buy new" choice in 2026. The current entry point is the Orin Nano.</div>
+      <p>The <a href="https://www.nvidia.com/en-us/autonomous-machines/embedded-systems/jetson-orin/nano-super-developer-kit/" target="_blank" rel="noreferrer">Jetson Orin Nano Super Developer Kit</a>: 6-core Cortex-A78AE up to 1.7&nbsp;GHz, a 1024-core Ampere GPU with 32 Tensor Cores, 8&nbsp;GB LPDDR5, up to 67&nbsp;TOPS INT8 — for $249 official. Same 40-pin header form factor as a Pi, but no WiFi/Bluetooth built into the module itself (the dev kit carrier board has an M.2 slot for an add-in card). It runs full native ROS 2 on Ubuntu like the Pi, plus NVIDIA's <a href="https://nvidia-isaac-ros.github.io/" target="_blank" rel="noreferrer">Isaac ROS</a> packages that are hardware-accelerated for its GPU.</p>
+      <p><strong>Best for:</strong> real-time deep-learning inference — object detection, segmentation, multi-camera perception — anywhere a Pi's CPU-only vision pipeline is the bottleneck. Overkill if your project doesn't actually run a neural net on-device.</p>
+
+      <h2>3. Side-by-Side</h2>
+      <table>
+        <thead>
+          <tr><th>Board</th><th>Category</th><th>Wireless</th><th>ROS 2</th><th>Best for</th></tr>
+        </thead>
+        <tbody>
+          <tr><td>Arduino Uno/Mega</td><td>Bare-metal MCU</td><td>None</td><td>Not on micro-ROS list</td><td>Absolute beginner electronics</td></tr>
+          <tr><td>ESP32</td><td>Bare-metal MCU</td><td>WiFi + BLE</td><td>micro-ROS (official)</td><td>Wireless sensor/actuator nodes</td></tr>
+          <tr><td>STM32 (Blue Pill/Nucleo)</td><td>Bare-metal MCU</td><td>None</td><td>micro-ROS (F4/F7 best)</td><td>Deterministic real-time control</td></tr>
+          <tr><td>Raspberry Pi 4/5</td><td>Linux SBC</td><td>WiFi + BT</td><td>Full, Tier&nbsp;1 (via Ubuntu)</td><td>The robot's "brain" — Nav2/SLAM/vision</td></tr>
+          <tr><td>Orange Pi 5</td><td>Linux SBC + NPU</td><td>WiFi + BT</td><td>Full (unofficial tier)</td><td>Budget Pi alternative w/ on-device NPU</td></tr>
+          <tr><td>Jetson Orin Nano</td><td>AI-accelerated SBC</td><td>None on-module</td><td>Full + Isaac ROS</td><td>On-device deep-learning inference</td></tr>
+        </tbody>
+      </table>
+
+      <h2>4. A Simple Decision Framework</h2>
+      <ol class="decision-list">
+        <li><strong>Just blinking LEDs, reading a sensor, or driving a motor with no wireless need?</strong> Arduino Uno. Cheapest on-ramp, biggest tutorial base.</li>
+        <li><strong>Need WiFi/BLE telemetry from a sensor node, or motor control with wireless, cheaply?</strong> ESP32.</li>
+        <li><strong>Need genuinely deterministic, low-jitter real-time control and can handle a steeper toolchain?</strong> STM32 — start with an official Nucleo board, not a bare clone.</li>
+        <li><strong>Need to run Linux, Nav2/SLAM/OpenCV, or act as the "brain" over serial/micro-ROS?</strong> Raspberry Pi 4/5 — or Orange Pi 5 if budget-constrained and comfortable with thinner documentation.</li>
+        <li><strong>Need real-time deep-learning inference on-device?</strong> Jetson Orin Nano. Skip the original Nano — it's EOL.</li>
+      </ol>
+
+      <h2>5. What I'd Actually Recommend</h2>
+      <p>If you're brand new: start with an Arduino Uno for a week of GPIO/PWM basics, then move to an ESP32 the moment you want wireless — it's a small jump in complexity for a large jump in capability, and it's what I used for the <a href="ble.html">BLE indoor localisation system</a>. The moment your project needs a real navigation stack, computer vision, or anything ROS 2-native, add a Raspberry Pi as the brain rather than trying to force a Linux-shaped workload onto a microcontroller — that split is exactly what runs <a href="mechabot-blog.html">MechaBot</a>: a Pi-class host running Nav2/SLAM, talking over a custom <code>ros2_control</code> hardware interface to embedded motor firmware. Only reach for a Jetson once you've actually confirmed your project needs on-device neural network inference faster than a Pi's CPU can deliver — it's the most expensive board here and the least useful if you don't need its GPU.</p>
+
+      <h2>Further Reading</h2>
+      <ul>
+        <li><a href="https://reps.openrobotics.org/rep-2000/" target="_blank" rel="noreferrer">REP 2000</a> — the official ROS 2 platform support-tier policy referenced throughout this post.</li>
+        <li><a href="https://micro.vulcanexus.org/docs/overview/hardware/" target="_blank" rel="noreferrer">micro-ROS supported hardware</a> — the canonical list of which MCUs/boards run micro-ROS today.</li>
+        <li><a href="https://www.digikey.com/en/maker/projects/comparing-microcontrollers-what-brain-should-i-go-with/02d2dcb1a0d441f5a11fc9956559b226" target="_blank" rel="noreferrer">DigiKey Maker.io: "The Great Debate — Arduino vs. Raspberry Pi vs. ESP32"</a> — a widely-referenced practical comparison, worth a second opinion alongside this post.</li>
+      </ul>
+
+    </div>
+  </main>
+
+  <!-- ─── FOOTER ───────────────────────────────────────────── -->
+  <footer>
+    <div class="container">
+      <p>&copy; 2026 Ganesh Reddy. All rights reserved.</p>
+    </div>
+  </footer>
+
+  <script>
+    /* Theme Toggle */
+    const themeToggle = document.getElementById('theme-toggle');
+    if (themeToggle) {
+      const sunIcon = themeToggle.querySelector('.sun-icon');
+      const moonIcon = themeToggle.querySelector('.moon-icon');
+      function updateThemeIcon() {
+        if (document.documentElement.getAttribute('data-theme') === 'light') {
+          sunIcon.style.display = 'none';
+          moonIcon.style.display = 'block';
+        } else {
+          sunIcon.style.display = 'block';
+          moonIcon.style.display = 'none';
+        }
+      }
+      updateThemeIcon();
+      themeToggle.addEventListener('click', () => {
+        const currentTheme = document.documentElement.getAttribute('data-theme') || 'dark';
+        const newTheme = currentTheme === 'light' ? 'dark' : 'light';
+        if (newTheme === 'light') { document.documentElement.setAttribute('data-theme', 'light'); }
+        else { document.documentElement.removeAttribute('data-theme'); }
+        localStorage.setItem('theme', newTheme);
+        updateThemeIcon();
+      });
+    }
+
+    const hamburger = document.getElementById('hamburger');
+    const navLinks = document.querySelector('.nav-links');
+    if (hamburger) {
+      hamburger.addEventListener('click', () => {
+        navLinks.classList.toggle('open');
+      });
+    }
+    window.addEventListener('scroll', () => {
+      document.body.style.setProperty('--scrollParam', window.scrollY);
+    });
+
+    function updateTimeParam() {
+      document.body.style.setProperty('--timeParam', performance.now() / 1000);
+      requestAnimationFrame(updateTimeParam);
+    }
+    updateTimeParam();
+  </script>
+</body>
+</html>

@@ -116,6 +116,7 @@
     <ul class="nav-links">
       <li><a href="./">&larr; Back to Portfolio</a></li>
       <li><a href="blog.html" class="gradient-text">Blog Home</a></li>
+      <li><a href="concepts.html">Concepts</a></li>
     </ul>
     <div class="nav-controls" style="display: flex; align-items: center; gap: 16px;">
       <button id="theme-toggle" class="theme-btn" aria-label="Toggle theme" style="background: transparent; border: none; color: var(--text); cursor: pointer; display: flex; align-items: center;">
@@ -148,6 +149,19 @@
       <p style="color: var(--text-muted); max-width: 680px; margin: 0 auto;">The full mobile-robotics pipeline on a custom differential-drive robot: URDF/Xacro modeling, ros2_control with a serial hardware interface, SLAM Toolbox, AMCL, Nav2, camera-based QR docking, battery-aware coverage cleaning, and a Q-learning memory that learns which parts of the map to avoid.</p>
     </div>
   </header>
+
+  <div class="container" style="text-align:center;margin-bottom:32px;">
+    <div class="blog-tags">
+      <span style="color:var(--text-dim);font-size:0.78rem;align-self:center;margin-right:2px;">KEY CONCEPTS:</span>
+      <a class="blog-tag" href="concepts.html#nav2">Nav2</a>
+      <a class="blog-tag" href="concepts.html#slam">SLAM</a>
+      <a class="blog-tag" href="concepts.html#amcl">AMCL</a>
+      <a class="blog-tag" href="concepts.html#ros2-control">ros2_control</a>
+      <a class="blog-tag" href="concepts.html#q-learning">Q-Learning</a>
+      <a class="blog-tag" href="concepts.html#behavior-trees">Behavior Trees</a>
+      <a class="blog-tag" href="concepts.html#occupancy-grid">Occupancy Grids</a>
+    </div>
+  </div>
 
   <!-- ─── VIDEO ────────────────────────────────────────────── -->
   <div class="container">
@@ -429,6 +443,15 @@ position_states_[i] += velocity_states_[i] * dt;</code></pre>
       <h2>15. Where It Goes Next</h2>
       <p>The natural upgrades: fuse wheel odometry and IMU with an EKF, replace the simulated battery with real voltage sensing, move from QR to AprilTags with full pose-from-corners visual servoing for docking, track cleaned-area coverage explicitly, and train the RL policy properly in simulation before deploying it. But the architecture is already the point — every one of those swaps happens behind an interface the rest of the stack never sees.</p>
       <p>The full source — all packages, firmware included — is on <a href="https://github.com/GSR07/mechabot" target="_blank" rel="noreferrer">GitHub</a>.</p>
+
+      <h2>16. Further Reading</h2>
+      <ul>
+        <li><a href="https://docs.nav2.org/" target="_blank" rel="noreferrer">Nav2 documentation</a> — the navigation stack behind planning, control, and recovery behaviors.</li>
+        <li><a href="https://github.com/SteveMacenski/slam_toolbox" target="_blank" rel="noreferrer">SLAM Toolbox</a> — the mapping backend used for scan-matching and loop closure.</li>
+        <li><a href="https://docs.nav2.org/configuration/packages/configuring-amcl.html" target="_blank" rel="noreferrer">AMCL configuration reference</a> — the particle-filter localizer running on top of the built map.</li>
+        <li><a href="https://control.ros.org/humble/index.html" target="_blank" rel="noreferrer">ros2_control documentation</a> — the hardware-abstraction framework the custom serial interface plugs into.</li>
+        <li><a href="https://www.slamtec.com/en/lidar/a1" target="_blank" rel="noreferrer">RPLIDAR A1 product page</a> — the 2D LiDAR feeding both SLAM and AMCL.</li>
+      </ul>
     </div>
   </main>
 

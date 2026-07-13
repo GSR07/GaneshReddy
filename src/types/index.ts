@@ -15,6 +15,8 @@ export interface Project {
   sort_order: number
   visual_class?: string
   highlights?: { icon: string; title: string; desc: string }[]
+  concepts?: string[]
+  specs?: { label: string; value: string }[]
   created_at: string
   updated_at: string
 }

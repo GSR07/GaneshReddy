@@ -108,6 +108,7 @@
     <ul class="nav-links">
       <li><a href="./">&larr; Back to Portfolio</a></li>
       <li><a href="blog.html" class="gradient-text">Blog Home</a></li>
+      <li><a href="concepts.html">Concepts</a></li>
     </ul>
     <div class="nav-controls" style="display: flex; align-items: center; gap: 16px;">
       <button id="theme-toggle" class="theme-btn" aria-label="Toggle theme" style="background: transparent; border: none; color: var(--text); cursor: pointer; display: flex; align-items: center;">
@@ -141,6 +142,12 @@
     </div>
   </header>
 
+  <div class="container" style="text-align:center;margin-bottom:32px;">
+    <div class="blog-tags">
+      <span style="color:var(--text-dim);font-size:0.78rem;align-self:center;margin-right:2px;">KEY CONCEPTS:</span>
+      <a class="blog-tag" href="concepts.html#hsv-segmentation">HSV Segmentation</a>
+    </div>
+  </div>
 
   <!-- ─── CONTENT ──────────────────────────────────────────── -->
   <main class="section" style="padding-top: 20px;">
@@ -172,6 +179,12 @@
         <li>Classical CV is not legacy CV — for controlled scenes it beats deep learning on latency, hardware cost, and debuggability.</li>
         <li>Fix problems as far upstream as possible: a €10 lamp beat hours of algorithm tuning.</li>
         <li>Real-time means worst-case, not average-case.</li>
+      </ul>
+
+      <h2>6. Further Reading</h2>
+      <ul>
+        <li><a href="https://docs.opencv.org/4.x/df/d9d/tutorial_py_colorspaces.html" target="_blank" rel="noreferrer">OpenCV: HSV color space conversion</a> — the official tutorial behind the hue-based part segmentation.</li>
+        <li><a href="https://docs.opencv.org/4.x/d4/d73/tutorial_py_contours_begin.html" target="_blank" rel="noreferrer">OpenCV: contour detection</a> — how the binary mask becomes part outlines and shape descriptors.</li>
       </ul>
     </div>
   </main>

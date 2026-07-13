@@ -3,17 +3,19 @@ import Navbar from './components/layout/Navbar'
 import Footer from './components/layout/Footer'
 import ScrollProgress from './components/ui/ScrollProgress'
 import Hero from './components/sections/Hero'
+import WhatIWorkOn from './components/sections/WhatIWorkOn'
 import About from './components/sections/About'
 import Skills from './components/sections/Skills'
 import Education from './components/sections/Education'
 import Experience from './components/sections/Experience'
 import ProjectsSection from './components/sections/ProjectsSection'
 import BlogSection from './components/sections/BlogSection'
+import DailyDrivers from './components/sections/DailyDrivers'
 import Contact from './components/sections/Contact'
 
 function addReveal() {
   document.querySelectorAll(
-    '.glass-card, .timeline-item, .exp-card, .project-card, .about-text, .about-card, .contact-info, .contact-cta'
+    '.glass-card, .timeline-item, .exp-card, .project-card, .about-text, .about-card, .contact-info, .contact-cta, .dd-panel'
   ).forEach(el => el.classList.add('reveal'))
 
   const observer = new IntersectionObserver(entries => {
@@ -45,12 +47,14 @@ export default function App() {
       <ScrollProgress />
       <Navbar />
       <Hero />
+      <WhatIWorkOn />
       <About />
       <Skills />
       <Education />
       <Experience />
       <ProjectsSection />
       <BlogSection />
+      <DailyDrivers />
       <Contact />
       <Footer />
     </>

@@ -3,6 +3,11 @@ import { STATIC_PROJECTS } from '../../data/projects'
 import { asset } from '../../lib/utils'
 import type { Project } from '../../types'
 import ProjectModal from '../ui/ProjectModal'
+import ConceptChips from '../ui/ConceptChips'
+
+function refTag(sortOrder: number) {
+  return `P-${String(sortOrder).padStart(2, '0')}`
+}
 
 function tiltCard(card: HTMLElement, e: MouseEvent) {
   const rect = card.getBoundingClientRect()
@@ -28,6 +33,7 @@ function ProjectCard({ project, onOpen }: { project: Project; onOpen: (p: Projec
 
   return (
     <div ref={cardRef} className="project-card glass-card reveal">
+      <span className="project-ref">{refTag(project.sort_order)}</span>
       <div className={`project-visual ${project.visual_class ?? ''}`}
         style={hasMedia ? { height: 210 } : undefined}>
         {project.image_url ? (
@@ -58,6 +64,11 @@ function ProjectCard({ project, onOpen }: { project: Project; onOpen: (p: Projec
         <div className="project-tags">
           {project.tags.map(t => <span key={t} className="tag-sm">{t}</span>)}
         </div>
+        {project.concepts && project.concepts.length > 0 && (
+          <div style={{ marginTop:'.6rem' }}>
+            <ConceptChips concepts={project.concepts} />
+          </div>
+        )}
         <div style={{ display:'flex',gap:'.5rem',marginTop:'1rem',flexWrap:'wrap',alignItems:'center' }}>
           <button
             onClick={() => onOpen(project)}
@@ -111,6 +122,7 @@ export default function ProjectsSection() {
 
           {featured && (
             <div ref={featuredRef} className="project-card project-featured glass-card reveal">
+              <span className="project-ref">{refTag(featured.sort_order)}</span>
               <div className="project-visual pv-franka">
                 <div className="pv-franka-arm">
                   {featured.video_url ? (
@@ -138,9 +150,24 @@ export default function ProjectsSection() {
                 <h3>{featured.title}</h3>
                 <p className="featured-desc"
                   dangerouslySetInnerHTML={{ __html: featured.long_description ?? featured.description }} />
-                <div className="project-tags" style={{ marginBottom:'1rem' }}>
+                {featured.specs && featured.specs.length > 0 && (
+                  <div className="spec-grid" style={{ marginBottom:'1rem' }}>
+                    {featured.specs.map(s => (
+                      <div key={s.label} className="spec-row">
+                        <span className="spec-label">{s.label}</span>
+                        <span className="spec-value">{s.value}</span>
+                      </div>
+                    ))}
+                  </div>
+                )}
+                <div className="project-tags" style={{ marginBottom:'.75rem' }}>
                   {featured.tags.map(t => <span key={t} className="tag-sm">{t}</span>)}
                 </div>
+                {featured.concepts && featured.concepts.length > 0 && (
+                  <div style={{ marginBottom:'1rem' }}>
+                    <ConceptChips concepts={featured.concepts} />
+                  </div>
+                )}
                 <div style={{ display:'flex',gap:'.75rem',flexWrap:'wrap',alignItems:'center' }}>
                   <button onClick={() => setSelected(featured)} className="btn-primary"
                     style={{ cursor:'pointer',display:'inline-flex',alignItems:'center',gap:'.4rem' }}>

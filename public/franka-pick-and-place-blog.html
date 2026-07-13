@@ -116,6 +116,7 @@
     <ul class="nav-links">
       <li><a href="./">&larr; Back to Portfolio</a></li>
       <li><a href="blog.html" class="gradient-text">Blog Home</a></li>
+      <li><a href="concepts.html">Concepts</a></li>
     </ul>
     <div class="nav-controls" style="display: flex; align-items: center; gap: 16px;">
       <button id="theme-toggle" class="theme-btn" aria-label="Toggle theme" style="background: transparent; border: none; color: var(--text); cursor: pointer; display: flex; align-items: center;">
@@ -148,6 +149,16 @@
       <p style="color: var(--text-muted); max-width: 600px; margin: 0 auto;">A beginner-friendly architectural deep dive into ROS2, MoveIt2, Open CV, and Ignition Gazebo physics with the Franka Emika Panda 7-DOF arm.</p>
     </div>
   </header>
+
+  <div class="container" style="text-align:center;margin-bottom:32px;">
+    <div class="blog-tags">
+      <span style="color:var(--text-dim);font-size:0.78rem;align-self:center;margin-right:2px;">KEY CONCEPTS:</span>
+      <a class="blog-tag" href="concepts.html#moveit2">MoveIt2</a>
+      <a class="blog-tag" href="concepts.html#tf2">TF2</a>
+      <a class="blog-tag" href="concepts.html#hsv-segmentation">HSV Segmentation</a>
+      <a class="blog-tag" href="concepts.html#ros2-nodes-topics-services">ROS 2 Nodes/Topics/Services</a>
+    </div>
+  </div>
 
   <!-- ─── VIDEO ────────────────────────────────────────────── -->
   <div class="container">
@@ -280,6 +291,134 @@ grasp_node  = Node(package='panda_controller', executable='grasp_manager')
 </code></pre>
 
       <p>When you spin up this single command, the entire system connects seamlessly. The camera begins streaming, the controller translates pixels into 3D transforms via TF2, MoveIt computes the safe IK joint trajectory, and the Grasp Manager mathematically locks the payload in place for a flawless simulated pick-and-place operation.</p>
+
+      <h2>7. Package Breakdown</h2>
+      <p>The whole simulation is split across six ROS 2 packages, each with a single clear job:</p>
+      <table>
+        <thead>
+          <tr><th>Package</th><th>Responsibility</th></tr>
+        </thead>
+        <tbody>
+          <tr><td><code>panda_description</code></td><td>Robot URDF/Xacro model, meshes, Gazebo world, camera, colored objects, target container</td></tr>
+          <tr><td><code>panda_controller</code></td><td><a href="concepts.html#ros2-control">ros2_control</a> controller config (joint_state_broadcaster, arm + gripper trajectory controllers, 100 Hz update rate)</td></tr>
+          <tr><td><code>panda_moveit</code></td><td>MoveIt 2 config — planning groups (7-joint arm, 2-joint gripper), KDL kinematics solver, named states (home/open/closed gripper)</td></tr>
+          <tr><td><code>panda_vision</code></td><td>The <code>color_detector.py</code> node — HSV segmentation and coordinate estimation</td></tr>
+          <tr><td><code>pymoveit2</code></td><td>Python MoveIt 2 interface + the <code>pick_and_place.py</code> task node that runs the full sequence</td></tr>
+          <tr><td><code>panda_bringup</code></td><td>Top-level launch file that starts Gazebo, controllers, MoveIt 2, RViz, vision, and the task node together</td></tr>
+        </tbody>
+      </table>
+
+      <h2>8. Camera & Detection Specs</h2>
+      <p>The simulated camera and the HSV thresholds tuned for it are the two pieces that make color detection actually work in this scene:</p>
+      <table>
+        <thead>
+          <tr><th>Property</th><th>Value</th></tr>
+        </thead>
+        <tbody>
+          <tr><td>Image width</td><td>640 px</td></tr>
+          <tr><td>Image height</td><td>320 px</td></tr>
+          <tr><td>Update rate</td><td>10 Hz</td></tr>
+          <tr><td>Horizontal FOV</td><td>1.0 rad</td></tr>
+          <tr><td>Near clip</td><td>0.05 m</td></tr>
+          <tr><td>Far clip</td><td>8.0 m</td></tr>
+        </tbody>
+      </table>
+
+      <table>
+        <thead>
+          <tr><th>Color</th><th>Hue range</th></tr>
+        </thead>
+        <tbody>
+          <tr><td>Red</td><td>0–10 and 170–179</td></tr>
+          <tr><td>Green</td><td>40–85</td></tr>
+          <tr><td>Blue</td><td>90–140</td></tr>
+        </tbody>
+      </table>
+      <p>Red needs two hue intervals because red wraps around the ends of OpenCV's 0–179 hue scale. Noise is filtered with a 3×3 morphological opening, and contours smaller than roughly 100 px are discarded as noise.</p>
+
+      <h2>9. From Pixel to Workspace</h2>
+      <p>Turning a detected pixel \((u, v)\) into a 3D point uses the standard pinhole camera projection:</p>
+      <div class="formula-box">
+        \[ X_c = \frac{(u-c_x)Z}{f_x}, \quad Y_c = \frac{(v-c_y)Z}{f_y}, \quad Z_c = Z \]
+      </div>
+      <p>Here's a worked example with numbers actually used in this project:</p>
+<pre><code>u = 350 px,  v = 180 px
+cx = 320 px, cy = 160 px
+fx = 585 px, fy = 585 px
+Z  = 0.50 m
+
+Xc ≈ 0.0256 m
+Yc ≈ 0.0171 m
+Zc = 0.50 m</code></pre>
+      <p>The important caveat: the current detector does <strong>not</strong> use a real measured depth image. It uses an assumed depth plus empirical scale/offset corrections tuned specifically for this fixed simulated scene. That means it's more accurate to describe this as a calibrated image-to-workspace mapping for a controlled simulation, rather than general-purpose 3D reconstruction. Real upgrade paths from here would include:</p>
+      <ul>
+        <li>RGB-D camera data</li>
+        <li>Stereo-camera depth</li>
+        <li>Point-cloud processing</li>
+        <li>Known-plane ray intersection</li>
+        <li>AprilTag-based pose estimation</li>
+        <li>Object-pose estimation neural network</li>
+      </ul>
+
+      <h2>10. Real ROS 2 Interfaces</h2>
+      <p>These are the actual topics wiring the pipeline together:</p>
+      <table>
+        <thead>
+          <tr><th>Topic</th><th>Message Type</th><th>Purpose</th></tr>
+        </thead>
+        <tbody>
+          <tr><td><code>/camera/image_raw</code></td><td><code>sensor_msgs/Image</code></td><td>RGB camera stream</td></tr>
+          <tr><td><code>/camera/camera_info</code></td><td><code>sensor_msgs/CameraInfo</code></td><td>Camera calibration</td></tr>
+          <tr><td><code>/color_coordinates</code></td><td><code>std_msgs/String</code></td><td>Detected color + estimated position</td></tr>
+          <tr><td><code>/joint_states</code></td><td><code>sensor_msgs/JointState</code></td><td>Current robot joint states</td></tr>
+          <tr><td><code>/panda_pick/{color}/attach, /detach, /state</code></td><td><code>std_msgs/Empty</code>, <code>std_msgs/Empty</code>, <code>std_msgs/String</code></td><td>Per-color grasp attachment control (color = red/green/blue)</td></tr>
+        </tbody>
+      </table>
+      <p>The detection message on <code>/color_coordinates</code> is currently a comma-separated string, e.g. <code>B,0.425,-0.180,0.100</code> (color, x, y, z). A typed custom message — something like <code>string color</code>, <code>geometry_msgs/Point position</code>, <code>float32 confidence</code> — would be safer than string-parsing. That's a known improvement, not something already done.</p>
+
+      <h2>11. Task Parameters</h2>
+      <p>The pick-and-place task node runs off a small set of hand-tuned parameters:</p>
+      <table>
+        <thead>
+          <tr><th>Parameter</th><th>Value</th><th>Purpose</th></tr>
+        </thead>
+        <tbody>
+          <tr><td><code>target_color</code></td><td>B (launch default)</td><td>Object to pick</td></tr>
+          <tr><td><code>pregrasp_z</code></td><td>0.30 m</td><td>Height above object before descent</td></tr>
+          <tr><td><code>grasp_z</code></td><td>0.170 m</td><td>Final grasp height</td></tr>
+          <tr><td><code>grasp_width</code></td><td>0.030 m per finger</td><td>Gripper closed position</td></tr>
+          <tr><td><code>drop_x</code></td><td>−0.6 m</td><td>Drop position X</td></tr>
+          <tr><td><code>drop_y</code></td><td>0.0 m</td><td>Drop position Y</td></tr>
+          <tr><td><code>drop_above_z</code></td><td>0.35 m</td><td>Position above container</td></tr>
+          <tr><td><code>drop_z</code></td><td>0.275 m</td><td>Release height</td></tr>
+        </tbody>
+      </table>
+      <p>These numbers are specific to the current simulated scene and geometry, and would need retuning if the camera pose, table size, or object dimensions changed.</p>
+
+      <h2>12. Honest Limitations</h2>
+      <div class="callout">
+        <p style="margin-bottom: 0;">This project works reliably in its current scope, but it's worth being upfront about what it doesn't do yet:</p>
+        <ul>
+          <li>Simulation-only — no real hardware yet.</li>
+          <li>Fixed HSV color thresholds, not learned detection.</li>
+          <li>No true measured depth, only an assumed-depth approximation.</li>
+          <li>Detachable-joint grasping instead of real contact/friction dynamics.</li>
+          <li>A fixed downward gripper orientation rather than a computed grasp pose.</li>
+          <li>No automatic recovery from planning failures.</li>
+          <li>A fixed startup delay before the task node runs, instead of readiness checks on controllers/MoveIt/camera/TF.</li>
+          <li>Assumes the target object stays stationary during the whole sequence.</li>
+        </ul>
+      </div>
+
+      <h2>13. Further Reading</h2>
+      <ul>
+        <li><a href="https://github.com/GSR07/frankapanda-simulation" target="_blank" rel="noreferrer">Project repository on GitHub</a> — full source: all 6 ROS 2 packages, launch files, and the pick-and-place task node.</li>
+        <li><a href="https://moveit.picknik.ai/" target="_blank" rel="noreferrer">MoveIt 2 documentation</a> — the motion-planning framework behind the arm's IK and trajectory execution.</li>
+        <li><a href="https://www.wiredworkers.io/wp-content/uploads/2019/12/Panda_FrankaEmika_ENG.pdf" target="_blank" rel="noreferrer">Franka Emika Panda datasheet</a> — official 7-DOF arm specs (payload, joint torque sensing, reach).</li>
+        <li><a href="https://gazebosim.org/docs/fortress/getstarted/" target="_blank" rel="noreferrer">Gazebo Fortress docs</a> — the simulator running the physics and the custom fixed-joint grasp trick.</li>
+        <li><a href="https://docs.ros.org/en/humble/Concepts/Intermediate/About-Tf2.html" target="_blank" rel="noreferrer">TF2 concepts (ROS 2 Humble)</a> — how the camera-to-base transform actually works.</li>
+        <li><a href="https://docs.ros.org/en/humble/" target="_blank" rel="noreferrer">ROS 2 Humble documentation</a> — the distro this whole stack targets.</li>
+      </ul>
     </div>
   </main>
 

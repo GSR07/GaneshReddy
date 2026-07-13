@@ -81,6 +81,13 @@ export default function Navbar() {
           </a>
         </li>
 
+        {/* Concepts → glossary page */}
+        <li>
+          <a href={asset('/concepts.html')} onClick={() => setMenuOpen(false)}>
+            Concepts
+          </a>
+        </li>
+
         <li>
           <a href="#contact" className="btn-nav" onClick={e => handleHashClick(e, 'contact')}>
             Contact
@@ -89,6 +96,10 @@ export default function Navbar() {
       </ul>
 
       <div className="nav-controls" style={{ display: 'flex', alignItems: 'center', gap: 16 }}>
+        <span className="nav-status-pill">
+          <span className="badge-dot" />
+          Open to Work
+        </span>
         <button
           id="theme-toggle" className="theme-btn" aria-label="Toggle theme"
           onClick={toggleTheme}
